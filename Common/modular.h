@@ -77,11 +77,11 @@ public:
 	{
 		return l.val_ < r.val_;
 	}
-	friend bool operator> (const mod_t& l, const mod_t& r) { return r < l; }
-	friend bool operator<=(const mod_t& l, const mod_t& r) { return !(l > r); }
-	friend bool operator>=(const mod_t& l, const mod_t& r) { return !(l < r); }
-	friend bool operator==(const mod_t& l, const mod_t& r) { return l.val_ == r.val_; }
-	friend bool operator!=(const mod_t& l, const mod_t& r) { return !(l == r); }
+	friend constexpr bool operator> (const mod_t& l, const mod_t& r) { return r < l; }
+	friend constexpr bool operator<=(const mod_t& l, const mod_t& r) { return !(l > r); }
+	friend constexpr bool operator>=(const mod_t& l, const mod_t& r) { return !(l < r); }
+	friend constexpr bool operator==(const mod_t& l, const mod_t& r) { return l.val_ == r.val_; }
+	friend constexpr bool operator!=(const mod_t& l, const mod_t& r) { return !(l == r); }
 
 	constexpr auto Val() const
 	{

@@ -25,16 +25,23 @@ struct wiring
 		epicyclism::ctransform(std::begin(w.rl_), std::end(w.rl_), std::begin(rl_), [](auto m) { return m; });
 		epicyclism::ctransform(std::begin(w.lr_), std::end(w.lr_), std::begin(lr_), [](auto m) { return m; });
 	}
-	//constexpr
-	modalpha evalRL(modalpha val) // const
+	constexpr modalpha evalRL(modalpha val) const
 	{
-		auto off = rl_.at(val);
-		return val + off;
+		return rl_[val.Val()];
 	}
-	//constexpr
-	alpha evalLR(alpha val) // const
+	constexpr modalpha evalLR(modalpha val) const
 	{
-		return val + lr_[val];
+		return lr_[val.Val()];
+	}
+	constexpr modalpha evalRef(modalpha val) const
+	{
+		return lr_[val.Val()] + val;
+	}
+	template<typename O> modalpha evalRef(modalpha val, O& ostr) const
+	{
+		auto r = lr_[val.Val()] + val;
+		ostr << "<>" << r ;
+		return r;
 	}
 };
 
