@@ -12,31 +12,31 @@ private :
 	base_t val_;
 
 public:
-	constexpr mod_t(T v) : val_{ static_cast<base_t>(v) }
+	constexpr mod_t(T v) noexcept : val_{ static_cast<base_t>(v) }
 	{		
 	}
-	constexpr mod_t() : val_{}
+	constexpr mod_t() noexcept : val_{}
 	{
 	}
-	constexpr mod_t ( mod_t const& t) : val_(t.val_)
+	constexpr mod_t ( mod_t const& t) noexcept : val_(t.val_)
 	{}
-	constexpr mod_t(int n) : val_(static_cast<base_t>(n % M))
+	constexpr mod_t(int n) noexcept : val_(static_cast<base_t>(n % M))
 	{
 	}
-	constexpr mod_t& operator++()
+	constexpr mod_t& operator++() noexcept
 	{
 		++val_;
 		if (val_ == M)
 			val_ = 0;
 		return *this;
 	}
-	constexpr mod_t operator++(int)
+	constexpr mod_t operator++(int) noexcept
 	{
 		mod_t t(*this);
 		operator++();
 		return t;
 	}
-	mod_t& operator--()
+	mod_t& operator--() noexcept
 	{
 		if (val_ == 0)
 			val_ = M - 1;
@@ -44,46 +44,46 @@ public:
 			--val_;
 		return *this;
 	}
-	mod_t operator--(int)
+	mod_t operator--(int) noexcept
 	{
 		mod_t t(*this);
 		operator--();
 		return t;
 	}
-	constexpr mod_t& operator+=(const mod_t& rhs)
+	constexpr mod_t& operator+=(const mod_t& rhs) noexcept
 	{
 		val_ += rhs.val_;
 		val_ %= M;
 		return *this;
 	}
-	constexpr mod_t& operator-=(const mod_t& rhs)
+	constexpr mod_t& operator-=(const mod_t& rhs) noexcept
 	{
 		if (rhs.val_ > val_)
 			val_ += M;
 		val_ -= rhs.val_;
 		return *this;
 	}
-	constexpr friend mod_t operator+ (mod_t l, const mod_t& r)
+	constexpr friend mod_t operator+ (mod_t l, const mod_t& r) noexcept
 	{
 		l += r;
 		return l;
 	}
-	constexpr friend mod_t operator- (mod_t l, const mod_t& r)
+	constexpr friend mod_t operator- (mod_t l, const mod_t& r) noexcept
 	{
 		l -= r;
 		return l;
 	}
-	constexpr friend bool operator< (const mod_t& l, const mod_t& r)
+	constexpr friend bool operator< (const mod_t& l, const mod_t& r) noexcept
 	{
 		return l.val_ < r.val_;
 	}
-	friend constexpr bool operator> (const mod_t& l, const mod_t& r) { return r < l; }
-	friend constexpr bool operator<=(const mod_t& l, const mod_t& r) { return !(l > r); }
-	friend constexpr bool operator>=(const mod_t& l, const mod_t& r) { return !(l < r); }
-	friend constexpr bool operator==(const mod_t& l, const mod_t& r) { return l.val_ == r.val_; }
-	friend constexpr bool operator!=(const mod_t& l, const mod_t& r) { return !(l == r); }
+	friend constexpr bool operator> (const mod_t& l, const mod_t& r) noexcept { return r < l; }
+	friend constexpr bool operator<=(const mod_t& l, const mod_t& r) noexcept { return !(l > r); }
+	friend constexpr bool operator>=(const mod_t& l, const mod_t& r) noexcept { return !(l < r); }
+	friend constexpr bool operator==(const mod_t& l, const mod_t& r) noexcept { return l.val_ == r.val_; }
+	friend constexpr bool operator!=(const mod_t& l, const mod_t& r) noexcept { return !(l == r); }
 
-	constexpr auto Val() const
+	constexpr auto Val() const noexcept 
 	{
 		return val_;
 	}

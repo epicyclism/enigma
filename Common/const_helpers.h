@@ -57,13 +57,13 @@ namespace epicyclism
 
 	template<typename I, typename F> constexpr void qsort(I b, I e, F f)
 	{
-		auto swap = [&](I l, I r)
+		auto const swap = [&](I l, I r)
 		{
 			auto tmp = *l;
 			*l = *r;
 			*r = tmp;
 		};
-		auto partition = [&](I l, I r)
+		auto const partition = [&](I l, I r)
 		{
 			--r;
 			auto v = *r;

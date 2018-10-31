@@ -56,7 +56,7 @@ public:
 		return w1_.LR(
 				w2_.LR(
 				 w3_.LR(
-				  ref_.evalLR(
+				  ref_.evalRef(
 				 w3_.RL(
 				w2_.RL(
 			   w1_.RL(in)))))));

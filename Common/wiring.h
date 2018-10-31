@@ -7,6 +7,7 @@
 // and return through the wheel from left to right. So this is computed in a
 // a constexpr function at compile time.
 //
+#pragma warning ( disable : 4514)
 
 #include <array>
 #include <algorithm>
@@ -17,7 +18,7 @@ struct wiring
 {
 	als_t rl_ ;
 	als_t lr_ ;
-	constexpr wiring() : rl_{}, lr_{}
+	constexpr wiring() noexcept : rl_{}, lr_{}
 	{}
 	constexpr wiring (wiring const& w) : rl_{}, lr_{}
 	{
@@ -51,7 +52,7 @@ constexpr wiring FromDescWheel(char const desc[26])
 	{
 		modalpha r_;
 		modalpha l_;
-		constexpr pr() {}
+		constexpr pr() noexcept {}
 	};
 	std::array<pr, 26> wking{};
 	modalpha l{ alpha::A };
@@ -89,7 +90,7 @@ constexpr wiring FromDescReflector(char const desc[26])
 	{
 		modalpha i_;
 		modalpha o_;
-		constexpr pr() {}
+		constexpr pr() noexcept {}
 	};
 	std::array<pr, 26> wking{};
 	modalpha l{ alpha::A };
