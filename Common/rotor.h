@@ -11,8 +11,8 @@ struct rotor : public wiring
 	modalpha to_;
 	// dual turnover
 	bool     dual_;
-	constexpr rotor() noexcept : wiring{}, to_ (0), dual_(false)
-	{}
+
+	constexpr rotor() = delete;
 	constexpr rotor (wiring const& w, modalpha to, bool d) noexcept : wiring(w), to_(to), dual_(d)
 	{}
 };

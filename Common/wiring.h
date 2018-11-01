@@ -18,6 +18,7 @@ struct wiring
 {
 	als_t rl_ ;
 	als_t lr_ ;
+
 	constexpr wiring() noexcept : rl_{}, lr_{}
 	{}
 	constexpr wiring (wiring const& w) : rl_{}, lr_{}

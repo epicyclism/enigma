@@ -18,6 +18,8 @@ modalpha from_printable_throw(char ch)
 	throw std::out_of_range("requires a-z or A-Z");
 }
 
+// these take a string_view so we can provide strings...
+//
 rotor const& rotor_from_name_throw(std::string_view nm)
 {
 	// yawn...
@@ -78,20 +80,6 @@ public:
 	{
 		w_.Setting(s3, s2, s1);
 	}
-	void Ring(char const cfg[3])
-	{
-		const modalpha r3 = from_printable_throw(cfg[0]);
-		const modalpha r2 = from_printable_throw(cfg[1]);
-		const modalpha r1 = from_printable_throw(cfg[2]);
-		Ring(r3, r2, r1);
-	}
-	void Setting(char const cfg[3])
-	{
-		const modalpha s3 = from_printable_throw(cfg[0]);
-		const modalpha s2 = from_printable_throw(cfg[1]);
-		const modalpha s1 = from_printable_throw(cfg[2]);
-		Setting(s3, s2, s1);
-	}
 	// clear
 	void Stecker()
 	{
@@ -103,10 +91,6 @@ public:
 	void Stecker(modalpha f, modalpha t)
 	{
 		s_.Set(f, t);
-	}
-	void Stecker(char f, char t)
-	{
-		s_.Set(from_printable_throw(f), from_printable_throw(t));
 	}
 	template<typename I> std::vector<modalpha> Transform(I b, I e)
 	{
@@ -125,7 +109,7 @@ public:
 		std::vector<modalpha> r;
 		std::transform(b, e, std::back_inserter(r), [&](auto in)
 		{
-			w_.Step();
+			w_.Step(ostr);
 			ostr << in;
 			auto v = s_.Eval(in, ostr);
 			v = w_.Evaluate(v, ostr);
@@ -144,10 +128,33 @@ public:
 //
 machine3 MakeMachine3(char const desc[4])
 {
-	const auto ref = reflector_from_name_throw(std::string_view(desc, 1));
-	const auto w3  = rotor_from_name_throw(std::string_view(desc + 1, 1));
-	const auto w2  = rotor_from_name_throw(std::string_view(desc + 2, 1));
-	const auto w1  = rotor_from_name_throw(std::string_view(desc + 3, 1));
+	wiring const& ref = reflector_from_name_throw(std::string_view(desc, 1));
+	rotor  const& w1  = rotor_from_name_throw(std::string_view(desc + 1, 1));
+	rotor  const& w2  = rotor_from_name_throw(std::string_view(desc + 2, 1));
+	rotor  const& w3  = rotor_from_name_throw(std::string_view(desc + 3, 1));
 
 	return machine3(ref, w3, w2, w1);
+}
+
+void Ring(machine3& m3, char const cfg[3])
+{
+	const modalpha r3 = from_printable_throw(cfg[0]);
+	const modalpha r2 = from_printable_throw(cfg[1]);
+	const modalpha r1 = from_printable_throw(cfg[2]);
+	m3.Ring(r3, r2, r1);
+}
+
+void Setting(machine3& m3, char const cfg[3])
+{
+	const modalpha s3 = from_printable_throw(cfg[0]);
+	const modalpha s2 = from_printable_throw(cfg[1]);
+	const modalpha s1 = from_printable_throw(cfg[2]);
+	m3.Setting(s3, s2, s1);
+}
+
+void Stecker(machine3& m3, char f, char t)
+{
+	auto from = from_printable_throw(f);
+	auto to = from_printable_throw(t);
+	m3.Stecker(from, to );
 }

@@ -25,6 +25,7 @@ struct wheel
 	{}
 	constexpr wheel (rotor const& r, alpha ring, alpha base) : rotor_{ r }, ring_{ ring }, base_(base), roll_{ r.to_ - base}
 	{}
+
 	constexpr modalpha RL(modalpha in) const
 	{
 		return in + rotor_.evalRL(base_ + in);
@@ -51,11 +52,11 @@ struct wheel
 	}
 	constexpr void Base(modalpha b)
 	{
-		base_ = b - ring_;
+		base_ = b - ring_ ;
 		if (rotor_.dual_ && (b > rotor_.to_))
-			roll_ = (rotor_.to_ + rotor_.to_) - base_; // in practice we know it is M and Z
+			roll_ = b - (rotor_.to_ + rotor_.to_); // in practice we know it is M and Z
 		else
-			roll_ = rotor_.to_ - base_;
+			roll_ = b - rotor_.to_ ;
 	}
 	constexpr bool Step()
 	{

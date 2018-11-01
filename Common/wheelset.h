@@ -21,6 +21,7 @@ public:
 	// initialisation is left to right, followed by reflector. Potential for confusion...
 	constexpr wheels3( rotor const& w3, rotor const& w2, rotor const& w1, wiring const& ref ) : w1_{w1}, w2_{w2}, w3_{w3}, ref_{ref}
 	{}
+
 	// note these are also left to right
 	constexpr void Ring(modalpha w3, modalpha w2, modalpha w1)
 	{
@@ -48,8 +49,31 @@ public:
 		else
 		if (w2_.VirtualStep())
 		{
-				w3_.Step();
+			w3_.Step();
 		}
+	}
+	template<typename O> constexpr void Step(O& ostr)
+	{
+		ostr << "x";
+		if (w1_.Step())
+		{
+			ostr << "x";
+			if (w2_.Step())
+			{
+				ostr << "x";
+				w3_.Step();
+			}
+			else
+				ostr << "-";
+		}
+		else
+		if (w2_.VirtualStep())
+		{
+			ostr << "Xx";
+			w3_.Step();
+		}
+		else
+			ostr << "--";
 	}
 	constexpr modalpha Evaluate(modalpha in) const
 	{
