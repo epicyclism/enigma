@@ -24,20 +24,29 @@ namespace std
 constexpr int alpha_max = std::numeric_limits<alpha>::max();
 using modalpha = mod_t<alpha_max, alpha>;
 
-constexpr char to_printable(modalpha const& c)
+constexpr inline char to_printable(modalpha const& c)
 {
+	if (c == alpha::SZ)
+		return ' ';
 	return char(c.Val() + 'A');
 }
 
-constexpr modalpha from_printable(char const ch)
+constexpr inline modalpha from_printable(char const ch)
 {
+	if (ch == ' ' || ch == 0)
+		return modalpha(alpha::SZ); // invalid character can be ignored later. Lets us use five letter groups for example.
 	return modalpha(ch - 'A');
+}
+
+constexpr inline bool valid_from_char(char const ch)
+{
+	return ch >= 'A' && ch <= 'Z';
 }
 
 using als_t  = std::array<modalpha, alpha_max>;
 using alsp_t = std::pair<als_t, als_t>;
 
-std::ostream& operator<< (std::ostream& ostr, modalpha const& m)
+inline std::ostream& operator<< (std::ostream& ostr, modalpha const& m)
 {
 	ostr << to_printable(m);
 	return ostr;

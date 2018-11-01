@@ -7,58 +7,6 @@
 #include "wheelset.h"
 #include "stecker.h"
 
-// helper functions, throw on invalid
-modalpha from_printable_throw(char ch)
-{
-	if (ch >= 'a' && ch <= 'z')
-		return modalpha(ch - 'a');
-	if ( ch >= 'A' && ch <= 'Z')
-		return modalpha(ch - 'A');
-	// cannot be done as constexpr...
-	throw std::out_of_range("requires a-z or A-Z");
-}
-
-// these take a string_view so we can provide strings...
-//
-rotor const& rotor_from_name_throw(std::string_view nm)
-{
-	// yawn...
-	if (nm == "1" || nm == "I")
-		return I;
-	if (nm == "2" || nm == "II")
-		return II;
-	if (nm == "3" || nm == "III")
-		return III;
-	if (nm == "4" || nm == "IV")
-		return IV;
-	if (nm == "5" || nm == "V")
-		return V;
-	if (nm == "6" || nm == "VI")
-		return VI;
-	if (nm == "7" || nm == "VII")
-		return VII;
-	if (nm == "8" || nm == "VIII")
-		return VIII;
-	if (nm == "b" || nm == "beta")
-		return beta;
-	if (nm == "g" || nm == "gamma")
-		return gamma;
-	throw std::out_of_range("invalid wheel name");
-}
-
-wiring const& reflector_from_name_throw(std::string_view nm)
-{
-	if (nm == "b" || nm == "B")
-		return B;
-	if (nm == "c" || nm == "C")
-		return C;
-	if (nm == "B" || nm == "B_M4")
-		return B_M4;
-	if (nm == "C" || nm == "C_M4")
-		return C_M4;
-	throw std::out_of_range("invalid reflector name");
-}
-
 class machine3
 {
 private:
@@ -97,6 +45,8 @@ public:
 		std::vector<modalpha> r;
 		std::transform(b, e, std::back_inserter(r), [&](auto in)
 		{
+			if (in == modalpha(alpha::SZ))
+				return modalpha(alpha::SZ);
 			w_.Step();
 			auto v = s_.Eval(in);
 			v = w_.Evaluate(v);
@@ -109,6 +59,8 @@ public:
 		std::vector<modalpha> r;
 		std::transform(b, e, std::back_inserter(r), [&](auto in)
 		{
+			if (in == modalpha(alpha::SZ))
+				return modalpha(alpha::SZ);
 			w_.Step(ostr);
 			ostr << in;
 			auto v = s_.Eval(in, ostr);
@@ -121,46 +73,78 @@ public:
 	}
 };
 
+// these take a string_view so we can provide strings...
+//
+inline rotor const& rotor_from_name_throw(std::string_view nm)
+{
+	// yawn...
+	if (nm == "1" || nm == "I")
+		return I;
+	if (nm == "2" || nm == "II")
+		return II;
+	if (nm == "3" || nm == "III")
+		return III;
+	if (nm == "4" || nm == "IV")
+		return IV;
+	if (nm == "5" || nm == "V")
+		return V;
+	if (nm == "6" || nm == "VI")
+		return VI;
+	if (nm == "7" || nm == "VII")
+		return VII;
+	if (nm == "8" || nm == "VIII")
+		return VIII;
+	if (nm == "b" || nm == "beta")
+		return beta;
+	if (nm == "g" || nm == "gamma")
+		return gamma;
+	throw std::out_of_range("invalid wheel name");
+}
+
+inline wiring const& reflector_from_name_throw(std::string_view nm)
+{
+	if (nm == "b" || nm == "B")
+		return B;
+	if (nm == "c" || nm == "C")
+		return C;
+	if (nm == "B" || nm == "B_M4")
+		return B_M4;
+	if (nm == "C" || nm == "C_M4")
+		return C_M4;
+	throw std::out_of_range("invalid reflector name");
+}
+
 // take a string like 'B321' and return a suitably configured machine.
 // throws on nonsense.
 //
 // reflector/wheel/wheel/wheel in the order they appear in an actual machine
 //
-machine3 MakeMachine3(char const desc[4])
+inline machine3 MakeMachine3(char const desc[4])
 {
-#if 0
-	wiring const& ref = reflector_from_name_throw(std::string_view(desc, 1));
-	rotor  const& w1  = rotor_from_name_throw(std::string_view(desc + 1, 1));
-	rotor  const& w2  = rotor_from_name_throw(std::string_view(desc + 2, 1));
-	rotor  const& w3  = rotor_from_name_throw(std::string_view(desc + 3, 1));
-#else
 	auto& ref = reflector_from_name_throw(std::string_view(desc, 1));
 	auto& w1  = rotor_from_name_throw(std::string_view(desc + 1, 1));
 	auto& w2  = rotor_from_name_throw(std::string_view(desc + 2, 1));
 	auto& w3  = rotor_from_name_throw(std::string_view(desc + 3, 1));
-#endif
 	return machine3(ref, w3, w2, w1);
 }
 
-void Ring(machine3& m3, char const cfg[3])
+// helper functions to set a machine up with readable parameters.
+void Ring(machine3& m3, char const cfg[3]);
+void Setting(machine3& m3, char const cfg[3]);
+void Stecker(machine3& m3, char f, char t);
+void Stecker(machine3& m3, char const* sS);
+
+// won't constexpr right now. damn it.
+//
+template<typename M, std::size_t N> constexpr auto make_alpha_array(const M(&msg)[N])
 {
-	const modalpha r3 = from_printable_throw(cfg[0]);
-	const modalpha r2 = from_printable_throw(cfg[1]);
-	const modalpha r1 = from_printable_throw(cfg[2]);
-	m3.Ring(r3, r2, r1);
+	std::array<modalpha, N> rv;
+	epicyclism::ctransform(std::begin(msg), std::end(msg), std::begin(rv),
+		[](M c)
+	{
+		return from_printable(c);
+	});
+
+	return rv;
 }
 
-void Setting(machine3& m3, char const cfg[3])
-{
-	const modalpha s3 = from_printable_throw(cfg[0]);
-	const modalpha s2 = from_printable_throw(cfg[1]);
-	const modalpha s1 = from_printable_throw(cfg[2]);
-	m3.Setting(s3, s2, s1);
-}
-
-void Stecker(machine3& m3, char f, char t)
-{
-	auto from = from_printable_throw(f);
-	auto to = from_printable_throw(t);
-	m3.Stecker(from, to );
-}

@@ -11,6 +11,8 @@ add_executable (RotorTest "RotorTest.cpp" )
 add_executable (WheelSetTest "WheelSetTest.cpp" )
 add_executable (MachineTest "MachineTest.cpp" )
 
+target_link_libraries(MachineTest Common )
+
 #if ( CMAKE_CXX_COMPILER_ID MATCHES "Clang|AppleClang|GNU" )
 #    target_compile_options( Enigma PRIVATE -Wall -Wextra -Wunreachable-code -Wpedantic -fexceptions)
 #endif()

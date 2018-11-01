@@ -2,7 +2,8 @@
 //
 
 #include <iostream>
-
+#include <string>
+#include "const_helpers.h"
 #include "machine.h"
 
 void Test1()
@@ -10,22 +11,9 @@ void Test1()
 	machine3 m3 = MakeMachine3("B432");
 	Ring(m3, "rit");
 	Setting(m3, "VOR");
-	Stecker(m3, 'A', 'H');
-	Stecker(m3, 'B', 'O');
-	Stecker(m3, 'C', 'G');
-	Stecker(m3, 'D', 'P');
-	Stecker(m3, 'F', 'L');
-	Stecker(m3, 'J', 'Q');
-	Stecker(m3, 'K', 'S');
-	Stecker(m3, 'M', 'U');
-	Stecker(m3, 'T', 'Z');
-	Stecker(m3, 'W', 'Y');
+	Stecker(m3, "AH BO CG DP FL JQ KS MU TZ WY");
 
-	constexpr modalpha ciphertext[]{ alpha::F, alpha::V, alpha::K, alpha::F, alpha::C,
-										alpha::D, alpha::W, alpha::R, alpha::I, alpha::I, 
-										alpha::C, alpha::Y, alpha::F, alpha::H, alpha::V, 
-										alpha::S, alpha::K, alpha::Q, alpha::O, alpha::W, 
-										alpha::Q, alpha::T, alpha::T, alpha::H };
+	auto ciphertext = make_alpha_array("FVKFC DWRII CYFHV SKQOW QTTH");
 	auto out = m3.Transform(std::begin(ciphertext), std::end(ciphertext));
 	for (auto c : out)
 		std::cout << c;
@@ -37,28 +25,63 @@ void Test2()
 	machine3 m3 = MakeMachine3("B125");
 	Ring(m3, "fvn");
 	Setting(m3, "XWB");
-	Stecker(m3, 'P', 'O');
-	Stecker(m3, 'M', 'L');
-	Stecker(m3, 'I', 'U');
-	Stecker(m3, 'K', 'J');
-	Stecker(m3, 'N', 'H');
-	Stecker(m3, 'Y', 'T');
-	Stecker(m3, 'G', 'B');
-	Stecker(m3, 'V', 'F');
-	Stecker(m3, 'R', 'E');
-	Stecker(m3, 'D', 'C');
+	Stecker(m3, "PO ML IU KJ NH YT GB VF RE DC" );
 
-	constexpr modalpha ciphertext[]{ alpha::Q, alpha::B, alpha::L, alpha::T, alpha::W,
-		alpha::L, alpha::D, alpha::A, alpha::H, alpha::H,
-		alpha::Y, alpha::E, alpha::O, alpha::E, alpha::F,
-		alpha::P, alpha::T, alpha::W, alpha::Y, alpha::B,
-		alpha::L, alpha::E, alpha::N, alpha::D, alpha::P,
-		alpha::M, alpha::K, alpha::O, alpha::X, alpha::L,
-		alpha::D, alpha::F, alpha::A, alpha::M, alpha::U,
-		alpha::D, alpha::W, alpha::I, alpha::J, alpha::D,
-		alpha::X, alpha::R, alpha::J, alpha::Z };
+	auto ciphertext = make_alpha_array("QBLTWLDAHHYEOEFPTWYBLENDPMKOXLDFAMUDWIJDXRJZ");
 
 	auto out = m3.Transform(std::begin(ciphertext), std::end(ciphertext));
+	for (auto c : out)
+		std::cout << c;
+	std::cout << "\n";
+}
+
+void Test3()
+{
+	auto ciphertext1 = make_alpha_array("EDPUD NRGYS ZRCXN UYTPO MRMBO FKTBZ REZKM LXLVE FGUEY SIOZV EQMIK UBPMM YLKLT TDEIS MDICA GYKUA CTCDO MOHWX MUUIA UBSTS LRNBZ SZWNR FXWFY SSXJZ VIJHI DISHP RKLKA YUPAD TXQSP INQMA TLPIF SVKDA SCTAC DPBOP VHJK" );
+
+	machine3 m3 = MakeMachine3("B245");
+	Ring(m3, "bul");
+	Setting(m3, "WXC");
+	Stecker(m3, "AV BS CG DL FU HZ IN KM OW RX");
+
+	auto key1 = make_alpha_array("KCH");
+	// decode the key...
+	auto key = m3.Transform(std::begin(key1), std::end(key1));
+	for (auto c : key)
+		std::cout << c;
+	std::cout << "\n";
+
+	// set the key
+	m3.Setting(key[0], key[1], key[2]);
+
+	// decode the message
+	auto out = m3.Transform(std::begin(ciphertext1), std::end(ciphertext1));
+	for (auto c : out)
+		std::cout << c;
+	std::cout << "\n";
+}
+
+void Test4()
+{
+	auto ciphertext1 = make_alpha_array("SFBWD NJUSE GQOBH KRTAR EEZMW KPPRB XOHDR OEQGB BGTQV PGVKB VVGBI MHUSZ YDAJQ IROAX SSSNR EHYGG RPISE ZBOVM QIEMM ZCYSG QDGRE RVBIL EKXYQ IRGIR QNRDN VRXCY YTNJR" );
+
+	machine3 m3 = MakeMachine3("B245");
+	Ring(m3, "bul");
+	Setting(m3, "CRS");
+	Stecker(m3, "AV BS CG DL FU HZ IN KM OW RX");
+
+	auto key1 = make_alpha_array("YPJ");
+	// decode the key...
+	auto key = m3.Transform(std::begin(key1), std::end(key1));
+	for (auto c : key)
+		std::cout << c;
+	std::cout << "\n";
+	
+	// set the key
+	m3.Setting(key[0], key[1], key[2]);
+
+	// decode the message
+	auto out = m3.Transform(std::begin(ciphertext1), std::end(ciphertext1));
 	for (auto c : out)
 		std::cout << c;
 	std::cout << "\n";
@@ -68,6 +91,8 @@ int main()
 {
 	Test1();
 	Test2();
+	Test3();
+	Test4();
 
 	return 0;
 }

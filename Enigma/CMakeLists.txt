@@ -7,4 +7,6 @@ cmake_minimum_required (VERSION 3.8)
 include_directories("${PROJECT_SOURCE_DIR}/Common")
 add_executable (Enigma "Enigma.cpp" "Enigma.h")
 
-# TODO: Add tests and install targets if needed.
+target_link_libraries(Enigma Common )
+
+install(TARGETS Enigma DESTINATION $(PROJECT_SOURCE_DIR)/bin)
