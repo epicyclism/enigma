@@ -12,7 +12,7 @@
 #include <array>
 #include <algorithm>
 #include "const_helpers.h"
-#include "mod26.h"
+#include "modalpha.h"
 
 struct wiring
 {

@@ -26,7 +26,7 @@ void Test1()
 										alpha::C, alpha::Y, alpha::F, alpha::H, alpha::V, 
 										alpha::S, alpha::K, alpha::Q, alpha::O, alpha::W, 
 										alpha::Q, alpha::T, alpha::T, alpha::H };
-	auto out = m3.Transform(std::begin(ciphertext), std::end(ciphertext), std::cout);
+	auto out = m3.Transform(std::begin(ciphertext), std::end(ciphertext));
 	for (auto c : out)
 		std::cout << c;
 	std::cout << "\n";
@@ -58,11 +58,10 @@ void Test2()
 		alpha::D, alpha::W, alpha::I, alpha::J, alpha::D,
 		alpha::X, alpha::R, alpha::J, alpha::Z };
 
-	auto out = m3.Transform(std::begin(ciphertext), std::end(ciphertext), std::cout);
+	auto out = m3.Transform(std::begin(ciphertext), std::end(ciphertext));
 	for (auto c : out)
 		std::cout << c;
 	std::cout << "\n";
-
 }
 
 int main()

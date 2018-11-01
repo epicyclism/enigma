@@ -1,6 +1,6 @@
 #pragma once
 
-#include "mod26.h"
+#include "modalpha.h"
 
 class stecker
 {

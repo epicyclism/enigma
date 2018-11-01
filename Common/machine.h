@@ -128,11 +128,17 @@ public:
 //
 machine3 MakeMachine3(char const desc[4])
 {
+#if 0
 	wiring const& ref = reflector_from_name_throw(std::string_view(desc, 1));
 	rotor  const& w1  = rotor_from_name_throw(std::string_view(desc + 1, 1));
 	rotor  const& w2  = rotor_from_name_throw(std::string_view(desc + 2, 1));
 	rotor  const& w3  = rotor_from_name_throw(std::string_view(desc + 3, 1));
-
+#else
+	auto& ref = reflector_from_name_throw(std::string_view(desc, 1));
+	auto& w1  = rotor_from_name_throw(std::string_view(desc + 1, 1));
+	auto& w2  = rotor_from_name_throw(std::string_view(desc + 2, 1));
+	auto& w3  = rotor_from_name_throw(std::string_view(desc + 3, 1));
+#endif
 	return machine3(ref, w3, w2, w1);
 }
 

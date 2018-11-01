@@ -53,10 +53,14 @@ struct wheel
 	constexpr void Base(modalpha b)
 	{
 		base_ = b - ring_ ;
+#if 0
 		if (rotor_.dual_ && (b > rotor_.to_))
 			roll_ = b - (rotor_.to_ + rotor_.to_); // in practice we know it is M and Z
 		else
 			roll_ = b - rotor_.to_ ;
+#else
+		roll_ = rotor_.to_ - b;
+#endif
 	}
 	constexpr bool Step()
 	{
