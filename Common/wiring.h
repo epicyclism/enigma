@@ -18,10 +18,12 @@ struct wiring
 {
 	als_t rl_ ;
 	als_t lr_ ;
+	// identifier
+	char     id_;
 
-	constexpr wiring() noexcept : rl_{}, lr_{}
+	constexpr wiring() noexcept : rl_{}, lr_{}, id_{'0'}
 	{}
-	constexpr wiring (wiring const& w) : rl_{}, lr_{}
+	constexpr wiring (wiring const& w) : rl_{}, lr_{}, id_{ w.id_ }
 	{
 		// seriously????
 		epicyclism::ctransform(std::begin(w.rl_), std::end(w.rl_), std::begin(rl_), [](auto m) { return m; });
@@ -47,7 +49,7 @@ struct wiring
 	}
 };
 
-constexpr wiring FromDescWheel(char const desc[26])
+constexpr wiring FromDescWheel(char const desc[26], char id)
 {
 	struct pr
 	{
@@ -69,6 +71,7 @@ constexpr wiring FromDescWheel(char const desc[26])
 
 	// render forwards
 	wiring rv{};
+	rv.id_ = id;
 	epicyclism::ctransform(std::begin(wking), std::end(wking), std::begin(rv.rl_), [](auto lr)
 	{
 		return lr.l_ - lr.r_;
@@ -84,7 +87,7 @@ constexpr wiring FromDescWheel(char const desc[26])
 	return rv;
 }
 
-constexpr wiring FromDescReflector(char const desc[26])
+constexpr wiring FromDescReflector(char const desc[26], char id)
 {
 	// load forwards, which is A->desc[0], B->desc[1]...Z->desc[25]
 	struct pr
@@ -107,6 +110,7 @@ constexpr wiring FromDescReflector(char const desc[26])
 
 	// render 
 	wiring rv{};
+	rv.id_ = id;
 	epicyclism::ctransform(std::begin(wking), std::end(wking), std::begin(rv.rl_), [](auto lr)
 	{
 		return lr.o_ - lr.i_;
@@ -122,7 +126,7 @@ constexpr wiring FromDescReflector(char const desc[26])
 
 // reflector wiring
 //
-constexpr wiring     B = FromDescReflector("YRUHQSLDPXNGOKMIEBFZCWVJAT");
-constexpr wiring     C = FromDescReflector("FVPJIAOYEDRZXWGCTKUQSBNMHL");
-constexpr wiring  B_M4 = FromDescReflector("ENKQAUYWJICOPBLMDXZVFTHRGS");
-constexpr wiring  C_M4 = FromDescReflector("RDOBJNTKVEHMLFCWZAXGYIPSUQ");
+constexpr wiring     B = FromDescReflector("YRUHQSLDPXNGOKMIEBFZCWVJAT", 'B');
+constexpr wiring     C = FromDescReflector("FVPJIAOYEDRZXWGCTKUQSBNMHL", 'C');
+constexpr wiring  B_M4 = FromDescReflector("ENKQAUYWJICOPBLMDXZVFTHRGS", 'b');
+constexpr wiring  C_M4 = FromDescReflector("RDOBJNTKVEHMLFCWZAXGYIPSUQ", 'c');

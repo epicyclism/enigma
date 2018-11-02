@@ -17,13 +17,13 @@ struct rotor : public wiring
 	{}
 };
 
-constexpr rotor     I { FromDescWheel("EKMFLGDQVZNTOWYHXUSPAIBRCJ"), alpha::Q, false};
-constexpr rotor    II { FromDescWheel("AJDKSIRUXBLHWTMCQGZNPYFVOE"), alpha::E, false };
-constexpr rotor   III { FromDescWheel("BDFHJLCPRTXVZNYEIWGAKMUSQO"), alpha::V, false };
-constexpr rotor    IV { FromDescWheel("ESOVPZJAYQUIRHXLNFTGKDCMWB"), alpha::J, false };
-constexpr rotor     V { FromDescWheel("VZBRGITYUPSDNHLXAWMJQOFECK"), alpha::Z, false };
-constexpr rotor    VI { FromDescWheel("JPGVOUMFYQBENHZRDKASXLICTW"), alpha::Z, true };
-constexpr rotor   VII { FromDescWheel("NZJHGRCXMYSWBOUFAIVLPEKQDT"), alpha::Z, true };
-constexpr rotor  VIII { FromDescWheel("FKQHTLXOCBJSPDZRAMEWNIUYGV"), alpha::Z, true };
-constexpr rotor  beta { FromDescWheel("LEYJVCNIXWPBQMDRTAKZGFUHOS"), alpha::Z, true };
-constexpr rotor gamma { FromDescWheel("FSOKANUERHMBTIYCWLQPZXVGJD"), alpha::Z, true };
+constexpr rotor     I { FromDescWheel("EKMFLGDQVZNTOWYHXUSPAIBRCJ", '1'), alpha::Q, false };
+constexpr rotor    II { FromDescWheel("AJDKSIRUXBLHWTMCQGZNPYFVOE", '2'), alpha::E, false };
+constexpr rotor   III { FromDescWheel("BDFHJLCPRTXVZNYEIWGAKMUSQO", '3'), alpha::V, false };
+constexpr rotor    IV { FromDescWheel("ESOVPZJAYQUIRHXLNFTGKDCMWB", '4'), alpha::J, false };
+constexpr rotor     V { FromDescWheel("VZBRGITYUPSDNHLXAWMJQOFECK", '5'), alpha::Z, false };
+constexpr rotor    VI { FromDescWheel("JPGVOUMFYQBENHZRDKASXLICTW", '6'), alpha::Z, true };
+constexpr rotor   VII { FromDescWheel("NZJHGRCXMYSWBOUFAIVLPEKQDT", '7'), alpha::Z, true };
+constexpr rotor  VIII { FromDescWheel("FKQHTLXOCBJSPDZRAMEWNIUYGV", '8'), alpha::Z, true };
+constexpr rotor  beta { FromDescWheel("LEYJVCNIXWPBQMDRTAKZGFUHOS", 'b'), alpha::Z, true };
+constexpr rotor gamma { FromDescWheel("FSOKANUERHMBTIYCWLQPZXVGJD", 'g'), alpha::Z, true };

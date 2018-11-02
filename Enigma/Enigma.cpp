@@ -3,50 +3,62 @@
 
 #include <array>
 #include <string_view>
-#include "Enigma.h"
+#include <iostream>
+#include "machine.h"
 
-using frequency_table = std::array<int, alpha_max + 1>;
+constexpr  char version[] = "v0.01";
 
-frequency_table get_frequency(const char * m)
+void Help()
 {
-	frequency_table tab;
-	std::string_view msg(m);
-	tab.fill(0);
-
-	for (auto ch : msg)
-	{
-		if (valid_from_char(ch))
-			++tab[from_printable(ch).Val()];
-		else
-			++tab[alpha_max];
-	}
-	return tab;
-}
-void print_tab(frequency_table const& tab)
-{
-	char row = 'A';
-	for (auto i : tab)
-	{
-		std::cout << row << " " << i << "\n";
-		++row;
-	}
+	std::cerr << "enigma " << version << " : processes stdin to stdout through an emulated Enigma machine.\n\n";
+	std::cerr << "For example,\n\n";
+	std::cerr << "./enigma B125 fvn XWB \"AH BO CG DP FL JQ KS MU TZ WY\"\n\n";
+	std::cerr << "configures a 'machine' with reflector B, rotors 1, 2, 5, ring setting fvn, initial setting XWB\n";
+	std::cerr << "and plug board as indicated. The plug settings can optionally be condensed and the quotes omitted.";
+	std::cerr << "Then when given\n";
+	std::cerr << "QBLTWLDAHHYEOEFPTWYBLENDPMKOXLDFAMUDWIJDXRJZ\n";
+	std::cerr << "the original message,";
+	std::cerr << "DERFUEHRERISTTODXDERKAMPFGEHTWEITERXDOENITZX\n";
+	std::cerr << "will be produced. Or vice versa.";
+	std::cerr << "Generally \'X\' is used for punctuation so this well known message reads,\n";
+	std::cerr << "DER FUEHRER IST TOD. DER KAMPF GEHT WEITER. DOENITZ.\n";
+	std::cerr << "etc....\n";
+	std::cerr << "Copyright (c) 2018, paul@epicyclism.com. Free to a good home.\n\n";
 }
 
-int main()
+int main(int ac, char**av)
 {
-	auto tab = get_frequency("EDPUD NRGYS ZRCXN UYTPO MRMBO FKTBZ REZKM LXLVE FGUEY SIOZV EQMIK UBPMM YLKLT TDEIS MDICA GYKUA CTCDO MOHWX MUUIA UBSTS LRNBZ SZWNR FXWFY SSXJZ VIJHI DISHP RKLKA YUPAD TXQSP INQMA TLPIF SVKDA SCTAC DPBOP VHJK");
-	print_tab(tab);
-	std::cout << "\n";
-	tab = get_frequency("AUFKL XABTE ILUNG XVONX KURTI NOWAX KURTI NOWAX NORDW ESTLX SEBEZ XSEBE ZXUAF FLIEG ERSTR ASZER IQTUN GXDUB ROWKI XDUBR OWKIX OPOTS CHKAX OPOTS CHKAX UMXEI NSAQT DREIN ULLXU HRANG ETRET ENXAN GRIFF XINFX RGTX");
-	print_tab(tab);
-	std::cout << "\n";
-
-	tab = get_frequency("SFBWD NJUSE GQOBH KRTAR EEZMW KPPRB XOHDR OEQGB BGTQV PGVKB VVGBI MHUSZ YDAJQ IROAX SSSNR EHYGG RPISE ZBOVM QIEMM ZCYSG QDGRE RVBIL EKXYQ IRGIR QNRDN VRXCY YTNJR");
-	print_tab(tab);
-	std::cout << "\n";
-	tab = get_frequency("DREIG EHTLA NGSAM ABERS IQERV ORWAE RTSXE INSSI EBENN ULLSE QSXUH RXROE MXEIN SXINF RGTXD REIXA UFFLI EGERS TRASZ EMITA NFANG XEINS SEQSX KMXKM XOSTW XKAME NECXK");
-	print_tab(tab);
-	std::cout << "\n";
+	if (ac < 5)
+	{
+		Help();
+		return 0;
+	}
+	try
+	{
+		machine3 m3 = MakeMachine3(av[1]);
+		Ring(m3, av[2]);
+		Setting(m3, av[3]);
+		Stecker(m3, av[4]);
+		std::cout << "enigma " << version << " configured : ";
+		m3.ReportSettings(std::cout);
+		std::cout << "\nReady\n";
+		while (std::cin)
+		{
+			char c;
+			std::cin >> c;
+			if (valid_from_char(c))
+			{
+				auto x = m3.Transform(from_printable(c));
+				std::cout << x;
+			}
+		}
+		std::cout << "\nFinished\n";
+	}
+	catch (std::exception& ex)
+	{
+		std::cerr << "Error configuring machine. >" << ex.what() << "<\n\n";
+		return -1;
+	}
 
 	return 0;
 }

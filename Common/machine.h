@@ -40,6 +40,13 @@ public:
 	{
 		s_.Set(f, t);
 	}
+	modalpha Transform(modalpha m)
+	{
+		w_.Step();
+		auto x = s_.Eval(m);
+		x = w_.Evaluate(x);
+		return s_.Eval(x);
+	}
 	template<typename I> std::vector<modalpha> Transform(I b, I e)
 	{
 		std::vector<modalpha> r;
@@ -70,6 +77,12 @@ public:
 			return r;
 		});
 		return r;
+	}
+	template<typename O> void ReportSettings(O& ostr)
+	{
+		w_.Report(ostr);
+		ostr << " ";
+		s_.Report(ostr);
 	}
 };
 
@@ -103,13 +116,13 @@ inline rotor const& rotor_from_name_throw(std::string_view nm)
 
 inline wiring const& reflector_from_name_throw(std::string_view nm)
 {
-	if (nm == "b" || nm == "B")
+	if (nm == "B")
 		return B;
-	if (nm == "c" || nm == "C")
+	if (nm == "C")
 		return C;
-	if (nm == "B" || nm == "B_M4")
+	if (nm == "b" || nm == "B_M4")
 		return B_M4;
-	if (nm == "C" || nm == "C_M4")
+	if (nm == "c" || nm == "C_M4")
 		return C_M4;
 	throw std::out_of_range("invalid reflector name");
 }

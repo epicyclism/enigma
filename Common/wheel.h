@@ -17,32 +17,34 @@ struct wheel
 	modalpha ring_; 
 	// the base setting
 	modalpha base_;
+	// the current position
+	modalpha pos_;
 	// steps to next rollover
 	modalpha roll_;
 
 	// cannot have a wheel without a rotor...
-	constexpr wheel ( rotor const& r) : rotor_ { r}, ring_{alpha::A}, base_(alpha::A), roll_{r.to_}
+	constexpr wheel ( rotor const& r) : rotor_ { r}, ring_{alpha::A}, base_(alpha::A), pos_(alpha::A), roll_{r.to_}
 	{}
-	constexpr wheel (rotor const& r, alpha ring, alpha base) : rotor_{ r }, ring_{ ring }, base_(base), roll_{ r.to_ - base}
+	constexpr wheel (rotor const& r, alpha ring, alpha base) : rotor_{ r }, ring_{ ring }, base_(base), pos_(alpha::A), roll_{ r.to_ - base}
 	{}
 
 	constexpr modalpha RL(modalpha in) const
 	{
-		return in + rotor_.evalRL(base_ + in);
+		return in + rotor_.evalRL(pos_ + in);
 	}
 	constexpr modalpha LR(modalpha in) const
 	{
-		return in + rotor_.evalLR(base_ + in);
+		return in + rotor_.evalLR(pos_ + in);
 	}
 	template<typename O> modalpha RL(modalpha in, O& ostr) const
 	{
-		auto r = in + rotor_.evalRL(base_ + in);
+		auto r = in + rotor_.evalRL(pos_ + in);
 		ostr << "-" << r;
 		return r;
 	}
 	template<typename O> modalpha LR(modalpha in, O& ostr) const
 	{
-		auto r = in + rotor_.evalLR(base_ + in);
+		auto r = in + rotor_.evalLR(pos_ + in);
 		ostr << "-" << r ;
 		return r;
 	}
@@ -52,19 +54,13 @@ struct wheel
 	}
 	constexpr void Base(modalpha b)
 	{
-		base_ = b - ring_ ;
-#if 0
-		if (rotor_.dual_ && (b > rotor_.to_))
-			roll_ = b - (rotor_.to_ + rotor_.to_); // in practice we know it is M and Z
-		else
-			roll_ = b - rotor_.to_ ;
-#else
+		base_ = b;
+		pos_ = b - ring_ ;
 		roll_ = rotor_.to_ - b;
-#endif
 	}
 	constexpr bool Step()
 	{
-		++base_;
+		++pos_;
 		if (roll_ == 0)
 		{
 			roll_ = rotor_.dual_ ? alpha_max / 2 : alpha_max; // align mechanism with Base calculation? TODO
@@ -80,7 +76,7 @@ struct wheel
 		{
 			roll_ = rotor_.dual_ ? alpha_max / 2 : alpha_max; // align mechanism with Base calculation? TODO
 			--roll_;
-			++base_;
+			++pos_;
 			return true;
 		}
 		return false;

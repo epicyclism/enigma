@@ -37,7 +37,7 @@ public:
 		int n = 0;
 		for (auto const& s : board_)
 		{
-			if (s > 0)
+			if (s > 0 && n + s > n)
 			{
 				ostr << modalpha(n) << modalpha(n + s) << " ";
 			}

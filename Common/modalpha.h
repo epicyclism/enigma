@@ -31,6 +31,13 @@ constexpr inline char to_printable(modalpha const& c)
 	return char(c.Val() + 'A');
 }
 
+constexpr inline char to_printable_lower(modalpha const& c)
+{
+	if (c == alpha::SZ)
+		return ' ';
+	return char(c.Val() + 'a');
+}
+
 constexpr inline modalpha from_printable(char const ch)
 {
 	if (ch == ' ' || ch == 0)

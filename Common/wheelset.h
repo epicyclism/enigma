@@ -85,6 +85,13 @@ public:
 				w2_.RL(
 			   w1_.RL(in)))))));
 	}
+	template<size_t N> constexpr std::array<modalpha, N> Evaluate(std::array<modalpha, N> const& in)
+	{
+		std::array<modalpha, N> out;
+		std::transform(std::begin(in), std::end(in), std::begin(out), [&](auto m) { return Evaluate(m); });
+
+		return out;
+	}
 	template <typename O> modalpha Evaluate(modalpha in, O& ostr) const
 	{
 		ostr << in;
@@ -98,6 +105,17 @@ public:
 	}
 	template <typename O> void Position(O& ostr) const
 	{
-		ostr << w3_.base_ << w2_.base_ << w1_.base_;
+		ostr << w3_.pos_ << w2_.pos_ << w1_.pos_;
+	}
+	// produce a standard sort of machine settings report
+	//
+	template <typename O> void Report(O& ostr) const
+	{
+		// reflector and wheels
+		ostr << ref_.id_ << w3_.rotor_.id_ << w2_.rotor_.id_ << w1_.rotor_.id_ << ' ';
+		// ring
+		ostr << to_printable_lower(w3_.ring_) << to_printable_lower(w2_.ring_) << to_printable_lower(w1_.ring_) << ' ';
+		// base
+		ostr << w3_.base_ << w2_.base_ << w1_.base_ << ' ';
 	}
 };
