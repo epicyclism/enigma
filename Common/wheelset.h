@@ -1,9 +1,10 @@
 #pragma once
 
 #include "wheel.h"
+#include "position.h"
 
 // wheel sets, cannot exist without appropriate wheel and reflector references.
-
+//
 class wheels3
 {
 private:
@@ -117,5 +118,13 @@ public:
 		ostr << to_printable_lower(w3_.ring_) << to_printable_lower(w2_.ring_) << to_printable_lower(w1_.ring_) << ' ';
 		// base
 		ostr << w3_.base_ << w2_.base_ << w1_.base_ << ' ';
+	}
+	position Position() const
+	{
+		return position(w1_.pos_, w2_.pos_, w3_.pos_);
+	}
+	void Position(position const& p)
+	{
+		Setting(p.wp_[0], p.wp_[1], p.wp_[2]);
 	}
 };
