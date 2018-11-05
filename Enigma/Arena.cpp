@@ -127,7 +127,7 @@ int main(int ac, char**av)
 
 	try
 	{
-		wheels3 w3{ I, II, V, B };
+		wheels3 w3{ B, I, II, V };
 		w3.Ring( alpha::A, alpha::A, alpha::A );
 		w3.Setting( alpha::A, alpha::A, alpha::A );
 		fill_arena(w3, a, 0);

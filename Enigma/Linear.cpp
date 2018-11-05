@@ -106,8 +106,8 @@ int main(int ac, char**av)
 
 	try
 	{
-#if 1
-		machine3 m3{ C, V, II, III };
+#if 0
+		machine3 m3{ C, III, II, V };
 		m3.Ring(alpha::H, alpha::S, alpha::C);
 		m3.Setting(alpha::A, alpha::A, alpha::A);
 		Stecker(m3, "AL FP HX JO KT NV QR SU WY");
@@ -116,7 +116,7 @@ int main(int ac, char**av)
 		linear_search(std::begin(ciphertext3), std::end(ciphertext3), l.ln_, r);
 		report_results(std::begin(ciphertext3), std::end(ciphertext3), l.ln_, r, m3);
 #else
-		machine3 m3{ C, I, III, IV };
+		machine3 m3{ C, IV, III, I };
 		m3.Ring(alpha::G, alpha::X, alpha::O);
 		m3.Setting(alpha::A, alpha::A, alpha::A);
 		Stecker(m3, "AT BG DV EW FR HN IQ JX KZ LU");

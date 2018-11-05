@@ -8,19 +8,19 @@
 class wheels3
 {
 private:
-	// right to left
-	wheel			w1_;
-	wheel			w2_;
-	wheel			w3_;
 	// reflector
 	wiring const&	ref_;
+	// left to right
+	wheel			w3_;
+	wheel			w2_;
+	wheel			w1_;
 	// looking at the machine layout of wheels is,
 	//
 	// Ref W3 W2 W1 <-> plugboard <-> keyboard/lights
 	//
 public:
-	// initialisation is left to right, followed by reflector. Potential for confusion...
-	constexpr wheels3( rotor const& w3, rotor const& w2, rotor const& w1, wiring const& ref ) : w1_{w1}, w2_{w2}, w3_{w3}, ref_{ref}
+	// initialisation is reflector, left to right, as loaded into the actual machine
+	constexpr wheels3( wiring const& ref, rotor const& w3, rotor const& w2, rotor const& w1  ) : ref_{ref}, w3_{w3}, w2_{w2}, w1_{w1}
 	{}
 
 	// note these are also left to right
@@ -121,7 +121,7 @@ public:
 	}
 	position Position() const
 	{
-		return position(w1_.Base(), w2_.Base(), w3_.Base());
+		return position(w3_.Base(), w2_.Base(), w1_.Base());
 	}
 	void Position(position const& p)
 	{

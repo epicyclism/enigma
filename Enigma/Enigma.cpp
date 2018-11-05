@@ -6,7 +6,7 @@
 #include <iostream>
 #include "machine.h"
 
-constexpr  char version[] = "v0.01";
+constexpr  char version[] = "v0.02";
 
 void Help()
 {

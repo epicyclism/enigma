@@ -15,7 +15,7 @@ private:
 public:
 	// must be constructed with wheel references!
 	machine3() = delete;
-	constexpr machine3(wiring const& ref, rotor const& w3, rotor const& w2, rotor const& w1 ) : w_(w1, w2, w3, ref)
+	constexpr machine3(wiring const& ref, rotor const& w3, rotor const& w2, rotor const& w1 ) : w_(ref, w3, w2, w1)
 	{}
 	// direct settings
 	// note left to right...
@@ -42,6 +42,8 @@ public:
 	}
 	modalpha Transform(modalpha m)
 	{
+		if (m == modalpha(alpha::SZ))
+			return modalpha(alpha::SZ);
 		w_.Step();
 		auto x = s_.Eval(m);
 		x = w_.Evaluate(x);
@@ -144,9 +146,9 @@ inline wiring const& reflector_from_name_throw(std::string_view nm)
 inline machine3 MakeMachine3(char const desc[4])
 {
 	auto& ref = reflector_from_name_throw(std::string_view(desc, 1));
-	auto& w1  = rotor_from_name_throw(std::string_view(desc + 1, 1));
+	auto& w3  = rotor_from_name_throw(std::string_view(desc + 1, 1));
 	auto& w2  = rotor_from_name_throw(std::string_view(desc + 2, 1));
-	auto& w3  = rotor_from_name_throw(std::string_view(desc + 3, 1));
+	auto& w1  = rotor_from_name_throw(std::string_view(desc + 3, 1));
 	return machine3(ref, w3, w2, w1);
 }
 
@@ -169,4 +171,3 @@ template<typename M, std::size_t N> constexpr auto make_alpha_array(const M(&msg
 
 	return rv;
 }
-
