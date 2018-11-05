@@ -58,6 +58,10 @@ struct wheel
 		pos_ = b - ring_ ;
 		roll_ = rotor_.to_ - b;
 	}
+	constexpr modalpha Base() const
+	{
+		return pos_ + ring_;
+	}
 	constexpr bool Step()
 	{
 		++pos_;

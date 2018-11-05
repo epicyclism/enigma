@@ -104,7 +104,7 @@ public:
 				w2_.RL(
 			   w1_.RL(in, ostr), ostr), ostr), ostr), ostr), ostr), ostr);
 	}
-	template <typename O> void Position(O& ostr) const
+	template <typename O> void PrintPosition(O& ostr) const
 	{
 		ostr << w3_.pos_ << w2_.pos_ << w1_.pos_;
 	}
@@ -121,10 +121,10 @@ public:
 	}
 	position Position() const
 	{
-		return position(w1_.pos_, w2_.pos_, w3_.pos_);
+		return position(w1_.Base(), w2_.Base(), w3_.Base());
 	}
 	void Position(position const& p)
 	{
-		Setting(p.wp_[0], p.wp_[1], p.wp_[2]);
+		Setting(p.wp_[2], p.wp_[1], p.wp_[0]);
 	}
 };

@@ -84,6 +84,15 @@ public:
 		ostr << " ";
 		s_.Report(ostr);
 	}
+	// forward on
+	position Position() const
+	{
+		return w_.Position();
+	}
+	void Position(position const& p)
+	{
+		w_.Position(p);
+	}
 };
 
 // these take a string_view so we can provide strings...

@@ -56,6 +56,27 @@ template<typename A, typename R> void report_results3(A const& a, R const& r, si
 	std::cout << "\n";
 }
 
+template<typename I, typename A, typename R> void report_results4(I cb, I ce, A const& a, R& r, wheels3& w3 )
+{
+	auto sz = std::distance(cb, ce);
+	auto itp = std::begin(a.pos_);
+	for (auto& rr : r)
+	{
+		auto itm = std::max_element(rr.begin(), rr.end() - sz);
+		std::cout << *(itp + std::distance(rr.begin(), itm)) << " - " << *itm << " - ";
+		// decode it!
+		w3.Position(*(itp + std::distance(rr.begin(), itm)));
+		auto cbc = cb;
+		while (cbc != ce)
+		{
+			w3.Step();
+			std::cout << w3.Evaluate(*cbc);
+			++cbc;
+		}
+		std::cout << "\n";
+	}
+}
+
 template<typename A, typename R> void report_results(A const& a, R const& r, size_t s)
 {
 	auto itp = std::begin(a.pos_);
@@ -113,7 +134,8 @@ int main(int ac, char**av)
 //		ArenaTestPrint(a);
 		arena_search(std::begin(ciphertext), std::end(ciphertext), a, results);
 //		print_results(results, ciphertext.size());
-		report_results2(a, results, ciphertext.size());
+//		report_results2(a, results, ciphertext.size());
+		report_results4(std::begin(ciphertext), std::end(ciphertext), a, results, w3);
 	}
 	catch (std::exception& ex)
 	{
