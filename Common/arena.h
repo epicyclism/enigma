@@ -62,3 +62,49 @@ template<typename O> void arena_print_r(arena_t const& a, modalpha l, int cnt, O
 	}
 }
 
+// some stuff for one dimensional arenas.
+//
+// search primitive
+// slide the ciphertext along the row and count the matches at each position.
+//
+template<typename I, size_t W> void linear_search(I cb, I ce, std::array<modalpha, W> const& row, std::array<unsigned, W>& counts)
+{
+	auto itb = std::begin(row);
+	auto ite = std::end(row) - std::distance(cb, ce);
+	auto ito = std::begin(counts);
+	while (itb != ite)
+	{
+		*ito = std::transform_reduce(cb, ce, itb, 0, std::plus<>(), [](auto l, auto r) { return l == r ? 1 : 0; });
+		++ito;
+		++itb;
+	}
+}
+
+// a line of enigma output
+// assumption is that a machine will be configured and given a constant input.
+// this structure records the output and each position that generates it.
+//
+template<size_t W> struct line_base
+{
+	static const size_t Width = W;
+	// position of each column
+	std::array<position, W> pos_;
+	// line.
+	std::array<modalpha, W> ln_;
+
+	// define a matching results type.
+	using results_t = std::array<unsigned, W>;
+};
+
+// applies ch to the machine and fills the line!
+//
+template<typename L> void fill_line(machine3& m3, L& l, modalpha ch)
+{
+	auto itp = std::begin(l.pos_);
+	std::generate(std::begin(l.ln_), std::end(l.ln_), [&]()
+	{
+		*itp = m3.Position();
+		++itp;
+		return m3.Transform(ch);
+	});
+}

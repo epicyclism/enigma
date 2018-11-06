@@ -6,7 +6,7 @@
 #include <iostream>
 #include "machine.h"
 
-constexpr  char version[] = "v0.01";
+constexpr  char version[] = "v0.02";
 
 void Help()
 {
@@ -19,7 +19,7 @@ void Help()
 	std::cerr << "QBLTWLDAHHYEOEFPTWYBLENDPMKOXLDFAMUDWIJDXRJZ\n";
 	std::cerr << "the original message,";
 	std::cerr << "DERFUEHRERISTTODXDERKAMPFGEHTWEITERXDOENITZX\n";
-	std::cerr << "will be produced. Or vice versa.";
+	std::cerr << "will be produced. Or vice versa.\n";
 	std::cerr << "Generally \'X\' is used for punctuation so this well known message reads,\n";
 	std::cerr << "DER FUEHRER IST TOD. DER KAMPF GEHT WEITER. DOENITZ.\n";
 	std::cerr << "etc....\n";
