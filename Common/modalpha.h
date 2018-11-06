@@ -40,8 +40,10 @@ constexpr inline char to_printable_lower(modalpha const& c)
 
 constexpr inline modalpha from_printable(char const ch)
 {
-	if (ch == ' ' || ch == 0)
+	if (ch == ' ' || ch == 0 || ch == '=')
 		return modalpha(alpha::SZ); // invalid character can be ignored later. Lets us use five letter groups for example.
+//	if (ch == '=')
+//		return modalpha(alpha::X); // missing character, replace with X for now
 	return modalpha(ch - 'A');
 }
 

@@ -16,8 +16,8 @@ void Help()
 	std::cerr << "configures a 'machine' with reflector B, rotors 1, 2, 5, ring setting fvn, initial setting XWB\n";
 	std::cerr << "and plug board as indicated. The plug settings can optionally be condensed and the quotes omitted.";
 	std::cerr << "Then when given\n";
-	std::cerr << "QBLTWLDAHHYEOEFPTWYBLENDPMKOXLDFAMUDWIJDXRJZ\n";
-	std::cerr << "the original message,";
+	std::cerr << "BYHSQTPUWDCMXYGQWMTZZMPNTUFSVGASNAXGLHFHAOVT\n";
+	std::cerr << "the original message,\n";
 	std::cerr << "DERFUEHRERISTTODXDERKAMPFGEHTWEITERXDOENITZX\n";
 	std::cerr << "will be produced. Or vice versa.\n";
 	std::cerr << "Generally \'X\' is used for punctuation so this well known message reads,\n";

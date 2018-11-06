@@ -3,128 +3,133 @@
 
 #include <iostream>
 #include <iomanip>
+#include <vector>
 #include <algorithm>
 #include <numeric>
 #include "machine.h"
+#include "arena.h"
 
-constexpr  char version[] = "v0.01";
+constexpr  char version[] = "v0.02";
 
-// slide the ciphertext along the row and count the matches.
+// this is a bit crap. There must be a more elegant way to do this
+// In essence we want the N best results, in order of bestness
 //
-template<typename I, size_t W> void linear_search(I cb, I ce, std::array<modalpha, W> const& row, std::array<unsigned, W>& counts)
+template<typename I> std::vector<I> best_of(I rb, I re)
 {
-	auto itb = std::begin(row);
-	auto ite = std::end(row) - std::distance(cb, ce);
-	auto ito = std::begin(counts);
-	while (itb != ite)
+	std::vector<I> rv;
+#if 0
+	std::iota(std::begin(rv), std::end(rv), rb);
+	std::sort(std::begin(rv), std::end(rv), [](auto l, auto r) { return *l < *r; });
+	rb += rv.size();
+#else
+	rv.push_back(rb);
+	++rb;
+#endif
+	while (rb != re)
 	{
-		*ito = std::transform_reduce(cb, ce, itb, 0, std::plus<>(), [](auto l, auto r) { return l == r ? 1 : 0; });
-		++ito;
-		++itb;
+		if ( *rb > *rv[0])
+		{
+			// rv[0] is the littlest in the array. so replace it.
+			rv.push_back(rb); 
+			// and put the replacement into place.
+			std::sort(std::begin(rv), std::end(rv), [](auto l, auto r) { return *l < *r; });
+			if (rv.size() > 16)
+				rv.erase(rv.begin());
+		}
+		++rb;
 	}
+	// now prune to greater than 80% of the best
+	auto threshold = (*rv.back() * 8) / 10;
+	rv.erase(std::remove_if(rv.begin(), rv.end(), [threshold](auto i) { return *i < threshold; }), rv.end());
+
+	return rv;
 }
 
 template<typename I, typename L, typename R> void report_results(I cb, I ce, L const& a, R& r, machine3& m3)
 {
 	auto sz = std::distance(cb, ce);
-	auto itp = std::begin(l.pos_);
+	auto itp = std::begin(a.pos_);
 
-	auto itm = std::max_element(std::begin(r), std::end(r) - sz);
-	std::cout << *(itp + std::distance(std::begin(r), itm)) << " - " << *itm << " - ";
-	// decode it!
-	m3.Position(*(itp + std::distance(std::begin(r), itm)));
-	m3.ReportSettings(std::cout);
-	auto cbc = cb;
-	while (cbc != ce)
+	auto rv = best_of(std::begin(r), std::end(r) - sz);
+	for (auto hit : rv)
 	{
-		std::cout << m3.Transform(*cbc);
-		++cbc;
+		std::cout << *hit << " - ";
+		// decode it!
+		m3.Position(*(itp + std::distance(std::begin(r), hit)));
+		m3.ReportSettings(std::cout);
+		auto cbc = cb;
+		while (cbc != ce)
+		{
+			std::cout << m3.Transform(*cbc);
+			++cbc;
+		}
+		std::cout << "\n";
 	}
-	std::cout << "\n";
 }
 
 void Help()
 {
-	std::cerr << "linear " << version << " : experiments in brute force Enigma cracking, given wheels, ring and stecker.\n\n";
+	std::cerr << "linear " << version << " : searches for the ciphertext supplied on stdin in the output of the defined enigma machine.\n\n";
+	std::cerr << "For example,\n\n";
+	std::cerr << "./linear B125 fvn \"AH BO CG DP FL JQ KS MU TZ WY\" [E]\n\n";
+	std::cerr << "Configures a 'machine' with reflector B, rotors 1, 2, 5, ring setting fvn\n";
+	std::cerr << "and plug board as indicated. The plug settings can optionally be condensed and the quotes omitted.";
+	std::cerr << "Then when given\n";
+	std::cerr << "BYHSQTPUWDCMXYGQWMTZZMPNTUFSVGASNAXGLHFHAOVT\n";
+	std::cerr << "the original message,\n";
+	std::cerr << "DERFUEHRERISTTODXDERKAMPFGEHTWEITERXDOENITZX\n";
+	std::cerr << "will be produced somewhere in a list of best fits by brute force and magic.\n";
+	std::cerr << "An optional trailing parameter can be used to search a particular line, the default is 'E' for obvious reasons.\n";
+	std::cerr << "(It seems that a 'manual' entry of the ciphertext on Windows can be terminated with \'Enter Ctrl-Z Enter\')\n";
+	std::cerr << "\nCopyright (c) 2018, paul@epicyclism.com. Free to a good home.\n\n";
 }
 
-template<size_t W> struct line_base
-{
-	static const size_t Width = W;
-	// position of each column
-	std::array<position, W> pos_;
-	// line.
-	std::array<modalpha, W> ln_;
+// an entire enigma cycle plus a reasonable max message length.
+//
+using line_t = line_base<26 * 26 * 26 + 250>;
 
-	using results_t = std::array<unsigned, W>;
-};
-
-template<typename L> void fill_line(machine3& m3, L& l, modalpha ch)
-{
-	auto itp = std::begin(l.pos_);
-	std::cout << m3.Position() << "\n";
-	std::generate(std::begin(l.ln_), std::end(l.ln_), [&]()
-	{
-		*itp = m3.Position();
-		++itp;
-		return m3.Transform(ch);
-	});
-}
-
-using line_t = line_base<26 * 26 * 27>;
-//using line_t = line_base<256>;
+// global to avoid allocation.
 line_t l;
 line_t::results_t r;
 
 int main(int ac, char**av)
 {
-	Help();
-	auto ciphertext3 = make_alpha_array("ZJTPLTJNETNLLGOPQVSWXSRHC"
-		"OSHUTFGUSHHTVPOUMBMVGKLAAF"
-		"DUBNUVCUVPOCFJXDMIQCCAUCBQ"
-		"OKPHUMCIZAJVIQESVGCFHDTISR"
-		"EHFCMBPJCRTWTTMXCNOIEUWRPO"
-		"MCEMSUNBBCTWZZRBLFLUFIFBNY"
-		"OYJGXUMNKPTCQHTGVYWSQDFFMS"
-		"WVECIDWILZBYLIPRXYICFCLPDQ"
-		"ZNOZWSKVNJURTGKMWUNFPNLEPO"
-		"FQLJMEDEFNMLRRRRJYTBVRKBQQ"
-		"GSUWVAWAFUUWFLMPKPHLDML");
-
-	auto ciphertext9 = make_alpha_array("INAVHYMVHIAGMJOPKVJHSGJYY"   
-		"KNHLFKRZWHWLAKKEGGHZFEAKV"
-		"VIDDSYYVEYQFQJPVYHLFUZESA"
-		"OLGNHTXTTBDZJVOAGEAWHBBWC"
-		"ADYYTHSLRXMPEDICATSMALBZY"
-		"LBPZMQDSXZHPFSXVYCBKGEBTG"
-		"QGZIIDQJDBYDACSWJGXUCUXLT"
-		"RTMZHHWXZPESSYEEPFCQAOWOS"
-		"PLUZUCVOKYJXCPYGNJHSPNCFS"
-		"WTLLMSGACQBSUTPSAVGUYFVKS"
-		"UBSQEGVZKVNRLXFIXZQWFKSXC"
-		"PPFRIMWQHTQSB");
-
+	if (ac < 4)
+	{
+		Help();
+		return 0;
+	}
 	try
 	{
-#if 0
-		machine3 m3{ C, III, II, V };
-		m3.Ring(alpha::H, alpha::S, alpha::C);
+		machine3 m3 = MakeMachine3(av[1]);
+		Ring(m3, av[2]);
 		m3.Setting(alpha::A, alpha::A, alpha::A);
-		Stecker(m3, "AL FP HX JO KT NV QR SU WY");
+		Stecker(m3, av[3]);
+		std::cout << "linear " << version << " configured : ";
 		m3.ReportSettings(std::cout);
-		fill_line(m3, l, alpha::E);
-		linear_search(std::begin(ciphertext3), std::end(ciphertext3), l.ln_, r);
-		report_results(std::begin(ciphertext3), std::end(ciphertext3), l.ln_, r, m3);
-#else
-		machine3 m3{ C, IV, III, I };
-		m3.Ring(alpha::G, alpha::X, alpha::O);
-		m3.Setting(alpha::A, alpha::A, alpha::A);
-		Stecker(m3, "AT BG DV EW FR HN IQ JX KZ LU");
-		m3.ReportSettings(std::cout);
-		fill_line(m3, l, alpha::E);
-		linear_search(std::begin(ciphertext9), std::end(ciphertext9), l.ln_, r);
-		report_results(std::begin(ciphertext9), std::end(ciphertext9), l.ln_, r, m3);
-#endif
+		std::cout << "\nReady\n";
+		// capture the ciphertext
+		std::vector<modalpha> ct;
+		while (1)
+		{
+			char c;
+			std::cin >> c;
+			if (!std::cin)
+				break;
+			if (valid_from_char(c))
+			{
+				ct.push_back(from_printable(c));
+			}
+		}
+		std::cout << "\nInitialising search\n";
+		modalpha E = alpha::E;
+		if (ac == 5)
+			E = from_printable(av[4][0]);
+		fill_line(m3, l, E);
+		std::cout << "Searching...\n";
+		linear_search(std::begin(ct), std::end(ct), l.ln_, r);
+		report_results(std::begin(ct), std::end(ct), l, r, m3);
+		std::cout << "\nFinished\n";
 	}
 	catch (std::exception& ex)
 	{

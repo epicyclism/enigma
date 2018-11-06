@@ -98,7 +98,7 @@ template<size_t W> struct line_base
 
 // applies ch to the machine and fills the line!
 //
-template<typename L> void fill_line(machine3& m3, L& l, modalpha ch)
+template<typename M, typename L> void fill_line(M& m3, L& l, modalpha ch)
 {
 	auto itp = std::begin(l.pos_);
 	std::generate(std::begin(l.ln_), std::end(l.ln_), [&]()

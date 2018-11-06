@@ -11,21 +11,6 @@
 
 constexpr  char version[] = "v0.01";
 
-// slide the ciphertext along the row and count the matches.
-//
-template<typename I, size_t W> void linear_search(I cb, I ce, std::array<modalpha, W> const& row, std::array<unsigned, W>& counts)
-{
-	auto itb = std::begin(row);
-	auto ite = std::end(row) - std::distance(cb, ce);
-	auto ito = std::begin(counts);
-	while (itb != ite)
-	{
-		*ito = std::transform_reduce(cb, ce, itb, 0, std::plus<>(), [](auto l, auto r) { return l == r ? 1 : 0; });
-		++ito;
-		++itb;
-	}
-}
-
 template<typename I, typename A, typename R> void arena_search(I cb, I ce, A const& a, R& r)
 {
 	auto itr  = std::begin(r);
