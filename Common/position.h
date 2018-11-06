@@ -22,7 +22,9 @@ struct position
 	//
 	position() : wp_{ alpha::A, alpha::A, alpha::A, alpha::SZ }
 	{}
-	position(modalpha w1, modalpha w2, modalpha w3, modalpha w4 = alpha_max) : wp_{ w1, w2, w3, w4}
+	position(modalpha w3, modalpha w2, modalpha w1) : wp_{ w1, w2, w3, alpha_max}
+	{}
+	position(modalpha w4, modalpha w3, modalpha w2, modalpha w1) : wp_{ w1, w2, w3, w4}
 	{}
 };
 
