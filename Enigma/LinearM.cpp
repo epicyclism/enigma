@@ -9,7 +9,7 @@
 #include "machine.h"
 #include "arena.h"
 
-constexpr  char version[] = "v0.03";
+constexpr  char version[] = "v0.01";
 
 // this is a bit crap. There must be a more elegant way to do this
 // In essence we want the N best results, in order of bestness
@@ -17,14 +17,8 @@ constexpr  char version[] = "v0.03";
 template<typename I> std::vector<I> best_of(I rb, I re)
 {
 	std::vector<I> rv;
-#if 0
-	std::iota(std::begin(rv), std::end(rv), rb);
-	std::sort(std::begin(rv), std::end(rv), [](auto l, auto r) { return *l < *r; });
-	rb += rv.size();
-#else
 	rv.push_back(rb);
 	++rb;
-#endif
 	while (rb != re)
 	{
 		if ( *rb > *rv[0])
@@ -69,17 +63,16 @@ template<typename I, typename L, typename R> void report_results(I cb, I ce, L c
 
 void Help()
 {
-	std::cerr << "linear " << version << " : searches for the ciphertext supplied on stdin in the output of the defined enigma machine.\n\n";
+	std::cerr << "linearM " << version << " : searches for the ciphertext supplied on stdin in the output of the set of enigma machines defined by a set of rotors and reflectors.\n\n";
 	std::cerr << "For example,\n\n";
-	std::cerr << "./linear B125 fvn \"AH BO CG DP FL JQ KS MU TZ WY\" [E]\n\n";
-	std::cerr << "Configures a 'machine' with reflector B, rotors 1, 2, 5, ring setting fvn\n";
+	std::cerr << "./linear fvn \"AH BO CG DP FL JQ KS MU TZ WY\" [E]\n\n";
+	std::cerr << "Configures a 'machine' with reflector B and C, rotors 1, 2, 3, 4, 5, ring setting fvn\n";
 	std::cerr << "and plug board as indicated. The plug settings can optionally be condensed and the quotes omitted.";
 	std::cerr << "Then when given\n";
 	std::cerr << "BYHSQTPUWDCMXYGQWMTZZMPNTUFSVGASNAXGLHFHAOVT\n";
 	std::cerr << "the original message,\n";
 	std::cerr << "DERFUEHRERISTTODXDERKAMPFGEHTWEITERXDOENITZX\n";
 	std::cerr << "will be produced somewhere in a list of best fits by brute force and magic.\n";
-	std::cerr << "An optional trailing parameter can be used to search a particular line, the default is 'E' for obvious reasons.\n";
 	std::cerr << "(It seems that a 'manual' entry of the ciphertext on Windows can be terminated with \'Enter Ctrl-Z Enter\')\n";
 	std::cerr << "\nCopyright (c) 2018, paul@epicyclism.com. Free to a good home.\n\n";
 }
@@ -94,19 +87,13 @@ line_t::results_t r;
 
 int main(int ac, char**av)
 {
-	if (ac < 4)
+	if (ac < 3)
 	{
 		Help();
 		return 0;
 	}
 	try
 	{
-		machine3 m3 = MakeMachine3(av[1]);
-		Ring(m3, av[2]);
-		m3.Setting(alpha::A, alpha::A, alpha::A);
-		Stecker(m3, av[3]);
-		std::cout << "linear " << version << " configured : ";
-		m3.ReportSettings(std::cout);
 		std::cout << "\nReady\n";
 		// capture the ciphertext
 		std::vector<modalpha> ct;
@@ -121,7 +108,14 @@ int main(int ac, char**av)
 				ct.push_back(from_printable(c));
 			}
 		}
-		std::cout << "\nInitialising search\n";
+		std::cout << "\nSearching\n";
+
+		machine3 m3 = MakeMachine3(av[1]);
+		Ring(m3, av[2]);
+		m3.Setting(alpha::A, alpha::A, alpha::A);
+		Stecker(m3, av[3]);
+		std::cout << "linear " << version << " configured : ";
+		m3.ReportSettings(std::cout);
 		modalpha E = alpha::E;
 		if (ac == 5)
 			E = from_printable(av[4][0]);

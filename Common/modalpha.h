@@ -40,16 +40,16 @@ constexpr inline char to_printable_lower(modalpha const& c)
 
 constexpr inline modalpha from_printable(char const ch)
 {
-	if (ch == ' ' || ch == 0 || ch == '=')
+	if (ch == ' ' || ch == 0 )
 		return modalpha(alpha::SZ); // invalid character can be ignored later. Lets us use five letter groups for example.
-//	if (ch == '=')
-//		return modalpha(alpha::X); // missing character, replace with X for now
+	if (ch == '=')
+		return modalpha(alpha::X); // missing character, replace with X for now
 	return modalpha(ch - 'A');
 }
 
 constexpr inline bool valid_from_char(char const ch)
 {
-	return ch >= 'A' && ch <= 'Z';
+	return (ch >= 'A' && ch <= 'Z') || ch == '=';
 }
 
 using als_t  = std::array<modalpha, alpha_max>;
