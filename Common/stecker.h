@@ -35,11 +35,18 @@ public:
 	template<typename O> constexpr void Report(O& ostr) const
 	{
 		int n = 0;
+		bool sp = false;
 		for (auto const& s : board_)
 		{
 			if (s > 0 && n + s > n)
 			{
-				ostr << modalpha(n) << modalpha(n + s) << " ";
+				if (sp)
+					ostr << " " << modalpha(n) << modalpha(n + s);
+				else
+				{
+					ostr << modalpha(n) << modalpha(n + s);
+					sp = true;
+				}
 			}
 			++n;
 		}

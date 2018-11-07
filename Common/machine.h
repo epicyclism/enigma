@@ -15,7 +15,7 @@ private:
 public:
 	// must be constructed with wheel references!
 	machine3() = delete;
-	constexpr machine3(wiring const& ref, rotor const& w3, rotor const& w2, rotor const& w1 ) : w_(ref, w3, w2, w1)
+	constexpr machine3(wiring const& ref, rotor const& w3, rotor const& w2, rotor const& w1) : w_(ref, w3, w2, w1)
 	{}
 	// direct settings
 	// note left to right...
@@ -95,6 +95,20 @@ public:
 	{
 		w_.Position(p);
 	}
+	// get machine settings so can recreate as wanted.
+	machine_settings_t machine_settings()// const
+	{
+		machine_settings_t mst = w_.Config();
+		mst.stecker_ = s_;
+		mst.pos_ = Position();
+		return mst;
+	}
+	void machine_settings(machine_settings_t const& mst)
+	{
+		s_ = mst.stecker_;
+		w_.Ring(mst.r3_, mst.r2_, mst.r1_);
+		w_.Position(mst.pos_);
+	}
 };
 
 // these take a string_view so we can provide strings...
@@ -138,6 +152,56 @@ inline wiring const& reflector_from_name_throw(std::string_view nm)
 	throw std::out_of_range("invalid reflector name");
 }
 
+// these take a char so we don't have to provide strings...
+//
+inline rotor const& rotor_from_name_throw(char nm)
+{
+	switch (nm)
+	{
+	case '1':
+		return I;
+	case '2':
+		return II;
+	case '3':
+		return III;
+	case '4':
+		return IV;
+	case '5':
+		return V;
+	case '6':
+		return VI;
+	case '7':
+		return VII;
+	case '8':
+		return VIII;
+	case 'b':
+		return beta;
+	case 'g':
+		return gamma;
+	default:
+		break;
+	}
+	throw std::out_of_range("invalid wheel name");
+}
+
+inline wiring const& reflector_from_name_throw(char nm)
+{
+	switch (nm)
+	{
+	case 'B':
+		return B;
+	case 'C':
+		return C;
+	case 'b':
+		return B_M4;
+	case 'c':
+		return C_M4;
+	default:
+		break;
+	}
+	throw std::out_of_range("invalid reflector name");
+}
+
 // take a string like 'B321' and return a suitably configured machine.
 // throws on nonsense.
 //
@@ -152,11 +216,29 @@ inline machine3 MakeMachine3(char const desc[4])
 	return machine3(ref, w3, w2, w1);
 }
 
+// build a machine from the settings
+//
+inline machine3 MakeMachine3(machine_settings_t const& mst)
+{
+	auto& ref = reflector_from_name_throw(mst.ref_);
+	auto& w3  = rotor_from_name_throw(mst.w3_);
+	auto& w2  = rotor_from_name_throw(mst.w2_);
+	auto& w1  = rotor_from_name_throw(mst.w1_);
+	machine3 m3(ref, w3, w2, w1);
+	m3.machine_settings(mst);
+
+	return m3;
+}
+
 // helper functions to set a machine up with readable parameters.
 void Ring(machine3& m3, char const cfg[3]);
 void Setting(machine3& m3, char const cfg[3]);
 void Stecker(machine3& m3, char f, char t);
 void Stecker(machine3& m3, char const* sS);
+
+void Ring(machine_settings_t& mst, char const cfg[3]);
+void Stecker(machine_settings_t& mst, char f, char t);
+void Stecker(machine_settings_t& mst, char const* sS);
 
 // won't constexpr right now. damn it.
 //

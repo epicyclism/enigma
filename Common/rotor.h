@@ -27,3 +27,24 @@ constexpr rotor   VII { FromDescWheel("NZJHGRCXMYSWBOUFAIVLPEKQDT", '7'), alpha:
 constexpr rotor  VIII { FromDescWheel("FKQHTLXOCBJSPDZRAMEWNIUYGV", '8'), alpha::Z, true };
 constexpr rotor  beta { FromDescWheel("LEYJVCNIXWPBQMDRTAKZGFUHOS", 'b'), alpha::Z, true };
 constexpr rotor gamma { FromDescWheel("FSOKANUERHMBTIYCWLQPZXVGJD", 'g'), alpha::Z, true };
+
+inline bool valid_rotor_id(char ch)
+{
+	switch (ch)
+	{
+	case '1':
+	case '2':
+	case '3':
+	case '4':
+	case '5':
+	case '6':
+	case '7':
+	case '8':
+	case 'b':
+	case 'g':
+		return true;
+	default:
+		break;
+	}
+	return false;
+}

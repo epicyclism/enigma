@@ -63,3 +63,46 @@ void Stecker(machine3& m3, char const* sS)
 	}
 }
 
+void Ring(machine_settings_t& mst, char const cfg[3])
+{
+	mst.r3_ = from_printable_throw(cfg[0]);
+	mst.r2_ = from_printable_throw(cfg[1]);
+	mst.r1_ = from_printable_throw(cfg[2]);
+}
+
+void Stecker(machine_settings_t& mst, char f, char t)
+{
+	auto from = from_printable_throw(f);
+	auto to = from_printable_throw(t);
+	mst.stecker_.Set(from, to);
+}
+
+// this expects a string of the form
+// AB CD EF
+// a string like
+// ABDCEF
+// will probably also work.
+//
+void Stecker(machine_settings_t& mst, char const* sS)
+{
+	std::string_view sv(sS);
+	if (sv.empty())
+		return;
+	auto fst = sv.begin();
+	auto snd = fst;
+	++snd;
+	int inc = 2;
+	while (snd != sv.end())
+	{
+		if (inc > 1 && valid_from_char(*fst) && valid_from_char(*snd))
+		{
+			Stecker(mst, *fst, *snd);
+			inc = 0;
+		}
+		// move on
+		++snd;
+		++fst;
+		++inc;
+	}
+}
+

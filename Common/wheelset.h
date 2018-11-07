@@ -127,4 +127,10 @@ public:
 	{
 		Setting(p.wp_[2], p.wp_[1], p.wp_[0]);
 	}
+	machine_settings_t Config() const
+	{
+		return machine_settings_t{ ref_.id_,
+			w3_.rotor_.id_, w2_.rotor_.id_, w1_.rotor_.id_,
+			w3_.ring_, w2_.ring_, w1_.ring_ };
+	}
 };

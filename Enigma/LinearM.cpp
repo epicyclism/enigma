@@ -6,6 +6,7 @@
 #include <vector>
 #include <algorithm>
 #include <numeric>
+#include <string>
 #include "machine.h"
 #include "arena.h"
 
@@ -63,11 +64,12 @@ template<typename I, typename L, typename R> void report_results(I cb, I ce, L c
 
 void Help()
 {
-	std::cerr << "linearM " << version << " : searches for the ciphertext supplied on stdin in the output of the set of enigma machines defined by a set of rotors and reflectors.\n\n";
+	std::cerr << "linearM " << version << " : searches for the ciphertext supplied on stdin in the output of the set of enigma machines defined by\n";
+	std::cerr << "a collection of rotors and reflectors.\n\n";
 	std::cerr << "For example,\n\n";
-	std::cerr << "./linear fvn \"AH BO CG DP FL JQ KS MU TZ WY\" [E]\n\n";
-	std::cerr << "Configures a 'machine' with reflector B and C, rotors 1, 2, 3, 4, 5, ring setting fvn\n";
-	std::cerr << "and plug board as indicated. The plug settings can optionally be condensed and the quotes omitted.";
+	std::cerr << "./linear BC 12345 fvn \"AH BO CG DP FL JQ KS MU TZ WY\"\n\n";
+	std::cerr << "Configures a 'machine' with all permutations of reflectors B and C, rotors 1, 2, 3, 4, 5, ring setting fvn\n";
+	std::cerr << "and plug board as indicated. The plug settings can optionally be condensed and the quotes omitted.\n";
 	std::cerr << "Then when given\n";
 	std::cerr << "BYHSQTPUWDCMXYGQWMTZZMPNTUFSVGASNAXGLHFHAOVT\n";
 	std::cerr << "the original message,\n";
@@ -87,13 +89,41 @@ line_t::results_t r;
 
 int main(int ac, char**av)
 {
-	if (ac < 3)
+	if (ac < 5)
 	{
 		Help();
 		return 0;
 	}
 	try
 	{
+		// reflectors
+		std::string ref(av[1]);
+		for (auto r : ref)
+		{
+			if (!valid_reflector_id(r))
+			{
+				std::cerr << "Invalid reflector " << r << "\n\n";
+				return -1;
+			}
+		}
+		// wheels
+		std::string whl(av[2]);
+		if (whl.size() < 3)
+		{
+			std::cerr << "Insufficient wheels specified for a 3 rotor machine\n\n";
+			return -1;
+		}
+		for (auto r : whl)
+		{
+			if (!valid_rotor_id(r))
+			{
+				std::cerr << "Invalid wheel " << r << "\n\n";
+				return -1;
+			}
+		}
+		std::sort(std::begin(ref), std::end(ref)); // overkill....
+		std::sort(std::begin(whl), std::end(whl));
+
 		std::cout << "\nReady\n";
 		// capture the ciphertext
 		std::vector<modalpha> ct;
@@ -108,8 +138,26 @@ int main(int ac, char**av)
 				ct.push_back(from_printable(c));
 			}
 		}
+		machine_settings_t mst;
+		// load the invariants for this purpose
+		Ring(mst, av[3]);
+		Stecker(mst, av[4]);
+
 		std::cout << "\nSearching\n";
 
+		do
+		{
+			do
+			{
+				mst.ref_ = ref[0];
+				mst.w3_ = whl[0];
+				mst.w2_ = whl[1];
+				mst.w1_ = whl[2];
+				std::cout << mst << "\n";
+
+			} while (std::next_permutation(std::begin(whl), std::end(whl)));
+		} while (std::next_permutation(std::begin(ref), std::end(ref)));
+#if 0
 		machine3 m3 = MakeMachine3(av[1]);
 		Ring(m3, av[2]);
 		m3.Setting(alpha::A, alpha::A, alpha::A);
@@ -123,6 +171,7 @@ int main(int ac, char**av)
 		std::cout << "Searching...\n";
 		linear_search(std::begin(ct), std::end(ct), l.ln_, r);
 		report_results(std::begin(ct), std::end(ct), l, r, m3);
+#endif
 		std::cout << "\nFinished\n";
 	}
 	catch (std::exception& ex)

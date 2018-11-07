@@ -130,3 +130,18 @@ constexpr wiring     B = FromDescReflector("YRUHQSLDPXNGOKMIEBFZCWVJAT", 'B');
 constexpr wiring     C = FromDescReflector("FVPJIAOYEDRZXWGCTKUQSBNMHL", 'C');
 constexpr wiring  B_M4 = FromDescReflector("ENKQAUYWJICOPBLMDXZVFTHRGS", 'b');
 constexpr wiring  C_M4 = FromDescReflector("RDOBJNTKVEHMLFCWZAXGYIPSUQ", 'c');
+
+inline bool valid_reflector_id(char ch)
+{
+	switch (ch)
+	{
+	case 'B':
+	case 'C':
+	case 'b':
+	case 'c':
+		return true;
+	default:
+		break;
+	}
+	return false;
+}
