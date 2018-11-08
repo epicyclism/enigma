@@ -4,6 +4,7 @@
 #include <iostream>
 #include <iomanip>
 #include <vector>
+#include <execution>
 #include <algorithm>
 #include <numeric>
 #include <string>
@@ -87,6 +88,40 @@ using line_t = line_base<26 * 26 * 26 + 250>;
 line_t l;
 line_t::results_t r;
 
+// wrap a machine description, a work space and a results space
+// so it can be handed off to a function for processing.
+//
+template<typename CI> struct job
+{
+	machine_settings_t mst_;
+
+	CI ctb_;
+	CI cte_;
+
+	line_t l_;
+	line_t::results_t r_;
+	job(machine_settings_t const& mst, CI ctb, CI cte) : mst_(mst), ctb_(ctb), cte_(cte)
+	{}
+};
+
+int factorial(int n)
+{
+	int f = 1;
+	while (n > 1)
+	{
+		f *= n;
+		--n;
+	}
+	return f;
+}
+
+template <typename JOB> void linear_search(JOB& jb)
+{
+	machine3 m3 = MakeMachine3(jb.mst_);
+	fill_line(m3, jb.l_, alpha::E);
+	linear_search(jb.ctb_, jb.cte_, jb.l_.ln_, jb.r_);
+}
+
 int main(int ac, char**av)
 {
 	if (ac < 5)
@@ -144,19 +179,36 @@ int main(int ac, char**av)
 		Stecker(mst, av[4]);
 
 		std::cout << "\nSearching\n";
-
+		std::vector < job< std::vector<modalpha>::const_iterator>> vjb;
+		int skip = factorial(whl.size() - 3);
+		int cnt = skip;
 		do
 		{
 			do
 			{
-				mst.ref_ = ref[0];
-				mst.w3_ = whl[0];
-				mst.w2_ = whl[1];
-				mst.w1_ = whl[2];
-				std::cout << mst << "\n";
-
+				--cnt; // take out the permutations out of our sight and avoid duplication.
+				if (cnt == 0)
+				{
+					mst.ref_ = ref[0];
+					mst.w3_ = whl[0];
+					mst.w2_ = whl[1];
+					mst.w1_ = whl[2];
+					vjb.emplace_back(mst, std::begin(ct), std::end(ct));
+					cnt = skip;
+				}
 			} while (std::next_permutation(std::begin(whl), std::end(whl)));
 		} while (std::next_permutation(std::begin(ref), std::end(ref)));
+#if 0
+		for (auto& r : vjb)
+		{
+			std::cout << r.mst_ << "\n";
+		}
+#endif
+		std::for_each(std::execution::par, std::begin(vjb), std::end(vjb), [](auto& j) { linear_search(j); });
+		for (auto& r : vjb)
+		{
+			std::cout << r.mst_ << " - " << *std::max_element(std::begin(r.r_), std::end(r.r_) - ct.size()) << "\n";
+		}
 #if 0
 		machine3 m3 = MakeMachine3(av[1]);
 		Ring(m3, av[2]);
