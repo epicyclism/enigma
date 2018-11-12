@@ -7,25 +7,30 @@
 
 #include "modalpha.h"
 
-using frequency_table = std::array<int, alpha_max + 1>;
+using frequency_table = std::array<int, alpha_max + 2>;
 
 frequency_table get_frequency(const char * m)
 {
 	frequency_table tab;
 	std::string_view msg(m);
 	tab.fill(0);
-
+	int cnt = 0;
 	for (auto ch : msg)
 	{
 		if (valid_from_char(ch))
+		{
 			++tab[from_printable(ch).Val()];
+			++cnt;
+		}
 		else
 			++tab[alpha_max];
 	}
+	tab[alpha_max + 1] = cnt;
 	return tab;
 }
 void print_tab(frequency_table const& tab)
 {
+	std::cout << "msg size = " << tab[alpha_max + 1] << "\n";
 	char row = 'A';
 	for (auto i : tab)
 	{

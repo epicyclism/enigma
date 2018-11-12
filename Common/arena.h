@@ -68,6 +68,9 @@ template<typename O> void arena_print_r(arena_t const& a, modalpha l, int cnt, O
 // search primitive
 // slide the ciphertext along the row and count the matches at each position.
 //
+// the result is added to anything already in the results buffer, allowing
+// multiple searches to be accumulated.
+//
 template<typename I, size_t W> void linear_search(I cb, I ce, std::array<modalpha, W> const& row, std::array<unsigned, W>& counts)
 {
 	auto itb = std::begin(row);
@@ -75,7 +78,7 @@ template<typename I, size_t W> void linear_search(I cb, I ce, std::array<modalph
 	auto ito = std::begin(counts);
 	while (itb != ite)
 	{
-		*ito = std::transform_reduce(cb, ce, itb, 0, std::plus<>(), [](auto l, auto r) { return l == r ? 1 : 0; });
+		*ito += std::transform_reduce(cb, ce, itb, 0, std::plus<>(), [](auto l, auto r) { return l == r ? 1 : 0; });
 		++ito;
 		++itb;
 	}
@@ -107,5 +110,28 @@ template<typename M, typename L> void fill_line(M& m3, L& l, modalpha ch)
 		*itp = m3.Position();
 		++itp;
 		return m3.Transform(ch);
+	});
+}
+
+// assumes that *I is a modalpha, IOW 0-25 for A-Z
+// update to genericity later.
+//
+template<typename I> double index_of_coincidence(I b, I e)
+{
+	auto N = std::distance(b, e);
+	std::array<unsigned, alpha_max> tab;
+	tab.fill(0);
+
+	// count
+	std::for_each(b, e, [&tab](auto c)
+	{
+		++tab[c.Val()];
+	});
+	// calculate
+	double nn = double(N) * double(N - 1);
+
+	return 	std::transform_reduce(std::begin(tab), std::end(tab), 0.0, std::plus<>(), [nn](auto n)
+	{
+		return double(n * (n - 1)) / nn;
 	});
 }

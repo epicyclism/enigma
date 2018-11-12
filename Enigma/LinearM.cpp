@@ -11,56 +11,48 @@
 #include "machine.h"
 #include "arena.h"
 
-constexpr  char version[] = "v0.01";
+constexpr  char version[] = "v0.03";
 
-// this is a bit crap. There must be a more elegant way to do this
-// In essence we want the N best results, in order of bestness
-//
-template<typename I> std::vector<I> best_of(I rb, I re)
-{
-	std::vector<I> rv;
-	rv.push_back(rb);
-	++rb;
-	while (rb != re)
-	{
-		if ( *rb > *rv[0])
-		{
-			// rv[0] is the littlest in the array. so replace it.
-			rv.push_back(rb); 
-			// and put the replacement into place.
-			std::sort(std::begin(rv), std::end(rv), [](auto l, auto r) { return *l < *r; });
-			if (rv.size() > 16)
-				rv.erase(rv.begin());
-		}
-		++rb;
-	}
-	// now prune to greater than 80% of the best
-	auto threshold = (*rv.back() * 6) / 10;
-	rv.erase(std::remove_if(rv.begin(), rv.end(), [threshold](auto i) { return *i < threshold; }), rv.end());
-
-	return rv;
-}
-
-template<typename I, typename L, typename R> void report_results(I cb, I ce, L const& a, R& r, machine3& m3)
+template<typename I, typename L, typename R> double report_results(machine_settings_t const& mst, I cb, I ce, L const& a, R& r)
 {
 	auto sz = std::distance(cb, ce);
 	auto itp = std::begin(a.pos_);
+	auto threshold = sz / 11;
+	double max_ioc = 0.0;
 
-	auto rv = best_of(std::begin(r), std::end(r) - sz);
-	for (auto hit : rv)
+	auto rb = std::begin(r);
+	while ( rb != std::end(r))
 	{
-		std::cout << *hit << " - ";
-		// decode it!
-		m3.Position(*(itp + std::distance(std::begin(r), hit)));
-		m3.ReportSettings(std::cout);
-		auto cbc = cb;
-		while (cbc != ce)
+		if (*rb > threshold) // decode!
 		{
-			std::cout << m3.Transform(*cbc);
-			++cbc;
+			machine3 m3 = MakeMachine3(mst);
+			m3.Position(*(itp + std::distance(std::begin(r), rb)));
+			std::vector<modalpha> vo;
+			vo.reserve(sz);
+			auto cbc = cb;
+			while (cbc != ce)
+			{
+//				std::cout << m3.Transform(*cbc);
+				vo.push_back(m3.Transform(*cbc));
+				++cbc;
+			}
+			auto ioc = index_of_coincidence(std::begin(vo), std::end(vo));
+			if (ioc > max_ioc)
+				max_ioc = ioc;
+			if (ioc > 0.049)
+			{
+				std::cout << *rb << " - ";
+				m3.ReportSettings(std::cout);
+				std::cout << " - ";
+				std::cout << ioc << " - ";
+				for (auto c : vo)
+					std::cout << c;
+				std::cout << "\n";
+			}
 		}
-		std::cout << "\n";
+		++rb;
 	}
+	return max_ioc;
 }
 
 void Help()
@@ -82,11 +74,7 @@ void Help()
 
 // an entire enigma cycle plus a reasonable max message length.
 //
-using line_t = line_base<26 * 26 * 26 + 250>;
-
-// global to avoid allocation.
-line_t l;
-line_t::results_t r;
+using line_t = line_base<26 * 26 * 26 + 256>;
 
 // wrap a machine description, a work space and a results space
 // so it can be handed off to a function for processing.
@@ -101,7 +89,9 @@ template<typename CI> struct job
 	line_t l_;
 	line_t::results_t r_;
 	job(machine_settings_t const& mst, CI ctb, CI cte) : mst_(mst), ctb_(ctb), cte_(cte)
-	{}
+	{
+		r_.fill(0);
+	}
 };
 
 int factorial(int n)
@@ -115,10 +105,10 @@ int factorial(int n)
 	return f;
 }
 
-template <typename JOB> void linear_search(JOB& jb)
+template <typename JOB> void linear_search(JOB& jb, modalpha ch)
 {
 	machine3 m3 = MakeMachine3(jb.mst_);
-	fill_line(m3, jb.l_, alpha::E);
+	fill_line(m3, jb.l_, ch);
 	linear_search(jb.ctb_, jb.cte_, jb.l_.ln_, jb.r_);
 }
 
@@ -177,7 +167,7 @@ int main(int ac, char**av)
 		// load the invariants for this purpose
 		Ring(mst, av[3]);
 		Stecker(mst, av[4]);
-
+		std::cout << "Message length is " << ct.size() << " characters.\n";
 		std::cout << "\nSearching\n";
 		std::vector < job< std::vector<modalpha>::const_iterator>> vjb;
 		int skip = factorial(whl.size() - 3);
@@ -186,7 +176,7 @@ int main(int ac, char**av)
 		{
 			do
 			{
-				--cnt; // take out the permutations out of our sight and avoid duplication.
+				--cnt; // take out the permutations of the wheels we're not taking to avoid duplication.
 				if (cnt == 0)
 				{
 					mst.ref_ = ref[0];
@@ -198,33 +188,17 @@ int main(int ac, char**av)
 				}
 			} while (std::next_permutation(std::begin(whl), std::end(whl)));
 		} while (std::next_permutation(std::begin(ref), std::end(ref)));
-#if 0
+
+		std::for_each(std::execution::par, std::begin(vjb), std::end(vjb), [](auto& j) { linear_search(j, alpha::E); });
+		double max_ioc = 0.0;
 		for (auto& r : vjb)
 		{
-			std::cout << r.mst_ << "\n";
+			auto ioc = report_results(r.mst_,r.ctb_, r.cte_, r.l_, r.r_);
+			if (ioc > max_ioc)
+				max_ioc = ioc;
 		}
-#endif
-		std::for_each(std::execution::par, std::begin(vjb), std::end(vjb), [](auto& j) { linear_search(j); });
-		for (auto& r : vjb)
-		{
-			std::cout << r.mst_ << " - " << *std::max_element(std::begin(r.r_), std::end(r.r_) - ct.size()) << "\n";
-		}
-#if 0
-		machine3 m3 = MakeMachine3(av[1]);
-		Ring(m3, av[2]);
-		m3.Setting(alpha::A, alpha::A, alpha::A);
-		Stecker(m3, av[3]);
-		std::cout << "linear " << version << " configured : ";
-		m3.ReportSettings(std::cout);
-		modalpha E = alpha::E;
-		if (ac == 5)
-			E = from_printable(av[4][0]);
-		fill_line(m3, l, E);
-		std::cout << "Searching...\n";
-		linear_search(std::begin(ct), std::end(ct), l.ln_, r);
-		report_results(std::begin(ct), std::end(ct), l, r, m3);
-#endif
 		std::cout << "\nFinished\n";
+		std::cout << "Max ioc = " << max_ioc << "\n";
 	}
 	catch (std::exception& ex)
 	{

@@ -57,6 +57,7 @@ template<typename I, typename L, typename R> void report_results(I cb, I ce, L c
 		// decode it!
 		m3.Position(*(itp + std::distance(std::begin(r), hit)));
 		m3.ReportSettings(std::cout);
+		std::cout << " ";
 		auto cbc = cb;
 		while (cbc != ce)
 		{
@@ -127,6 +128,7 @@ int main(int ac, char**av)
 			E = from_printable(av[4][0]);
 		fill_line(m3, l, E);
 		std::cout << "Searching...\n";
+		r.fill(0);
 		linear_search(std::begin(ct), std::end(ct), l.ln_, r);
 		report_results(std::begin(ct), std::end(ct), l, r, m3);
 		std::cout << "\nFinished\n";
