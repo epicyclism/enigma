@@ -5,6 +5,7 @@
 #include <string_view>
 #include <iostream>
 #include "machine.h"
+#include "arena.h"
 
 constexpr  char version[] = "v0.02";
 
@@ -42,6 +43,7 @@ int main(int ac, char**av)
 		std::cout << "enigma " << version << " configured : ";
 		m3.ReportSettings(std::cout);
 		std::cout << "\nReady\n";
+		std::vector<modalpha> vo;
 		while (std::cin)
 		{
 			char c;
@@ -50,9 +52,10 @@ int main(int ac, char**av)
 			{
 				auto x = m3.Transform(from_printable(c));
 				std::cout << x;
+				vo.push_back(x);
 			}
 		}
-		std::cout << "\nFinished\n";
+		std::cout << "\nFinished - ioc = " << index_of_coincidence(std::begin(vo), std::end(vo)) << "\n";
 	}
 	catch (std::exception& ex)
 	{

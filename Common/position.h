@@ -73,3 +73,13 @@ inline std::ostream& operator<<(std::ostream& o, machine_settings_t const& m)
 
 	return o;
 }
+
+// a result for consideration.
+//
+struct result_t
+{
+	machine_settings_t mst_;
+	double ioc_;
+	result_t(machine_settings_t const& mst, double ioc) : mst_(mst), ioc_(ioc)
+	{}
+};

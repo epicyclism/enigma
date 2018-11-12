@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <numeric>
 #include "wheelset.h"
 
 //using arena_t = std::array<std::array<modalpha, 1024>, alpha_max>;
@@ -78,7 +79,7 @@ template<typename I, size_t W> void linear_search(I cb, I ce, std::array<modalph
 	auto ito = std::begin(counts);
 	while (itb != ite)
 	{
-		*ito += std::transform_reduce(cb, ce, itb, 0, std::plus<>(), [](auto l, auto r) { return l == r ? 1 : 0; });
+		*ito += std::transform_reduce(cb, ce, itb, 0, std::plus{}, [](auto l, auto r) { return l == r ? 1 : 0; });
 		++ito;
 		++itb;
 	}
@@ -130,7 +131,7 @@ template<typename I> double index_of_coincidence(I b, I e)
 	// calculate
 	double nn = double(N) * double(N - 1);
 
-	return 	std::transform_reduce(std::begin(tab), std::end(tab), 0.0, std::plus<>(), [nn](auto n)
+	return 	std::transform_reduce(std::begin(tab), std::end(tab), 0.0, std::plus{}, [nn](auto n)
 	{
 		return double(n * (n - 1)) / nn;
 	});

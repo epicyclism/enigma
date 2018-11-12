@@ -240,6 +240,26 @@ void Ring(machine_settings_t& mst, char const cfg[3]);
 void Stecker(machine_settings_t& mst, char f, char t);
 void Stecker(machine_settings_t& mst, char const* sS);
 
+inline void ZeroRing(machine_settings_t& mst)
+{
+	mst.r1_ = modalpha(0);
+	mst.r2_ = modalpha(0);
+	mst.r3_ = modalpha(0);
+}
+
+inline bool AdvanceRing(machine_settings_t& mst)
+{
+	++mst.r1_;
+	if (mst.r1_ == modalpha(0))
+	{
+		++mst.r2_;
+		if (mst.r2_ == modalpha(0))
+			return false; // finished!
+	}
+	// don't care about r3.
+	return true;
+}
+
 // won't constexpr right now. damn it.
 //
 template<typename M, std::size_t N> constexpr auto make_alpha_array(const M(&msg)[N])
