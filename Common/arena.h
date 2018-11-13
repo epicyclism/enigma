@@ -4,8 +4,6 @@
 #include <numeric>
 #include "wheelset.h"
 
-//using arena_t = std::array<std::array<modalpha, 1024>, alpha_max>;
-
 // maintain alpha_max rows of width W, each row is the output of encoding continuous letters in the machine.
 // position recorded to ensure can go back without having to separate out the stepping process.
 //
@@ -14,13 +12,11 @@ template<size_t W> struct arena_base
 	static const size_t Width = W;
 	// position of each column
 	std::array<position, W> pos_;
-	// array of columns.
-	std::array<std::array<modalpha, W>, alpha_max> arena_;
-
-	using results_t = std::array<std::array<unsigned, W>, alpha_max>;
+	// array of lines.
+	using line_t = std::array<modalpha, W>;
+	std::array<line_t, alpha_max> arena_;
 };
 
-using arena_t = arena_base<17576>;
 //                                                  A  B  C  D  E  F  G  H  I  J   K   L   M   N   O   P   Q   R   S   T   U   V   W   X   Y   Z
 constexpr std::array<modalpha, alpha_max> alphabet{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25 };
 //                                                     A  B  C  D  E  F  G  H  I   J   K   L   M   N   O   P   Q   R   S   T   U   V   W   X   Y   Z
@@ -52,7 +48,7 @@ template<typename A> void shuffle_down_arena(A& a, size_t left)
 	}
 }
 
-template<typename O> void arena_print_r(arena_t const& a, modalpha l, int cnt, O& ostr)
+template<typename A, typename O> void arena_print_r(A const& a, modalpha l, int cnt, O& ostr)
 {
 	auto c = std::begin(a.pos_);
 	auto r = std::begin(a.arena_[l.Val()]);

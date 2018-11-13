@@ -17,6 +17,11 @@ public:
 	machine3() = delete;
 	constexpr machine3(wiring const& ref, rotor const& w3, rotor const& w2, rotor const& w1) : w_(ref, w3, w2, w1)
 	{}
+	// access the wheelset alone
+	[[nodiscard]] constexpr wheels3& Wheels() noexcept
+	{
+		return w_;
+	}
 	// direct settings
 	// note left to right...
 	constexpr void Ring(modalpha r3, modalpha r2, modalpha r1) noexcept
@@ -40,7 +45,7 @@ public:
 	{
 		s_.Set(f, t);
 	}
-	modalpha Transform(modalpha m)
+	[[nodiscard]] modalpha Transform(modalpha m) noexcept
 	{
 		if (m == modalpha(alpha::SZ))
 			return modalpha(alpha::SZ);
@@ -49,7 +54,7 @@ public:
 		x = w_.Evaluate(x);
 		return s_.Eval(x);
 	}
-	template<typename I> std::vector<modalpha> Transform(I b, I e)
+	template<typename I> std::vector<modalpha> Transform(I b, I e) noexcept
 	{
 		std::vector<modalpha> r;
 		std::transform(b, e, std::back_inserter(r), [&](auto in)

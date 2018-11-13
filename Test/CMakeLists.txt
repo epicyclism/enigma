@@ -10,8 +10,10 @@ add_executable (WiringTest "WiringTest.cpp" )
 add_executable (RotorTest "RotorTest.cpp" )
 add_executable (WheelSetTest "WheelSetTest.cpp" )
 add_executable (MachineTest "MachineTest.cpp" )
+add_executable (MatchTest "MatchTest.cpp" )
 
 target_link_libraries(MachineTest Common )
+target_link_libraries(MatchTest Common )
 
 #if ( CMAKE_CXX_COMPILER_ID MATCHES "Clang|AppleClang|GNU" )
 #    target_compile_options( Enigma PRIVATE -Wall -Wextra -Wunreachable-code -Wpedantic -fexceptions)
@@ -24,4 +26,4 @@ target_link_libraries(MachineTest Common )
 #endif()
 
 # TODO: Add tests and install targets if needed.
-install(TARGETS ModAlphaTest WiringTest RotorTest MachineTest DESTINATION $(PROJECT_SOURCE_DIR)/bin)
+install(TARGETS ModAlphaTest WiringTest RotorTest MachineTest MatchTest DESTINATION $(PROJECT_SOURCE_DIR)/bin)

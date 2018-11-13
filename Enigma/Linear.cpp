@@ -44,7 +44,7 @@ template<typename I> std::vector<I> best_of(I rb, I re)
 
 	return rv;
 }
-
+#if 0
 template<typename I, typename L, typename R> void report_results(I cb, I ce, L const& a, R& r, machine3& m3)
 {
 	auto sz = std::distance(cb, ce);
@@ -67,6 +67,47 @@ template<typename I, typename L, typename R> void report_results(I cb, I ce, L c
 		std::cout << "\n";
 	}
 }
+#else
+template<typename I, typename L, typename R> void report_results(I cb, I ce, L const& a, R& r, machine3& m3)
+{
+	auto sz = std::distance(cb, ce);
+	auto itp = std::begin(a.pos_);
+	auto threshold = sz / 11;
+	double max_ioc = 0.0;
+
+	auto rb = std::begin(r);
+	while (rb != std::end(r))
+	{
+		if (*rb > threshold) // decode!
+		{
+			m3.Position(*(itp + std::distance(std::begin(r), rb)));
+			std::vector<modalpha> vo;
+			vo.reserve(sz);
+			auto cbc = cb;
+			while (cbc != ce)
+			{
+				vo.push_back(m3.Transform(*cbc));
+				++cbc;
+			}
+			auto ioc = index_of_coincidence(std::begin(vo), std::end(vo));
+			if (ioc > max_ioc)
+				max_ioc = ioc;
+			if (ioc > 0.049)
+			{
+				std::cout << *rb << " - ";
+				m3.ReportSettings(std::cout);
+				std::cout << " - ";
+				std::cout << ioc << " - ";
+				for (auto c : vo)
+					std::cout << c;
+				std::cout << "\n";
+			}
+		}
+		++rb;
+	}
+	std::cout << "Max ioc = " << max_ioc << "\n";
+}
+#endif
 
 void Help()
 {

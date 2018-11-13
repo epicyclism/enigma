@@ -3,124 +3,189 @@
 
 #include <iostream>
 #include <iomanip>
+#include <execution>
 #include <algorithm>
 #include <numeric>
 #include "wheelset.h"
 #include "machine.h"
 #include "arena.h"
+#include "position.h"
 
-constexpr  char version[] = "v0.01";
+constexpr  char version[] = "v0.02";
 
-template<typename I, typename A, typename R> void arena_search(I cb, I ce, A const& a, R& r)
+struct stkr
 {
-	auto itr  = std::begin(r);
+	modalpha f_;
+	modalpha t_;
+	short    cnt_;
+};
 
-	std::for_each(std::begin(a.arena_), std::end(a.arena_), [&itr, &cb, &ce](auto r)
+// assumed max message length
+struct stkrset
+{
+	std::array<stkr, 256> sss_;
+	int direct_;
+};
+
+void clear(stkrset& ss)
+{
+	for (auto& s : ss.sss_)
 	{
-		linear_search(cb, ce, r, *itr);
-		++itr;
+		s.f_ = alpha::SZ;
+		s.t_ = alpha::SZ;
+		s.cnt_ = 0;
+	}
+	ss.direct_ = 0;
+}
+
+void set(stkrset& ss, modalpha f, modalpha t)
+{
+	if (f == t)
+	{
+		++ss.direct_;
+		return;
+	}
+	if (f > t)
+	{
+		std::swap(f, t);
+	}
+	auto& sss = ss.sss_;
+	std::for_each(std::begin(sss), std::end(sss), [&f, &t](auto& pg)
+	{
+		if (pg.f_ == alpha::SZ)
+		{
+			pg.f_ = f;
+			pg.t_ = t;
+			++pg.cnt_;
+			return;
+		}
+		if ((pg.f_ == f) && (pg.t_ == t))
+		{
+			++pg.cnt_;
+			return;
+		}
 	});
 }
 
-template<typename A, typename R> void report_results2(A const& a, R const& r, size_t s)
+void print(stkrset const& ss)
 {
-	auto itp = std::begin(a.pos_);
-	for (auto& rr : r)
+	std::cout << "direct = " << ss.direct_ << "\n";
+	for (auto& s : ss.sss_)
 	{
-		auto itm = std::max_element(rr.begin(), rr.end() - s);
-		std::cout << *(itp + std::distance(rr.begin(), itm)) << " - " << *itm << "\n";
+		std::cout << s.f_ << "<->" << s.t_ << " - " << s.cnt_ << "\n";
 	}
 }
 
-template<typename A, typename R> void report_results3(A const& a, R const& r, size_t s)
+std::vector<modalpha> read_ciphertext()
 {
-	auto itp = std::begin(a.pos_);
-	std::for_each(r[4].begin(), r[4].end() - s, [](auto i) { std::cout << i << " "; }); // 'E'
-	std::cout << "\n";
-	std::for_each(r[23].begin(), r[23].end() - s, [](auto i) { std::cout << i << " "; }); // 'X'
-	std::cout << "\n";
-}
-
-template<typename I, typename A, typename R> void report_results4(I cb, I ce, A const& a, R& r, wheels3& w3 )
-{
-	auto sz = std::distance(cb, ce);
-	auto itp = std::begin(a.pos_);
-	for (auto& rr : r)
+	std::vector<modalpha> rv;
+	while (1)
 	{
-		auto itm = std::max_element(rr.begin(), rr.end() - sz);
-		std::cout << *(itp + std::distance(rr.begin(), itm)) << " - " << *itm << " - ";
-		// decode it!
-		w3.Position(*(itp + std::distance(rr.begin(), itm)));
-		auto cbc = cb;
-		while (cbc != ce)
+		char c;
+		std::cin >> c;
+		if (!std::cin)
+			break;
+		if (valid_from_char(c))
 		{
-			w3.Step();
-			std::cout << w3.Evaluate(*cbc);
-			++cbc;
+			rv.push_back(from_printable(c));
 		}
-		std::cout << "\n";
 	}
+	return rv;
 }
 
-template<typename A, typename R> void report_results(A const& a, R const& r, size_t s)
+template<typename J> void stecker_search(J& j)
 {
-	auto itp = std::begin(a.pos_);
-	for (auto i = 0; i < A::Width - s; ++i)
-	{
-		int sum = 0;
-		for (auto ita = std::begin(r); ita != std::end(r); ++ita)
-		{
-			sum += (*ita)[i];
-		}
-		std::cout << *itp << " - " << sum << "\n";
-		++itp;
-	}
-}
+	auto itb = std::begin(j.line_);
+	auto ite = std::end(j.line_) - std::distance(j.ctb_, j.cte_);
+	stkrset ss;
 
-template<typename R> void print_results(R const& r, size_t s)
-{
-	for (auto ita = std::begin(r); ita != std::end(r); ++ita)
+	while (itb != ite)
 	{
-		std::for_each(std::begin(*ita), std::end(*ita) - s, [](auto x)
-		{
-			std::cout << x << " ";
-		});
-		std::cout << "\n";
+		clear(ss);
+		// collect stecker possibles
+		auto it = itb;
+		std::for_each(j.ctb_, j.cte_, [&it, &ss](auto const c) { set(ss, c, *it); ++it; });
+		// evaluate them
+		++itb;
 	}
 }
 
 void Help()
 {
-	std::cerr << "arena " << version << " : experiments in brute force Enigma cracking.\n\n";
+	std::cerr << "arena " << version << " : Enigma Stecker hunt experiments.\n\n";
+	std::cerr << "For example,\n\n";
+	std::cerr << "./arena B125 fvn\n";
+	std::cerr << "Configures a machine for wheels B125 and ring fvn then reads ciphertext from stdin\n";
+	std::cerr << "and attempts to find plug settings that produce a decrypt\n\n";
 }
 
-template<typename A> void ArenaTestPrint(A const& a)
-{
-	std::cout << "A ->\n";
-	arena_print_r(a, alpha::A, 32, std::cout);
-	std::cout << "Z ->\n";
-	arena_print_r(a, alpha::Z, 32, std::cout);
-}
+using arena_t = arena_base<26*26*26 + 256>;
 
 arena_t a;
-arena_t::results_t results;
+
+// worthwhile hit
+// includes possible 'stecker' and position
+//
+struct result
+{
+	position pos_;
+	als_t    board_;
+};
+
+template<typename CI> struct job
+{
+	CI ctb_;
+	CI cte_;
+	arena_t::line_t         const& line_;
+	std::array<position, arena_t::Width> const& pos_;
+	std::vector<result> r_;
+
+	job(CI ctb, CI cte, arena_t::line_t const& l, std::array<position, arena_t::Width> const& pos) : ctb_(ctb), cte_(cte), line_(l), pos_(pos)
+	{}
+};
 
 int main(int ac, char**av)
 {
-	Help();
-	auto ciphertext = make_alpha_array("EXTYYFJYICJYGKRWTZBCMGORXJQZXMQLQOMIFYTPWCAI");
-
+#if 0
+	if (ac < 3)
+	{
+		Help();
+		return 0;
+	}
+#endif
 	try
 	{
-		wheels3 w3{ B, I, II, V };
-		w3.Ring( alpha::A, alpha::A, alpha::A );
-		w3.Setting( alpha::A, alpha::A, alpha::A );
-		fill_arena(w3, a, 0);
-//		ArenaTestPrint(a);
-		arena_search(std::begin(ciphertext), std::end(ciphertext), a, results);
-//		print_results(results, ciphertext.size());
-//		report_results2(a, results, ciphertext.size());
-		report_results4(std::begin(ciphertext), std::end(ciphertext), a, results, w3);
+#if 0
+		machine3 m3 = MakeMachine3(av[1]);
+		Ring(m3, av[2]);
+		m3.Setting(alpha::A, alpha::A, alpha::A);
+#else
+		machine3 m3 = MakeMachine3("B213");
+		Ring(m3, "zcp");
+#endif
+		std::cout << "arena " << version << " configured : ";
+		m3.ReportSettings(std::cout);
+		std::cout << "\nReady\n";
+		// capture the ciphertext
+//		auto ct = read_ciphertext();
+		auto ct = make_alpha_array("SIAZKQGEMLIVDBIYWAKCAMPYKCFLOPQDCWPVMITCWAYWKBRUJAVGRYYCISIJZSGRMTZEKGEQLWUXIXYPMQLUHODQFPNRKBZDISWXPHYDBNEQHJUZJRZFWWMVTGIXFSFCQIBVMHGENWKNKYXMQRYSMAWCMBWFHYPNWJEBVYBZEZRCUFZYLIFFJCQFKGOGBYGXMDJLUJMMKZDLNNNJIYEAOYUVDFRFCCUVPWYPJHWFSGGRLXQDFFOKLSKGXZ");
+
+		std::cout << "\nInitialising search\n";
+		fill_arena(m3.Wheels(), a, 0);
+		// create the jobs
+//		std::vector < job< std::vector<modalpha>::const_iterator>> vjb;
+		std::vector < job< std::array<modalpha, 251>::const_iterator>> vjb;
+		vjb.reserve(arena_t::Width - ct.size());
+		std::for_each(std::begin(a.arena_), std::end(a.arena_), [&ct, &vjb](auto const& l)
+		{
+			vjb.emplace_back(std::begin(ct), std::end(ct), l, a.pos_ );
+		});
+		// run the jobs
+		std::cout << "\nSearching\n";
+		std::for_each(/*std::execution::par,*/ std::begin(vjb), std::end(vjb), [](auto& j) { stecker_search(j); });
+
+		// evaluate and report!
+		std::cout << "\nFinished\n";
 	}
 	catch (std::exception& ex)
 	{
