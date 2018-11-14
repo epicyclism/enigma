@@ -24,8 +24,8 @@ int main()
 	std::cout << "\nReady\n";
 	fill_arena(m3.Wheels(), a, 0);
 
-	stkrset ss;
-	match_ciphertext(std::begin(ct), std::end(ct), std::begin(a.arena_[0]), ss);
-	print(ss);
+	plug_best ps;
+	match_ciphertext(std::begin(ct), std::end(ct) - 1, std::begin(a.arena_[0]), ps, alpha::A);
+//	print(ps);
 
 }
