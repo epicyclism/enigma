@@ -16,7 +16,7 @@ struct plug_stat_chk
 struct plug
 {
 	modalpha t_ = 0;
-	modalpha f_ = 0
+	modalpha f_ = 0;
 };
 
 using plug_best = std::array<plug, 10>;
@@ -125,32 +125,16 @@ public:
 				pg.f_ = f;
 				pg.t_ = t;
 				pg.cnt_ = direct_;
+				direct_ = 0;
 				++end_;
 				break;
 			}
 			++it;
 		}
 	}
-	// where the magic happens
-	//
-	plug_set algorithm()
+	[[nodiscard]] int direct() const noexcept
 	{
-		plug_set ps;
-		bool again = false;
-		do
-		{
-			auto b = psm_.begin();
-			auto e = psm_.end();
-			int n = 0;
-			while (b != e)
-			{
-				again = ps.apply(*b, n);
-				++b;
-				++n;
-			}
-		} while (again);
-
-		return ps;
+		return direct_;
 	}
 	template<typename O> void print(O& ostr)
 	{
@@ -162,11 +146,128 @@ public:
 	}
 };
 
+template<unsigned N=10,  typename I > int nbestdirect(I b, I e)
+{
+	if (std::distance(b, e) < N)
+		return std::accumulate(b, e, 0, [](auto l, auto r) { return l + r.cnt_; });
+	// else
+	std::sort(b, e, [](auto&l, auto&r) { return l.cnt_ > r.cnt_; });
+
+	return std::accumulate(b, b + 10, 0, [](auto l, auto r) { return l + r.cnt_; });
+}
+
+template<typename I> int nbestc(I b, I e)
+{
+	std::for_each(b, e, [](auto& pg) { std::cout << pg.f_ << "<->" << pg.t_ << " = " << pg.cnt_ << "\n"; });
+
+	return std::accumulate(b, e, 0, [](auto l, auto r) { return l + r.cnt_; });
+}
+
+struct link
+{
+	modalpha f_, t_;
+	int score_;
+	bool is(modalpha f, modalpha t)
+	{
+		return f == f_ || f == t_ || t == f_ || t == t_;
+	}
+};
+
+class linkset
+{
+private:
+	std::array<link, 10> links_;
+public:
+	linkset() noexcept
+	{
+		for (auto& l : links_)
+			l.score_ = 0;
+	}
+	// returns true if link inserted.
+	//
+	bool insertlink(modalpha f, modalpha t, int score) noexcept
+	{
+		// look for an existing connection to one of our ends
+		for (auto& l : links_)
+		{
+			if (l.is(f, t))
+			{
+				if (l.score_ < score)
+				{
+					// replace
+					l.f_ = f;
+					l.t_ = t;
+					l.score_ = score;
+					return true;
+				}
+				else
+					return false;
+			}
+		}
+		// then look for an empty entry
+		for (auto& l : links_)
+		{
+			if (l.score_ == 0)
+			{
+				l.f_ = f;
+				l.t_ = t;
+				l.score_ = score;
+				return true;
+			}
+		}
+		// last look for a lesser entry
+		auto lst = std::min_element(std::begin(links_), std::end(links_), [](auto& l, auto& r) { return l.score_ < r.score_; });
+		if ((*lst).score_ < score)
+		{
+			// replace
+			(*lst).f_ = f;
+			(*lst).t_ = t;
+			(*lst).score_ = score;
+			return true;
+		}
+		// failure to improve with this link
+		return false;
+	}
+	int score() const noexcept
+	{
+		return std::accumulate(std::begin(links_), std::end(links_), 0, [](auto l, auto r) { return l + r.score_; });
+	}
+	template<typename O> void report(O& ostr)
+	{
+		for (auto& l : links_)
+		{
+			ostr << l.f_ << l.t_ << " ";
+		}
+		ostr << "\n";
+	}
+};
+
+template<typename I> int nbest(I b, I e)
+{
+	linkset ls;
+	bool bchg = false;
+	do
+	{
+		bchg = false;
+		auto bb = b;
+		while (bb != e)
+		{
+			// try and insert *bb to the advantage
+			if (ls.insertlink((*bb).f_, (*bb).t_, (*bb).cnt_))
+				bchg = true;
+			++bb;
+		}
+	} while (bchg);
+	ls.report(std::cout);
+
+	return ls.score();
+}
+
 // returns our pseudo 'E' score, and fills out the plug set that corresponds
 // the caller can then judge whether to record or discard
 // bs is the 'letter' attached to the input stream
 //
-template<typename IC, typename IA> int match_ciphertext(IC ctb, IC cte, IA base, plug_best& ps, modalpha bs)
+template<typename IC, typename IA> int match_ciphertext(IC ctb, IC cte, IA base, modalpha bs)
 {
 	plug_set_msg psm;
 	// collect stecker possibles
@@ -177,37 +278,26 @@ template<typename IC, typename IA> int match_ciphertext(IC ctb, IC cte, IA base,
 	});
 	// add the 'direct'
 	psm.set_direct(bs, alpha::E);
-#if 1
-	// build the best list
-
-#else
-	// order for each possible letter
-	plug_prune pp;
-	
-	// install implicit plug from base
-	if (bs != alpha::E)
-	{
-		pp[modalpha(alpha::E).Val()].t_ = bs;
-		pp[modalpha(alpha::E).Val()].cnt_ = ps.direct_;
-	}
-	for (auto& plug : ps)
-	{
-		if (pp[plug.f_.Val()].cnt_ < plug.cnt_)
-		{
-			pp[plug.f_.Val()].t_    = plug.t_;
-			pp[plug.f_.Val()].cnt_  = plug.cnt_;
-		}
-		else
-		if (pp[plug.t_.Val()].cnt_ < plug.cnt_)
-		{
-			pp[plug.t_.Val()].t_    = plug.f_;
-			pp[plug.t_.Val()].cnt_  = plug.cnt_;
-		}
-	}
-	print(pp);
-
-	// want ten best
-#endif
-	return 0;
+	psm.print(std::cout);
+	// work out the 10 best...
+	return nbest(psm.begin(), psm.end()) + psm.direct();
 }
 
+template<typename I, size_t W> void match_search(I cb, I ce, std::array<modalpha, W> const& row, std::array<unsigned, W>& counts, modalpha bs)
+{
+	auto itb = std::begin(row);
+	auto ite = std::end(row) - std::distance(cb, ce);
+	auto ito = std::begin(counts);
+	int n = 0;
+#if 0
+	while (itb != ite)
+	{
+		*ito += match_ciphertext(cb, ce, itb, bs);
+		++ito;
+		++itb;
+		++n;
+	}
+#else
+	match_ciphertext(cb, ce, itb, bs);
+#endif
+}

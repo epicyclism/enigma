@@ -14,18 +14,31 @@ using arena_t = arena_base<26 * 26 * 26 + 256>;
 
 arena_t a;
 
+void report(arena_t::results_t const& r)
+{
+	auto itb = std::begin(r);
+	while (itb != std::end(r))
+	{
+		std::cout << *itb << "\n";
+		++itb;
+	}
+}
+
 int main()
 {
+	// B213 zcp YTL "BM DV KT LN RS UP XZ EA QW OI"
 	auto ct = make_alpha_array("SIAZKQGEMLIVDBIYWAKCAMPYKCFLOPQDCWPVMITCWAYWKBRUJAVGRYYCISIJZSGRMTZEKGEQLWUXIXYPMQLUHODQFPNRKBZDISWXPHYDBNEQHJUZJRZFWWMVTGIXFSFCQIBVMHGENWKNKYXMQRYSMAWCMBWFHYPNWJEBVYBZEZRCUFZYLIFFJCQFKGOGBYGXMDJLUJMMKZDLNNNJIYEAOYUVDFRFCCUVPWYPJHWFSGGRLXQDFFOKLSKGXZ");
 
 	machine3 m3 = MakeMachine3("B213");
 	Ring(m3, "zcp");
+	m3.Setting(alpha::Y, alpha::T, alpha::L);
+	std::cout << "# ";
 	m3.ReportSettings(std::cout);
-	std::cout << "\nReady\n";
+	std::cout << "\n# Ready\n";
 	fill_arena(m3.Wheels(), a, 0);
-
-	plug_best ps;
-	match_ciphertext(std::begin(ct), std::end(ct) - 1, std::begin(a.arena_[0]), ps, alpha::A);
-//	print(ps);
-
+	
+	arena_t::results_t r;
+	r.fill(0);
+	match_search(std::begin(ct), std::end(ct) - 1,  a.arena_[0], r, alpha::A);
+//	report(r);
 }

@@ -23,13 +23,17 @@ struct position
 	//
 	position() : wp_{ alpha::A, alpha::A, alpha::A, alpha::SZ }
 	{}
-	position(modalpha w3, modalpha w2, modalpha w1) : wp_{ w1, w2, w3, alpha_max}
+	position(modalpha w3, modalpha w2, modalpha w1) : wp_{ w1, w2, w3, alpha_max }
 	{}
-	position(modalpha w4, modalpha w3, modalpha w2, modalpha w1) : wp_{ w1, w2, w3, w4}
+	position(modalpha w4, modalpha w3, modalpha w2, modalpha w1) : wp_{ w1, w2, w3, w4 }
 	{}
 	position(position const& other)
 	{
 		u_ = other.u_; // safe???????
+	}
+	friend constexpr bool operator==(position const& l, position const& r) noexcept
+	{
+		return (l.wp_[2] == r.wp_[2]) && (l. wp_[1] == r.wp_[1]) && (l.wp_[0] == r.wp_[0]);
 	}
 };
 
