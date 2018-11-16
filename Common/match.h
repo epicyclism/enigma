@@ -258,7 +258,7 @@ template<typename I> int nbest(I b, I e)
 			++bb;
 		}
 	} while (bchg);
-	ls.report(std::cout);
+//	ls.report(std::cout);
 
 	return ls.score();
 }
@@ -278,7 +278,7 @@ template<typename IC, typename IA> int match_ciphertext(IC ctb, IC cte, IA base,
 	});
 	// add the 'direct'
 	psm.set_direct(bs, alpha::E);
-	psm.print(std::cout);
+//	psm.print(std::cout);
 	// work out the 10 best...
 	return nbest(psm.begin(), psm.end()) + psm.direct();
 }
@@ -289,7 +289,7 @@ template<typename I, size_t W> void match_search(I cb, I ce, std::array<modalpha
 	auto ite = std::end(row) - std::distance(cb, ce);
 	auto ito = std::begin(counts);
 	int n = 0;
-#if 0
+#if 1
 	while (itb != ite)
 	{
 		*ito += match_ciphertext(cb, ce, itb, bs);
@@ -298,6 +298,7 @@ template<typename I, size_t W> void match_search(I cb, I ce, std::array<modalpha
 		++n;
 	}
 #else
-	match_ciphertext(cb, ce, itb, bs);
+	auto i = match_ciphertext(cb, ce, itb, bs);
+	std::cout << i << "\n";
 #endif
 }

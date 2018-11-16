@@ -24,6 +24,29 @@ void report(arena_t::results_t const& r)
 	}
 }
 
+
+void report2(arena_t::results_t const& r)
+{
+	std::array<int, 61> hi;
+	hi.fill(0);
+
+	auto itb = std::begin(r);
+	while (itb != std::end(r))
+	{
+		if (*itb >= 60)
+			++hi[60];
+		else
+			++hi[*itb];
+		++itb;
+	}
+	int i = 0;
+	for (auto n : hi)
+	{
+		std::cout << i << " " << n << "\n";
+		++i;
+	}
+}
+
 int main()
 {
 	// B213 zcp YTL "BM DV KT LN RS UP XZ EA QW OI"
@@ -31,7 +54,7 @@ int main()
 
 	machine3 m3 = MakeMachine3("B213");
 	Ring(m3, "zcp");
-	m3.Setting(alpha::Y, alpha::T, alpha::L);
+	m3.Setting(alpha::A, alpha::A, alpha::A);
 	std::cout << "# ";
 	m3.ReportSettings(std::cout);
 	std::cout << "\n# Ready\n";
@@ -40,5 +63,5 @@ int main()
 	arena_t::results_t r;
 	r.fill(0);
 	match_search(std::begin(ct), std::end(ct) - 1,  a.arena_[0], r, alpha::A);
-//	report(r);
+	report2(r);
 }
