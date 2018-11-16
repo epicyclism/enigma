@@ -9,18 +9,20 @@
 //
 template<size_t W> struct arena_base
 {
+	// a line
+	using line_t = std::array<modalpha, W>;
 	// a result for a line
 	using results_t = std::array<unsigned, W>;
 	// remember the position for each column
 	using position_t = std::array<position, W>;
-
 	static const size_t Width = W;
+	
 	// position of each column
 	position_t pos_;
 	// array of lines.
-	using line_t = std::array<modalpha, W>;
 	std::array<line_t, alpha_max> arena_;
-
+	// array of results
+	std::array<results_t, alpha_max> results_;
 };
 
 //                                                  A  B  C  D  E  F  G  H  I  J   K   L   M   N   O   P   Q   R   S   T   U   V   W   X   Y   Z

@@ -253,7 +253,7 @@ template<typename I> int nbest(I b, I e)
 		while (bb != e)
 		{
 			// try and insert *bb to the advantage
-			if (ls.insertlink((*bb).f_, (*bb).t_, (*bb).cnt_))
+			if ((*bb).cnt_ > 1 && ls.insertlink((*bb).f_, (*bb).t_, (*bb).cnt_))
 				bchg = true;
 			++bb;
 		}

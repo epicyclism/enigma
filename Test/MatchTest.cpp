@@ -5,12 +5,14 @@
 //
 
 #include <iostream>
+#include <iomanip>
 #include "const_helpers.h"
 #include "machine.h"
 #include "arena.h"
 #include "match.h"
 
 using arena_t = arena_base<26 * 26 * 26 + 256>;
+//using arena_t = arena_base<26 + 256>;
 
 arena_t a;
 
@@ -45,6 +47,53 @@ void report2(arena_t::results_t const& r)
 		std::cout << i << " " << n << "\n";
 		++i;
 	}
+	std::cout << "\n";
+	std::cout << "\n";
+}
+
+void all_report2(arena_t const& a)
+{
+	for (auto& r : a.results_)
+		report2(r);
+}
+
+void mega_report(arena_t const& a, double iocs[arena_t::Width], int N)
+{
+	// for each column compute the effective index of coincidence.
+	for (int c = 0; c < a.Width; ++c)
+	{
+		// we don't have a 'slice' iterator? Might look at valarray for the arena?
+		double sm = 0.0;
+		for ( int r = 0; r < 26; ++r)
+		{
+			int n = a.results_[r][c];
+			sm += double(n * (n - 1));
+		}
+		iocs[c] = sm / (double(N * (N - 1)));
+	}
+}
+
+void mega_report(arena_t const& a)
+{
+	for (int r = 0; r < 26; ++r)
+	{
+		for (int c = 0; c < a.Width - 256; ++c)
+		{
+			std::cout << std::setw(2) << a.results_[r][c] << " ";
+		}
+		std::cout << "\n";
+	}
+}
+
+void report3(arena_t const& a, modalpha k)
+{
+	auto const& r = a.results_[k.Val()];
+
+	for (int c = 0; c < a.Width - 256; ++c)
+	{
+		if (r[c] > 30 && r[c] < 40)
+			std::cout << a.pos_[c] << " - " << r[c] << "\n";
+	}
 }
 
 int main()
@@ -60,8 +109,29 @@ int main()
 	std::cout << "\n# Ready\n";
 	fill_arena(m3.Wheels(), a, 0);
 	
-	arena_t::results_t r;
-	r.fill(0);
-	match_search(std::begin(ct), std::end(ct) - 1,  a.arena_[0], r, alpha::A);
-	report2(r);
+	for (int i = 0; i < 26; ++i)
+	{
+		a.results_[i].fill(0);
+		match_search(std::begin(ct), std::end(ct) - 1, a.arena_[i], a.results_[i], modalpha(i));
+	}
+	//	all_report2(a);
+	report3(a, alpha::A);
+#if 0
+	double iocs[arena_t::Width];
+	mega_report(a, iocs);
+	int i = 0;
+	for (auto ioc : iocs)
+	{
+		if (ioc > 0.0385)
+			std::cout << a.pos_[i] << " - " << ioc << "\n";
+		++i;
+	}
+	mega_report(a);
+	double iocs[arena_t::Width];
+	mega_report(a, iocs, std::distance(std::begin(ct), std::end(ct)));
+	for ( int i = 0; i < 26; ++i)
+	{
+		std::cout << a.pos_[i] << " - " << iocs[i] << "\n";
+	}
+#endif
 }
