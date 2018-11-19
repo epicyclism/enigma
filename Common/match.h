@@ -50,14 +50,12 @@ struct plug_set
 	}
 };
 
-
 // assumed max message length
 // collect all possible plugs for this message, with their frequency
 class plug_set_msg
 {
 private:
 	std::array<plug_stat_chk, 256> psm_;
-	int direct_;
 	int end_;
 public:
 	plug_set_msg()
@@ -76,16 +74,10 @@ public:
 			s.cnt_ = 0;
 			s.b_ = false;
 		}
-		direct_ = 0;
 		end_ = 0;
 	}
 	void set(modalpha f, modalpha t) noexcept
 	{
-		if (f == t)
-		{
-			++direct_;
-			return;
-		}
 		if (f > t)
 		{
 			std::swap(f, t);
@@ -110,61 +102,51 @@ public:
 			++it;
 		}
 	}
-	void set_direct(modalpha f, modalpha t)
+	void merge_direct(modalpha f, modalpha t)
 	{
 		if (f == t)
 			return;
 		if (f > t)
 			std::swap(f, t);
+		int cnt = 0;
+		for (auto& n : psm_)
+		{
+			if (n.f_ == n.t_ && n.cnt_ > 1)
+			{
+				cnt += n.cnt_;
+				n.cnt_ = 0;
+			}
+		}
 		auto it = std::begin(psm_);
 		while (it != std::end(psm_))
 		{
 			auto& pg = *it;
-			if (pg.f_ == f && pg.t_ == t)
-				pg.cnt_ += direct_;
-			else
 			if (pg.f_ == alpha::SZ)
 			{
 				pg.f_ = f;
 				pg.t_ = t;
-				pg.cnt_ = direct_;
-				direct_ = 0;
+				pg.cnt_ = cnt;
 				++end_;
+				break;
+			}
+			if (pg.f_ == f && pg.t_ == t)
+			{
+				pg.cnt_ += cnt;
 				break;
 			}
 			++it;
 		}
 	}
-	[[nodiscard]] int direct() const noexcept
-	{
-		return direct_;
-	}
 	template<typename O> void print(O& ostr)
 	{
-		ostr << "direct = " << direct_ << "\n";
+		std::sort(std::begin(psm_), std::end(psm_), [](auto const& l, auto const& r) { return l.cnt_ > r.cnt_; });
 		for (auto& s : psm_)
 		{
-			ostr << s.f_ << "<->" << s.t_ << " - " << s.cnt_ << "\n";
+			if ( s.cnt_ > 1)
+				ostr << s.f_ << "<->" << s.t_ << " - " << s.cnt_ << "\n";
 		}
 	}
 };
-
-template<unsigned N=10,  typename I > int nbestdirect(I b, I e)
-{
-	if (std::distance(b, e) < N)
-		return std::accumulate(b, e, 0, [](auto l, auto r) { return l + r.cnt_; });
-	// else
-	std::sort(b, e, [](auto&l, auto&r) { return l.cnt_ > r.cnt_; });
-
-	return std::accumulate(b, b + 10, 0, [](auto l, auto r) { return l + r.cnt_; });
-}
-
-template<typename I> int nbestc(I b, I e)
-{
-	std::for_each(b, e, [](auto& pg) { std::cout << pg.f_ << "<->" << pg.t_ << " = " << pg.cnt_ << "\n"; });
-
-	return std::accumulate(b, e, 0, [](auto l, auto r) { return l + r.cnt_; });
-}
 
 struct link
 {
@@ -279,11 +261,13 @@ template<typename IC, typename IA> int match_ciphertext(IC ctb, IC cte, IA base,
 		psm.set( c, *base);
 		++base;
 	});
-	// add the 'direct'
-	psm.set_direct(bs, alpha::E);
-	psm.print(std::cout);
+	if (bs != alpha::E)
+	{
+		psm.merge_direct(bs, alpha::E);
+	}
+//	psm.print(std::cout);
 	// work out the 10 best...
-	return nbest(psm.begin(), psm.end()) + psm.direct();
+	return nbest(psm.begin(), psm.end()) ;
 }
 
 template<typename I, size_t W> void match_search(I cb, I ce, std::array<modalpha, W> const& row, std::array<unsigned, W>& counts, modalpha bs)
@@ -291,17 +275,17 @@ template<typename I, size_t W> void match_search(I cb, I ce, std::array<modalpha
 	auto itb = std::begin(row);
 	auto ite = std::end(row) - std::distance(cb, ce);
 	auto ito = std::begin(counts);
-	int n = 0;
-#if 0
+#if 1
 	while (itb != ite)
 	{
 		*ito += match_ciphertext(cb, ce, itb, bs);
 		++ito;
 		++itb;
-		++n;
 	}
 #else
 	auto i = match_ciphertext(cb, ce, itb, bs);
+	std::cout << i << "\n";
+	i = match_ciphertext(cb, ce, itb + 1, bs);
 	std::cout << i << "\n";
 #endif
 }
