@@ -103,20 +103,20 @@ int main()
 
 	machine3 m3 = MakeMachine3("B213");
 	Ring(m3, "zcp");
-	m3.Setting(alpha::A, alpha::A, alpha::A);
+	m3.Setting(alpha::Y, alpha::T, alpha::L);
 	std::cout << "# ";
 	m3.ReportSettings(std::cout);
 	std::cout << "\n# Ready\n";
 	fill_arena(m3.Wheels(), a, 0);
 	
-	for (int i = 0; i < 26; ++i)
+	for (int i = 0; i < 1; ++i)
 	{
 		a.results_[i].fill(0);
 		match_search(std::begin(ct), std::end(ct) - 1, a.arena_[i], a.results_[i], modalpha(i));
 	}
 	//	all_report2(a);
-	report3(a, alpha::A);
 #if 0
+	report3(a, alpha::A);
 	double iocs[arena_t::Width];
 	mega_report(a, iocs);
 	int i = 0;

@@ -120,6 +120,9 @@ public:
 		while (it != std::end(psm_))
 		{
 			auto& pg = *it;
+			if (pg.f_ == f && pg.t_ == t)
+				pg.cnt_ += direct_;
+			else
 			if (pg.f_ == alpha::SZ)
 			{
 				pg.f_ = f;
@@ -278,7 +281,7 @@ template<typename IC, typename IA> int match_ciphertext(IC ctb, IC cte, IA base,
 	});
 	// add the 'direct'
 	psm.set_direct(bs, alpha::E);
-//	psm.print(std::cout);
+	psm.print(std::cout);
 	// work out the 10 best...
 	return nbest(psm.begin(), psm.end()) + psm.direct();
 }
@@ -289,7 +292,7 @@ template<typename I, size_t W> void match_search(I cb, I ce, std::array<modalpha
 	auto ite = std::end(row) - std::distance(cb, ce);
 	auto ito = std::begin(counts);
 	int n = 0;
-#if 1
+#if 0
 	while (itb != ite)
 	{
 		*ito += match_ciphertext(cb, ce, itb, bs);
