@@ -8,73 +8,11 @@
 #include <numeric>
 #include "wheelset.h"
 #include "machine.h"
-#include "arena.h"
 #include "position.h"
+#include "match.h"
+#include "arena.h"
 
-constexpr  char version[] = "v0.02";
-
-struct stkr
-{
-	modalpha f_;
-	modalpha t_;
-	short    cnt_;
-};
-
-// assumed max message length
-struct stkrset
-{
-	std::array<stkr, 256> sss_;
-	int direct_;
-};
-
-void clear(stkrset& ss)
-{
-	for (auto& s : ss.sss_)
-	{
-		s.f_ = alpha::SZ;
-		s.t_ = alpha::SZ;
-		s.cnt_ = 0;
-	}
-	ss.direct_ = 0;
-}
-
-void set(stkrset& ss, modalpha f, modalpha t)
-{
-	if (f == t)
-	{
-		++ss.direct_;
-		return;
-	}
-	if (f > t)
-	{
-		std::swap(f, t);
-	}
-	auto& sss = ss.sss_;
-	std::for_each(std::begin(sss), std::end(sss), [&f, &t](auto& pg)
-	{
-		if (pg.f_ == alpha::SZ)
-		{
-			pg.f_ = f;
-			pg.t_ = t;
-			++pg.cnt_;
-			return;
-		}
-		if ((pg.f_ == f) && (pg.t_ == t))
-		{
-			++pg.cnt_;
-			return;
-		}
-	});
-}
-
-void print(stkrset const& ss)
-{
-	std::cout << "direct = " << ss.direct_ << "\n";
-	for (auto& s : ss.sss_)
-	{
-		std::cout << s.f_ << "<->" << s.t_ << " - " << s.cnt_ << "\n";
-	}
-}
+constexpr  char version[] = "v0.03";
 
 std::vector<modalpha> read_ciphertext()
 {
@@ -93,26 +31,9 @@ std::vector<modalpha> read_ciphertext()
 	return rv;
 }
 
-template<typename J> void stecker_search(J& j)
-{
-	auto itb = std::begin(j.line_);
-	auto ite = std::end(j.line_) - std::distance(j.ctb_, j.cte_);
-	stkrset ss;
-
-	while (itb != ite)
-	{
-		clear(ss);
-		// collect stecker possibles
-		auto it = itb;
-		std::for_each(j.ctb_, j.cte_, [&it, &ss](auto const c) { set(ss, c, *it); ++it; });
-		// evaluate them
-		++itb;
-	}
-}
-
 void Help()
 {
-	std::cerr << "arena " << version << " : Enigma Stecker hunt experiments.\n\n";
+	std::cerr << "arena " << version << " : Enigma Stecker hunt.\n\n";
 	std::cerr << "For example,\n\n";
 	std::cerr << "./arena B125 fvn\n";
 	std::cerr << "Configures a machine for wheels B125 and ring fvn then reads ciphertext from stdin\n";
@@ -123,26 +44,111 @@ using arena_t = arena_base<26*26*26 + 256>;
 
 arena_t a;
 
-// worthwhile hit
-// includes possible 'stecker' and position
-//
-struct result
-{
-	position pos_;
-	als_t    board_;
-};
-
 template<typename CI> struct job
 {
+	machine_settings_t mst_;
+
 	CI ctb_;
 	CI cte_;
 	arena_t::line_t         const& line_;
-	std::array<position, arena_t::Width> const& pos_;
-	std::vector<result> r_;
+	arena_t::position_t     const& pos_;
+	arena_t::results_t           & r_;
+	modalpha                const  bs_;
 
-	job(CI ctb, CI cte, arena_t::line_t const& l, std::array<position, arena_t::Width> const& pos) : ctb_(ctb), cte_(cte), line_(l), pos_(pos)
+	job(machine_settings_t const& mst, CI ctb, CI cte, arena_t::line_t const& l, arena_t::position_t const& pos, arena_t::results_t& r, modalpha bs)
+		: mst_(mst), ctb_(ctb), cte_(cte), line_(l), pos_(pos), r_(r), bs_(bs)
 	{}
 };
+
+template<typename IC, typename IA, typename R> void hillclimb(IC ctb, IC cte, IA base, position const& pos, modalpha bs, machine_settings_t const & mst_j, R& rv)
+{
+	linkset ls = match_ciphertext_get(ctb, cte, base, bs);
+	machine_settings_t mst(mst_j);
+	for (auto& l : ls)
+		mst.stecker_.Set(l.f_, l.t_);
+	machine3 m3 = MakeMachine3(mst);
+	m3.Position(pos);
+	std::vector<modalpha> vo;
+	vo.reserve(std::distance(ctb, cte));
+	auto ct = ctb;
+	while (ct != cte)
+	{
+		vo.push_back(m3.Transform(*ct));
+		++ct;
+	}
+	auto ioc = index_of_coincidence(std::begin(vo), std::end(vo));
+//	if (ioc > 0.04)
+	{
+		// put the machine back...
+		m3.Position(pos);
+		// record
+		rv.emplace_back(m3.machine_settings(), ioc);
+	}
+}
+
+// these are sort of shared and could be common...
+//
+template<typename J, typename R> void collect_results(J const& j, R& r)
+{
+	unsigned cnt_ = 0;
+	auto sz = std::distance(j.ctb_, j.cte_);
+	auto itp = std::begin(j.pos_);
+	int threshold = 29;
+
+	auto rb = std::begin(j.r_);
+	while (rb != std::end(j.r_))
+	{
+		int score = ((*rb & 0x0000ffff) - (*rb >> 16));
+
+		if (score > threshold) // decode!
+		{
+			++cnt_;
+			auto off = std::distance(std::begin(j.r_), rb);
+			hillclimb(j.ctb_, j.cte_, std::begin(j.line_) + off, *(itp + off), j.bs_, j.mst_, r);
+#if 0
+			machine3 m3 = MakeMachine3(j.mst_);
+			m3.Position(*(itp + std::distance(std::begin(j.r_), rb)));
+			std::vector<modalpha> vo;
+			vo.reserve(sz);
+			auto cbc = j.ctb_;
+			while (cbc != j.cte_)
+			{
+				vo.push_back(m3.Transform(*cbc));
+				++cbc;
+			}
+			auto ioc = index_of_coincidence(std::begin(vo), std::end(vo));
+			if (ioc > 0.052)
+			{
+				// put the machine back...
+				m3.Position(*(itp + std::distance(std::begin(j.r_), rb)));
+				// record
+				r.emplace_back(m3.machine_settings(), ioc);
+			}
+#endif
+		}
+		++rb;
+	}
+	std::cout << "Evaluated " << cnt_ << " results.\n";
+}
+
+template<typename I> void report_result(result_t const& r, I cb, I ce)
+{
+	machine3 m3 = MakeMachine3(r.mst_);
+	std::vector<modalpha> vo;
+	vo.reserve(std::distance(cb, ce));
+	auto cbc = cb;
+	while (cbc != ce)
+	{
+		vo.push_back(m3.Transform(*cbc));
+		++cbc;
+	}
+	m3.ReportSettings(std::cout);
+	std::cout << " - ";
+	std::cout << r.ioc_ << " - ";
+	for (auto c : vo)
+		std::cout << c;
+	std::cout << "\n";
+}
 
 int main(int ac, char**av)
 {
@@ -158,11 +164,11 @@ int main(int ac, char**av)
 #if 0
 		machine3 m3 = MakeMachine3(av[1]);
 		Ring(m3, av[2]);
-		m3.Setting(alpha::A, alpha::A, alpha::A);
 #else
 		machine3 m3 = MakeMachine3("B213");
 		Ring(m3, "zcp");
 #endif
+		m3.Setting(alpha::A, alpha::A, alpha::A);
 		std::cout << "arena " << version << " configured : ";
 		m3.ReportSettings(std::cout);
 		std::cout << "\nReady\n";
@@ -175,17 +181,32 @@ int main(int ac, char**av)
 		// create the jobs
 //		std::vector < job< std::vector<modalpha>::const_iterator>> vjb;
 		std::vector < job< std::array<modalpha, 251>::const_iterator>> vjb;
-		vjb.reserve(arena_t::Width - ct.size());
-		std::for_each(std::begin(a.arena_), std::end(a.arena_), [&ct, &vjb](auto const& l)
+		vjb.reserve(alpha_max);
+		for ( int i = 0; i < alpha_max; ++i)
 		{
-			vjb.emplace_back(std::begin(ct), std::end(ct), l, a.pos_ );
-		});
+			vjb.emplace_back(m3.machine_settings(), std::begin(ct), std::end(ct), a.arena_[i], a.pos_, a.results_[i], modalpha(i));
+
+		}
 		// run the jobs
-		std::cout << "\nSearching\n";
-		std::for_each(/*std::execution::par,*/ std::begin(vjb), std::end(vjb), [](auto& j) { stecker_search(j); });
+		std::cout << "Searching\n";
+		std::for_each(std::execution::par, std::begin(vjb), std::end(vjb), [](auto& j)
+		{
+			match_search(j.ctb_, j.cte_, j.line_, j.r_, j.bs_);
+		});
 
 		// evaluate and report!
-		std::cout << "\nFinished\n";
+		std::cout << "Evaluating\n";
+		std::vector<result_t> results;
+		for (auto& j : vjb)
+		{
+			collect_results(j, results);
+		}
+		for (auto& res : results)
+		{
+			report_result(res, std::begin(ct), std::end(ct));
+		}
+
+		std::cout << "Finished\n";
 	}
 	catch (std::exception& ex)
 	{

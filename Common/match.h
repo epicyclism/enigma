@@ -11,44 +11,6 @@ struct plug_stat_chk
 	bool     b_;
 	int      cnt_;
 };
-// for the outside world
-//
-struct plug
-{
-	modalpha t_ = 0;
-	modalpha f_ = 0;
-};
-
-using plug_best = std::array<plug, 10>;
-
-// this represents the actual estimate of the machine plugging for
-// this message, private to our algorithm
-struct plug_set
-{
-	std::array<plug_stat_chk, 10> pss_;
-	plug_set()
-	{
-		clear();
-	}
-	void clear() noexcept
-	{
-		for (auto& p : pss_)
-		{
-			p.f_ = alpha::SZ;
-			p.t_ = alpha::SZ;
-			p.b_ = false;
-			p.cnt_ = 0;
-		}
-	}
-	void copy_out(plug_best& pb)
-	{
-		std::transform(std::begin(pss_), std::end(pss_), std::begin(pb), [](auto& p) { return plug{ p.f_, p.t_ }; });
-	}
-	bool apply(plug_stat_chk& psc, int n)
-	{
-
-	}
-};
 
 // assumed max message length
 // collect all possible plugs for this message, with their frequency
@@ -142,7 +104,7 @@ public:
 		std::sort(std::begin(psm_), std::end(psm_), [](auto const& l, auto const& r) { return l.cnt_ > r.cnt_; });
 		for (auto& s : psm_)
 		{
-			if ( s.cnt_ > 1)
+			if ( s.cnt_ > 0)
 				ostr << s.f_ << "<->" << s.t_ << " - " << s.cnt_ << "\n";
 		}
 	}
@@ -162,16 +124,28 @@ class linkset
 {
 private:
 	std::array<link, 10> links_;
+	int anti_score_;
 public:
 	linkset() noexcept
 	{
 		for (auto& l : links_)
 			l.score_ = 0;
+		anti_score_ = 0;
+	}
+	auto begin() const
+	{
+		return std::begin(links_);
+	}
+	auto end() const
+	{
+		return std::end(links_);
 	}
 	// returns true if link inserted.
 	//
 	bool insertlink(modalpha f, modalpha t, int score) noexcept
 	{
+		if (score < 2)
+			return false;
 		// look for an existing connection to one of our ends
 		for (auto& l : links_)
 		{
@@ -179,6 +153,8 @@ public:
 			{
 				if (l.score_ < score)
 				{
+					// anti?
+					anti_score_ += l.score_;
 					// replace
 					l.f_ = f;
 					l.t_ = t;
@@ -186,7 +162,10 @@ public:
 					return true;
 				}
 				else
+				{
+					anti_score_ += score;
 					return false;
+				}
 			}
 		}
 		// then look for an empty entry
@@ -204,18 +183,26 @@ public:
 		auto lst = std::min_element(std::begin(links_), std::end(links_), [](auto& l, auto& r) { return l.score_ < r.score_; });
 		if ((*lst).score_ < score)
 		{
+			// anti?
+			anti_score_ += (*lst).score_;
 			// replace
 			(*lst).f_ = f;
 			(*lst).t_ = t;
 			(*lst).score_ = score;
 			return true;
 		}
+		// anti?
+		anti_score_ += score;
 		// failure to improve with this link
 		return false;
 	}
 	int score() const noexcept
 	{
 		return std::accumulate(std::begin(links_), std::end(links_), 0, [](auto l, auto r) { return l + r.score_; });
+	}
+	int anti_score() const noexcept
+	{
+		return anti_score_;
 	}
 	template<typename O> void report(O& ostr)
 	{
@@ -243,9 +230,29 @@ template<typename I> int nbest(I b, I e)
 			++bb;
 		}
 	} while (bchg);
-//	ls.report(std::cout);
+	ls.report(std::cout);
 
-	return ls.score();
+	return ls.score() | (ls.anti_score() << 16);
+}
+
+template<typename I> linkset nbest_get(I b, I e)
+{
+	linkset ls;
+	bool bchg = false;
+	do
+	{
+		bchg = false;
+		auto bb = b;
+		while (bb != e)
+		{
+			// try and insert *bb to the advantage
+			if ((*bb).cnt_ > 1 && ls.insertlink((*bb).f_, (*bb).t_, (*bb).cnt_))
+				bchg = true;
+			++bb;
+		}
+	} while (bchg);
+
+	return ls;
 }
 
 // returns our pseudo 'E' score, and fills out the plug set that corresponds
@@ -265,9 +272,28 @@ template<typename IC, typename IA> int match_ciphertext(IC ctb, IC cte, IA base,
 	{
 		psm.merge_direct(bs, alpha::E);
 	}
-//	psm.print(std::cout);
+	nbest(psm.begin(), psm.end()) ;
+	psm.print(std::cout);
 	// work out the 10 best...
 	return nbest(psm.begin(), psm.end()) ;
+}
+
+template<typename IC, typename IA> linkset match_ciphertext_get(IC ctb, IC cte, IA base, modalpha bs)
+{
+	plug_set_msg psm;
+	// collect stecker possibles
+	std::for_each(ctb, cte, [&base, &psm](auto const c)
+	{
+		psm.set( c, *base);
+		++base;
+	});
+	if (bs != alpha::E)
+	{
+		psm.merge_direct(bs, alpha::E);
+	}
+//	psm.print(std::cout);
+	// work out the 10 best...
+	return nbest_get(psm.begin(), psm.end()) ;
 }
 
 template<typename I, size_t W> void match_search(I cb, I ce, std::array<modalpha, W> const& row, std::array<unsigned, W>& counts, modalpha bs)
@@ -275,7 +301,7 @@ template<typename I, size_t W> void match_search(I cb, I ce, std::array<modalpha
 	auto itb = std::begin(row);
 	auto ite = std::end(row) - std::distance(cb, ce);
 	auto ito = std::begin(counts);
-#if 1
+#if 0
 	while (itb != ite)
 	{
 		*ito += match_ciphertext(cb, ce, itb, bs);
@@ -284,8 +310,8 @@ template<typename I, size_t W> void match_search(I cb, I ce, std::array<modalpha
 	}
 #else
 	auto i = match_ciphertext(cb, ce, itb, bs);
-	std::cout << i << "\n";
+	std::cout << (i & 0x0000ffff) << " - " << (i >> 16) << " == " << ((i & 0x0000ffff) - (i >> 16 )) << "\n";
 	i = match_ciphertext(cb, ce, itb + 1, bs);
-	std::cout << i << "\n";
+	std::cout << (i & 0x0000ffff) << " - " << (i >> 16) << " == " << ((i & 0x0000ffff) - (i >> 16)) << "\n";
 #endif
 }

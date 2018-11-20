@@ -12,40 +12,32 @@
 #include "match.h"
 
 using arena_t = arena_base<26 * 26 * 26 + 256>;
-//using arena_t = arena_base<26 + 256>;
 
 arena_t a;
 
-void report(arena_t::results_t const& r)
+void reportwkr(arena_t::results_t const& r, std::array<int, 61>& hi)
 {
 	auto itb = std::begin(r);
 	while (itb != std::end(r))
 	{
-		std::cout << *itb << "\n";
-		++itb;
-	}
-}
-
-
-void report2wkr(arena_t::results_t const& r, std::array<int, 61>& hi)
-{
-	auto itb = std::begin(r);
-	while (itb != std::end(r))
-	{
-		if (*itb >= 60)
+		int score = ((*itb & 0x0000ffff) - (*itb >> 16));
+		if (score >= 60)
 			++hi[60];
 		else
-			++hi[*itb];
+		if (score < 0)
+			++hi[0];
+		else
+			++hi[score];
 		++itb;
 	}
 }
 
-void report2(arena_t::results_t const& r)
+void report(arena_t::results_t const& r)
 {
 	std::array<int, 61> hi;
 	hi.fill(0);
 
-	report2wkr(r, hi);
+	reportwkr(r, hi);
 
 	int i = 0;
 	for (auto n : hi)
@@ -56,13 +48,13 @@ void report2(arena_t::results_t const& r)
 	std::cout << "\n";
 }
 
-void report2all(arena_t const& a)
+void reportall(arena_t const& a)
 {
 	std::array<int, 61> hi;
 	hi.fill(0);
 
 	for (auto& r : a.results_)
-		report2wkr(r, hi);
+		reportwkr(r, hi);
 
 	int i = 0;
 	for (auto n : hi)
@@ -71,26 +63,6 @@ void report2all(arena_t const& a)
 		++i;
 	}
 	std::cout << "\n";
-}
-
-void all_report2(arena_t const& a)
-{
-	std::array<int, 61> hi;
-	hi.fill(0);
-	for (auto& r : a.results_)
-		report2(r);
-}
-
-void mega_report(arena_t const& a)
-{
-	for (int r = 0; r < 26; ++r)
-	{
-		for (int c = 0; c < a.Width - 256; ++c)
-		{
-			std::cout << std::setw(2) << a.results_[r][c] << " ";
-		}
-		std::cout << "\n";
-	}
 }
 
 int main()
@@ -100,35 +72,16 @@ int main()
 
 	machine3 m3 = MakeMachine3("B213");
 	Ring(m3, "zcp");
-	m3.Setting(alpha::A, alpha::A, alpha::A);
+	m3.Setting(alpha::Y, alpha::T, alpha::L);
 	std::cout << "# ";
 	m3.ReportSettings(std::cout);
 	std::cout << "\n# Ready\n";
 	fill_arena(m3.Wheels(), a, 0);
 	
-	for (int i = 0; i < 26; ++i)
+	for (int i = 0; i < 1; ++i)
 	{
 		a.results_[i].fill(0);
 		match_search(std::begin(ct), std::end(ct) - 1, a.arena_[i], a.results_[i], modalpha(i));
 	}
-	report2all(a);
-#if 0
-	report3(a, alpha::A);
-	double iocs[arena_t::Width];
-	mega_report(a, iocs);
-	int i = 0;
-	for (auto ioc : iocs)
-	{
-		if (ioc > 0.0385)
-			std::cout << a.pos_[i] << " - " << ioc << "\n";
-		++i;
-	}
-	mega_report(a);
-	double iocs[arena_t::Width];
-	mega_report(a, iocs, std::distance(std::begin(ct), std::end(ct)));
-	for ( int i = 0; i < 26; ++i)
-	{
-		std::cout << a.pos_[i] << " - " << iocs[i] << "\n";
-	}
-#endif
+	reportall(a);
 }
