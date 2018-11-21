@@ -93,12 +93,12 @@ template<typename J, typename R> void collect_results(J const& j, R& r)
 	unsigned cnt_ = 0;
 	auto sz = std::distance(j.ctb_, j.cte_);
 	auto itp = std::begin(j.pos_);
-	int threshold = 29;
+	int threshold = 24;
 
 	auto rb = std::begin(j.r_);
 	while (rb != std::end(j.r_))
 	{
-		int score = ((*rb & 0x0000ffff) - (*rb >> 16));
+		int score = *rb;
 
 		if (score > threshold) // decode!
 		{

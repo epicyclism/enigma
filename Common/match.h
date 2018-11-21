@@ -144,8 +144,6 @@ public:
 	//
 	bool insertlink(modalpha f, modalpha t, int score) noexcept
 	{
-		if (score < 2)
-			return false;
 		// look for an existing connection to one of our ends
 		for (auto& l : links_)
 		{
@@ -153,7 +151,6 @@ public:
 			{
 				if (l.score_ < score)
 				{
-					// anti?
 					anti_score_ += l.score_;
 					// replace
 					l.f_ = f;
@@ -183,7 +180,6 @@ public:
 		auto lst = std::min_element(std::begin(links_), std::end(links_), [](auto& l, auto& r) { return l.score_ < r.score_; });
 		if ((*lst).score_ < score)
 		{
-			// anti?
 			anti_score_ += (*lst).score_;
 			// replace
 			(*lst).f_ = f;
@@ -191,9 +187,8 @@ public:
 			(*lst).score_ = score;
 			return true;
 		}
-		// anti?
-		anti_score_ += score;
 		// failure to improve with this link
+		anti_score_ += score;
 		return false;
 	}
 	int score() const noexcept
@@ -230,9 +225,9 @@ template<typename I> int nbest(I b, I e)
 			++bb;
 		}
 	} while (bchg);
-	ls.report(std::cout);
-
-	return ls.score() | (ls.anti_score() << 16);
+//	ls.report(std::cout);
+//	std::cout << "nbest " << ls.score() << ", " << ls.anti_score() << "\n";
+	return ls.score() - (ls.anti_score() / 16);
 }
 
 template<typename I> linkset nbest_get(I b, I e)
@@ -272,8 +267,6 @@ template<typename IC, typename IA> int match_ciphertext(IC ctb, IC cte, IA base,
 	{
 		psm.merge_direct(bs, alpha::E);
 	}
-	nbest(psm.begin(), psm.end()) ;
-	psm.print(std::cout);
 	// work out the 10 best...
 	return nbest(psm.begin(), psm.end()) ;
 }
@@ -301,7 +294,7 @@ template<typename I, size_t W> void match_search(I cb, I ce, std::array<modalpha
 	auto itb = std::begin(row);
 	auto ite = std::end(row) - std::distance(cb, ce);
 	auto ito = std::begin(counts);
-#if 0
+#if 1
 	while (itb != ite)
 	{
 		*ito += match_ciphertext(cb, ce, itb, bs);
@@ -310,8 +303,8 @@ template<typename I, size_t W> void match_search(I cb, I ce, std::array<modalpha
 	}
 #else
 	auto i = match_ciphertext(cb, ce, itb, bs);
-	std::cout << (i & 0x0000ffff) << " - " << (i >> 16) << " == " << ((i & 0x0000ffff) - (i >> 16 )) << "\n";
+	std::cout << i << "\n";
 	i = match_ciphertext(cb, ce, itb + 1, bs);
-	std::cout << (i & 0x0000ffff) << " - " << (i >> 16) << " == " << ((i & 0x0000ffff) - (i >> 16)) << "\n";
+	std::cout << i << "\n";
 #endif
 }

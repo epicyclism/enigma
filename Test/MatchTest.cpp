@@ -78,7 +78,7 @@ int main()
 	std::cout << "\n# Ready\n";
 	fill_arena(m3.Wheels(), a, 0);
 	
-	for (int i = 0; i < 1; ++i)
+	for (int i = 0; i < 26; ++i)
 	{
 		a.results_[i].fill(0);
 		match_search(std::begin(ct), std::end(ct) - 1, a.arena_[i], a.results_[i], modalpha(i));
