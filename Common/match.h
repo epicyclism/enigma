@@ -18,7 +18,7 @@ class plug_set_msg
 {
 private:
 	std::array<plug_stat_chk, 256> psm_;
-	int end_;
+	ptrdiff_t end_;
 public:
 	plug_set_msg()
 	{
@@ -26,7 +26,10 @@ public:
 	}
 	auto begin() noexcept { return psm_.begin(); }
 	auto end()   noexcept { return psm_.begin() + end_; }
-
+	template<typename I> void set_end(I e) noexcept
+	{
+		end_ = std::distance(psm_.begin(), e);
+	}
 	void clear() noexcept
 	{
 		for (auto& s : psm_)
@@ -101,12 +104,16 @@ public:
 	}
 	template<typename O> void print(O& ostr)
 	{
-		std::sort(std::begin(psm_), std::end(psm_), [](auto const& l, auto const& r) { return l.cnt_ > r.cnt_; });
-		for (auto& s : psm_)
-		{
-			if ( s.cnt_ > 0)
-				ostr << s.f_ << "<->" << s.t_ << " - " << s.cnt_ << "\n";
-		}
+		std::sort(std::begin(psm_), std::begin(psm_) + end_,
+			[](auto const& l, auto const& r)
+			{
+				return l.cnt_ > r.cnt_;
+			});
+		std::for_each(std::begin(psm_), std::begin(psm_) + end_, 
+			[&ostr](auto const& v)
+			{
+				ostr << v.f_ << "<->" << v.t_ << " - " << v.cnt_ << "\n"; 
+			});
 	}
 };
 
@@ -289,22 +296,109 @@ template<typename IC, typename IA> linkset match_ciphertext_get(IC ctb, IC cte, 
 	return nbest_get(psm.begin(), psm.end()) ;
 }
 
+template<typename IC, typename IA> plug_set_msg match_ciphertext_psm(IC ctb, IC cte, IA base, modalpha bs)
+{
+	plug_set_msg psm;
+	// collect stecker possibles
+	std::for_each(ctb, cte, [&base, &psm](auto const c)
+	{
+		psm.set( c, *base);
+		++base;
+	});
+	if (bs != alpha::E)
+	{
+		psm.merge_direct(bs, alpha::E);
+	}
+	// sort highest cnt first
+	std::sort(std::begin(psm), std::end(psm), [](auto const& l, auto const& r) { return l.cnt_ > r.cnt_; });
+	// remove all cnt = '1' entries
+	psm.set_end(std::find_if(std::begin(psm), std::end(psm), [](auto& v) { return v.cnt_ == 1; }));
+//	psm.print(std::cout);
+
+	return psm ;
+}
+
 template<typename I, size_t W> void match_search(I cb, I ce, std::array<modalpha, W> const& row, std::array<unsigned, W>& counts, modalpha bs)
 {
 	auto itb = std::begin(row);
 	auto ite = std::end(row) - std::distance(cb, ce);
 	auto ito = std::begin(counts);
-#if 1
+
 	while (itb != ite)
 	{
 		*ito += match_ciphertext(cb, ce, itb, bs);
 		++ito;
 		++itb;
 	}
-#else
+}
+
+template<typename IC, typename O> void decode(IC ctb, IC cte, machine3& m3, O& o)
+{
+	o.clear();
+	position pos = m3.Position();
+	auto ct = ctb;
+	while (ct != cte)
+	{
+		o.push_back(m3.Transform(*ct));
+		++ct;
+	}
+	// reset machine
+	m3.Position(pos);
+}
+
+
+template<typename IC, typename IA> void hillclimb_test(IC ctb, IC cte, IA base, position const& pos, modalpha bs, machine_settings_t const & mst_j)
+{
+	// collect the likely candidate pairs
+	auto psm = match_ciphertext_psm(ctb, cte, base, bs);
+	// prepare a machine
+	machine_settings_t mst(mst_j);
+	machine3 m3 = MakeMachine3(mst);
+	m3.Position(pos);
+	std::vector<modalpha> vo;
+	vo.reserve(std::distance(ctb, cte));
+	// establish the baseline
+	decode(ctb, cte, m3, vo);
+	auto ioc = index_of_coincidence(std::begin(vo), std::end(vo));
+	// now for each candidate, remove a clash, apply it, if ioc improves keep it.
+	for (auto& s : psm)
+	{
+		auto stk = m3.GetStecker();
+		m3.ApplyPlug(s.f_, s.t_);
+		decode(ctb, cte, m3, vo);
+		auto iocn = index_of_coincidence(std::begin(vo), std::end(vo));
+#if 1
+		m3.ReportSettings(std::cout);
+		std::cout << " - ";
+		std::cout << iocn << " - ";
+		for (auto c : vo)
+			std::cout << c;
+		std::cout << "\n";
+#endif
+		if (ioc > iocn) // undo
+		{
+			m3.PutStecker(stk);
+		}
+		else // keep!
+		{
+			ioc = iocn;
+		}
+	}
+	m3.ReportSettings(std::cout);
+	std::cout << " - ";
+	std::cout << ioc << " - ";
+	for (auto c : vo)
+		std::cout << c;
+	std::cout << "\n";
+}
+
+template<typename I, size_t W> void match_test(I cb, I ce, std::array<modalpha, W> const& row, std::array<unsigned, W>& counts, modalpha bs)
+{
+	auto itb = std::begin(row);
+	auto ite = std::end(row) - std::distance(cb, ce);
+	auto ito = std::begin(counts);
 	auto i = match_ciphertext(cb, ce, itb, bs);
 	std::cout << i << "\n";
 	i = match_ciphertext(cb, ce, itb + 1, bs);
 	std::cout << i << "\n";
-#endif
 }

@@ -77,11 +77,16 @@ int main()
 	m3.ReportSettings(std::cout);
 	std::cout << "\n# Ready\n";
 	fill_arena(m3.Wheels(), a, 0);
-	
+#if 0	
 	for (int i = 0; i < 26; ++i)
 	{
 		a.results_[i].fill(0);
 		match_search(std::begin(ct), std::end(ct) - 1, a.arena_[i], a.results_[i], modalpha(i));
 	}
 	reportall(a);
+#else
+	a.results_[0].fill(0);
+	match_test(std::begin(ct), std::end(ct) - 1, a.arena_[0], a.results_[0], modalpha(0));
+	hillclimb_test(std::begin(ct), std::end(ct) - 1, std::begin(a.arena_[0]), a.pos_[0], modalpha(0), m3.machine_settings());
+#endif
 }

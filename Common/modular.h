@@ -87,4 +87,8 @@ public:
 	{
 		return val_;
 	}
+	constexpr explicit operator size_t() const noexcept
+	{
+		return val_;
+	}
 };

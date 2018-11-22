@@ -114,6 +114,27 @@ public:
 		w_.Ring(mst.r3_, mst.r2_, mst.r1_);
 		w_.Position(mst.pos_);
 	}
+	// manipulate the plugs
+	// get the set so we can restore
+	[[nodiscard]] stecker GetStecker() const noexcept
+	{
+		return s_;
+	}
+	// put the set back
+	void PutStecker(stecker const& s) noexcept
+	{
+		s_ = s;
+	}
+	// apply destructively.
+	void ApplyPlug(modalpha f, modalpha t) noexcept
+	{
+		if (s_.Is(f, t))
+		{
+			s_.Clear(f);
+			s_.Clear(t);
+		}
+		s_.Set(f, t);
+	}
 };
 
 // these take a string_view so we can provide strings...

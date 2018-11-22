@@ -8,23 +8,33 @@ private:
 	als_t board_;
 
 public:
-	constexpr stecker()
+	constexpr stecker() noexcept
 	{
 		Clear();
 	}
-	constexpr void Clear()
+	constexpr void Clear() noexcept
 	{
 		for (auto& p : board_)
 			p = alpha::A;
 	}
-	constexpr void Set(modalpha from, modalpha to)
+	constexpr void Clear(modalpha from) noexcept
+	{
+		modalpha to = Eval(from);
+		board_[from.Val()] = alpha::A;
+		board_[to.Val()] = alpha::A;
+	}
+	constexpr void Set(modalpha from, modalpha to) noexcept
 	{
 		board_[from.Val()] = to - from;
 		board_[to.Val()] = from - to;
 	}
-	constexpr modalpha Eval(modalpha from) const
+	[[nodiscard]] constexpr modalpha Eval(modalpha from) const noexcept
 	{
 		return from + board_[from.Val()];
+	}
+	[[nodiscard]] constexpr bool Is(modalpha from, modalpha to) const noexcept
+	{
+		return board_[from.Val()] == 0 || board_[to.Val()] == 0;
 	}
 	template<typename O> constexpr modalpha Eval(modalpha from, O& ostr) const
 	{
