@@ -34,7 +34,7 @@ public:
 	}
 	[[nodiscard]] constexpr bool Is(modalpha from, modalpha to) const noexcept
 	{
-		return board_[from.Val()] == 0 || board_[to.Val()] == 0;
+		return !(board_[from.Val()] == 0 && board_[to.Val()] == 0);
 	}
 	template<typename O> constexpr modalpha Eval(modalpha from, O& ostr) const
 	{

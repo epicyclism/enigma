@@ -12,6 +12,7 @@ class machine3
 private:
 	wheels3 w_;
 	stecker s_;
+	stecker s_b_;
 public:
 	// must be constructed with wheel references!
 	machine3() = delete;
@@ -116,14 +117,14 @@ public:
 	}
 	// manipulate the plugs
 	// get the set so we can restore
-	[[nodiscard]] stecker GetStecker() const noexcept
+	void PushStecker() noexcept
 	{
-		return s_;
+		s_b_ = s_;
 	}
 	// put the set back
-	void PutStecker(stecker const& s) noexcept
+	void PopStecker() noexcept
 	{
-		s_ = s;
+		s_ = s_b_;
 	}
 	// apply destructively.
 	void ApplyPlug(modalpha f, modalpha t) noexcept

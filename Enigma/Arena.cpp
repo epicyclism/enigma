@@ -60,32 +60,6 @@ template<typename CI> struct job
 	{}
 };
 
-template<typename IC, typename IA, typename R> void hillclimb(IC ctb, IC cte, IA base, position const& pos, modalpha bs, machine_settings_t const & mst_j, R& rv)
-{
-	linkset ls = match_ciphertext_get(ctb, cte, base, bs);
-	machine_settings_t mst(mst_j);
-	for (auto& l : ls)
-		mst.stecker_.Set(l.f_, l.t_);
-	machine3 m3 = MakeMachine3(mst);
-	m3.Position(pos);
-	std::vector<modalpha> vo;
-	vo.reserve(std::distance(ctb, cte));
-	auto ct = ctb;
-	while (ct != cte)
-	{
-		vo.push_back(m3.Transform(*ct));
-		++ct;
-	}
-	auto ioc = index_of_coincidence(std::begin(vo), std::end(vo));
-//	if (ioc > 0.04)
-	{
-		// put the machine back...
-		m3.Position(pos);
-		// record
-		rv.emplace_back(m3.machine_settings(), ioc);
-	}
-}
-
 // these are sort of shared and could be common...
 //
 template<typename J, typename R> void collect_results(J const& j, R& r)
@@ -104,27 +78,7 @@ template<typename J, typename R> void collect_results(J const& j, R& r)
 		{
 			++cnt_;
 			auto off = std::distance(std::begin(j.r_), rb);
-			hillclimb(j.ctb_, j.cte_, std::begin(j.line_) + off, *(itp + off), j.bs_, j.mst_, r);
-#if 0
-			machine3 m3 = MakeMachine3(j.mst_);
-			m3.Position(*(itp + std::distance(std::begin(j.r_), rb)));
-			std::vector<modalpha> vo;
-			vo.reserve(sz);
-			auto cbc = j.ctb_;
-			while (cbc != j.cte_)
-			{
-				vo.push_back(m3.Transform(*cbc));
-				++cbc;
-			}
-			auto ioc = index_of_coincidence(std::begin(vo), std::end(vo));
-			if (ioc > 0.052)
-			{
-				// put the machine back...
-				m3.Position(*(itp + std::distance(std::begin(j.r_), rb)));
-				// record
-				r.emplace_back(m3.machine_settings(), ioc);
-			}
-#endif
+			use_ees(j.ctb_, j.cte_, std::begin(j.line_) + off, *(itp + off), j.bs_, j.mst_, r);
 		}
 		++rb;
 	}
@@ -152,7 +106,7 @@ template<typename I> void report_result(result_t const& r, I cb, I ce)
 
 int main(int ac, char**av)
 {
-#if 0
+#if 1
 	if (ac < 3)
 	{
 		Help();
@@ -161,11 +115,11 @@ int main(int ac, char**av)
 #endif
 	try
 	{
-#if 0
+#if 1
 		machine3 m3 = MakeMachine3(av[1]);
 		Ring(m3, av[2]);
 #else
-		machine3 m3 = MakeMachine3("B213");
+		machine3 m3 = MakeMachine3("B123");
 		Ring(m3, "zcp");
 #endif
 		m3.Setting(alpha::A, alpha::A, alpha::A);

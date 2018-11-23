@@ -87,6 +87,9 @@ int main()
 #else
 	a.results_[0].fill(0);
 	match_test(std::begin(ct), std::end(ct) - 1, a.arena_[0], a.results_[0], modalpha(0));
-	hillclimb_test(std::begin(ct), std::end(ct) - 1, std::begin(a.arena_[0]), a.pos_[0], modalpha(0), m3.machine_settings());
+	auto mst_n = use_ees_test(std::begin(ct), std::end(ct) - 1, std::begin(a.arena_[0]), a.pos_[0], modalpha(0), m3.machine_settings());
+	match_test(std::begin(ct), std::end(ct) - 1, a.arena_[1], a.results_[1], modalpha(1));
+	mst_n = use_ees_test(std::begin(ct), std::end(ct) - 1, std::begin(a.arena_[1]), a.pos_[0], modalpha(1), m3.machine_settings());
+//	hillclimb_test(std::begin(ct), std::end(ct) - 1, std::begin(a.arena_[0]), a.pos_[0], modalpha(0), mst_n);
 #endif
 }
