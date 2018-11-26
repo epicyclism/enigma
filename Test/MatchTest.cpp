@@ -9,6 +9,7 @@
 #include "const_helpers.h"
 #include "machine.h"
 #include "arena.h"
+#include "scores.h"
 #include "match.h"
 
 using arena_t = arena_base<26 * 26 * 26 + 256>;

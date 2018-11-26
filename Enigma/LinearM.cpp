@@ -10,8 +10,10 @@
 #include <string>
 #include "machine.h"
 #include "arena.h"
+#include "scores.h"
+#include "jobs.h"
 
-constexpr  char version[] = "v0.04";
+constexpr  char version[] = "v0.05";
 
 template<typename I, typename L, typename R> void report_results(machine_settings_t const& mst, I cb, I ce, L const& a, R& r)
 {
@@ -95,7 +97,7 @@ using line_t = line_base<26 * 26 * 26 + 256>;
 // wrap a machine description, a work space and a results space
 // so it can be handed off to a function for processing.
 //
-template<typename CI> struct job
+template<typename CI> struct job_base
 {
 	machine_settings_t mst_;
 
@@ -104,11 +106,13 @@ template<typename CI> struct job
 
 	line_t l_;
 	line_t::results_t r_;
-	job(machine_settings_t const& mst, CI ctb, CI cte) : mst_(mst), ctb_(ctb), cte_(cte)
+	job_base(machine_settings_t const& mst, CI ctb, CI cte) : mst_(mst), ctb_(ctb), cte_(cte)
 	{
 		r_.fill(0);
 	}
 };
+
+using job = job_base< std::vector<modalpha>::const_iterator>;
 
 template<typename J, typename R> void collect_results(J const& j, R& r)
 {
@@ -144,17 +148,6 @@ template<typename J, typename R> void collect_results(J const& j, R& r)
 	}
 }
 
-int factorial(int n)
-{
-	int f = 1;
-	while (n > 1)
-	{
-		f *= n;
-		--n;
-	}
-	return f;
-}
-
 template <typename JOB> void linear_search(JOB& jb, modalpha ch)
 {
 	machine3 m3 = MakeMachine3(jb.mst_);
@@ -171,35 +164,10 @@ int main(int ac, char**av)
 	}
 	try
 	{
-		// reflectors
-		std::string ref(av[1]);
-		for (auto r : ref)
-		{
-			if (!valid_reflector_id(r))
-			{
-				std::cerr << "Invalid reflector " << r << "\n\n";
-				return -1;
-			}
-		}
-		// wheels
-		std::string whl(av[2]);
-		if (whl.size() < 3)
-		{
-			std::cerr << "Insufficient wheels specified for a 3 rotor machine\n\n";
-			return -1;
-		}
-		for (auto r : whl)
-		{
-			if (!valid_rotor_id(r))
-			{
-				std::cerr << "Invalid wheel " << r << "\n\n";
-				return -1;
-			}
-		}
-		std::sort(std::begin(ref), std::end(ref)); // overkill....
-		std::sort(std::begin(whl), std::end(whl));
+		// validate the arguments (these throw on problems)
+		check_reflectors(av[1]);
+		check_wheels(av[2]);
 
-		std::cout << "\nReady\n";
 		// capture the ciphertext
 		std::vector<modalpha> ct;
 		while (1)
@@ -213,32 +181,13 @@ int main(int ac, char**av)
 				ct.push_back(from_printable(c));
 			}
 		}
-		machine_settings_t mst;
-		// load the invariants for this purpose
-		ZeroRing(mst);
-		Stecker(mst, av[3]);
 		std::cout << "Message length is " << ct.size() << " characters.\n";
-		std::cout << "\nSearching\n";
-		std::vector < job< std::vector<modalpha>::const_iterator>> vjb;
-		int skip = factorial(whl.size() - 3);
-		int cnt = skip;
-		do
-		{
-			do
-			{
-				--cnt; // take out the permutations of the wheels we're not taking to avoid duplication.
-				if (cnt == 0)
-				{
-					mst.ref_ = ref[0];
-					mst.w3_ = whl[0];
-					mst.w2_ = whl[1];
-					mst.w1_ = whl[2];
-					vjb.emplace_back(mst, std::begin(ct), std::end(ct));
-					cnt = skip;
-				}
-			} while (std::next_permutation(std::begin(whl), std::end(whl)));
-		} while (std::next_permutation(std::begin(ref), std::end(ref)));
+		// make the job list
+		auto vjb = make_job_list<job>(av[1], av[2], std::begin(ct), std::end(ct));
 
+		std::cout << "\nSearching\n";
+		// just used as a counter
+		machine_settings_t mst = vjb[0].mst_;
 		// collect results here
 		std::vector<result_t> results;
 		while (1)

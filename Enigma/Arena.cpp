@@ -9,6 +9,7 @@
 #include "wheelset.h"
 #include "machine.h"
 #include "position.h"
+#include "scores.h"
 #include "match.h"
 #include "arena.h"
 

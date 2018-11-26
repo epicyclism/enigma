@@ -1,7 +1,6 @@
 #pragma once
 
 #include <array>
-#include <numeric>
 #include "wheelset.h"
 
 // maintain alpha_max rows of width W, each row is the output of encoding continuous letters in the machine.
@@ -115,28 +114,5 @@ template<typename M, typename L> void fill_line(M& m3, L& l, modalpha ch)
 		*itp = m3.Position();
 		++itp;
 		return m3.Transform(ch);
-	});
-}
-
-// assumes that *I is a modalpha, IOW 0-25 for A-Z
-// update to genericity later.
-//
-template<typename I> double index_of_coincidence(I b, I e)
-{
-	auto N = std::distance(b, e);
-	std::array<unsigned, alpha_max> tab;
-	tab.fill(0);
-
-	// count
-	std::for_each(b, e, [&tab](auto c)
-	{
-		++tab[c.Val()];
-	});
-	// calculate
-	double nn = double(N) * double(N - 1);
-
-	return 	std::transform_reduce(std::begin(tab), std::end(tab), 0.0, std::plus{}, [nn](auto n)
-	{
-		return double(n * (n - 1)) / nn;
 	});
 }

@@ -5,7 +5,7 @@
 #include <string_view>
 #include <iostream>
 #include "machine.h"
-#include "arena.h"
+#include "scores.h"
 
 constexpr  char version[] = "v0.02";
 
