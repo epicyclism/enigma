@@ -106,7 +106,7 @@ template<typename I> void report_result(result_t const& r, I cb, I ce)
 
 int main(int ac, char**av)
 {
-#if 1
+#if 0
 	if (ac < 3)
 	{
 		Help();
@@ -115,11 +115,11 @@ int main(int ac, char**av)
 #endif
 	try
 	{
-#if 1
+#if 0
 		machine3 m3 = MakeMachine3(av[1]);
 		Ring(m3, av[2]);
 #else
-		machine3 m3 = MakeMachine3("B123");
+		machine3 m3 = MakeMachine3("B213");
 		Ring(m3, "zcp");
 #endif
 		m3.Setting(alpha::A, alpha::A, alpha::A);
@@ -128,7 +128,7 @@ int main(int ac, char**av)
 		std::cout << "\nReady\n";
 		// capture the ciphertext
 //		auto ct = read_ciphertext();
-		auto ct = make_alpha_array("SIAZKQGEMLIVDBIYWAKCAMPYKCFLOPQDCWPVMITCWAYWKBRUJAVGRYYCISIJZSGRMTZEKGEQLWUXIXYPMQLUHODQFPNRKBZDISWXPHYDBNEQHJUZJRZFWWMVTGIXFSFCQIBVMHGENWKNKYXMQRYSMAWCMBWFHYPNWJEBVYBZEZRCUFZYLIFFJCQFKGOGBYGXMDJLUJMMKZDLNNNJIYEAOYUVDFRFCCUVPWYPJHWFSGGRLXQDFFOKLSKGXZ");
+		auto ct = make_alpha_array("YNDXIHNTJYETDDJVBPCAPORBPPASUKHYHTHETMFGJNPUFWAMEBFIKQBZGGFZZXJMUYNJDWXJXZDMEEVPYRDGPYMAXWTWHUGDQZTMJWKYQRDQXKVGTZYIIMPBVDJPQVJLOIOSXQENZZHCNTWCQYQYMHCOXPNTDXMTZWABTWRVYIGMJEICMHXHHEITFPKXEFWMICOVTIVIBIEACPFVXZILJXWTBRVBEFENEWQZTCCDMWVWGLDZTXGUDJWSTR");
 
 		std::cout << "\nInitialising search\n";
 		fill_arena(m3.Wheels(), a, 0);

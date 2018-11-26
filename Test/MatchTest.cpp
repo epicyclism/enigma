@@ -68,11 +68,15 @@ void reportall(arena_t const& a)
 int main()
 {
 	// B213 zcp YTL "BM DV KT LN RS UP XZ EA QW OI"
-	auto ct = make_alpha_array("SIAZKQGEMLIVDBIYWAKCAMPYKCFLOPQDCWPVMITCWAYWKBRUJAVGRYYCISIJZSGRMTZEKGEQLWUXIXYPMQLUHODQFPNRKBZDISWXPHYDBNEQHJUZJRZFWWMVTGIXFSFCQIBVMHGENWKNKYXMQRYSMAWCMBWFHYPNWJEBVYBZEZRCUFZYLIFFJCQFKGOGBYGXMDJLUJMMKZDLNNNJIYEAOYUVDFRFCCUVPWYPJHWFSGGRLXQDFFOKLSKGXZ");
+	//auto ct = make_alpha_array("SIAZKQGEMLIVDBIYWAKCAMPYKCFLOPQDCWPVMITCWAYWKBRUJAVGRYYCISIJZSGRMTZEKGEQLWUXIXYPMQLUHODQFPNRKBZDISWXPHYDBNEQHJUZJRZFWWMVTGIXFSFCQIBVMHGENWKNKYXMQRYSMAWCMBWFHYPNWJEBVYBZEZRCUFZYLIFFJCQFKGOGBYGXMDJLUJMMKZDLNNNJIYEAOYUVDFRFCCUVPWYPJHWFSGGRLXQDFFOKLSKGXZ");
+	// B213 zcp MUM "BM DV KT LN RS UP XZ EA QW OI"
+	auto ct = make_alpha_array("YNDXIHNTJYETDDJVBPCAPORBPPASUKHYHTHETMFGJNPUFWAMEBFIKQBZGGFZZXJMUYNJDWXJXZDMEEVPYRDGPYMAXWTWHUGDQZTMJWKYQRDQXKVGTZYIIMPBVDJPQVJLOIOSXQENZZHCNTWCQYQYMHCOXPNTDXMTZWABTWRVYIGMJEICMHXHHEITFPKXEFWMICOVTIVIBIEACPFVXZILJXWTBRVBEFENEWQZTCCDMWVWGLDZTXGUDJWSTR");
+	// B213 zcp NWF "BM DV KT LN RS UP XZ EA QW OI"
+	//auto ct = make_alpha_array("BKWVQICHPWRRYJDAXQEIQJKQQYMLTPVAKYCJZZTDAODOLSTOKLSSXJRTQCKIKGRRDRJZYZWWJPTABZJEOWGRUKLASPPBMKZBJRHIOKPAKYFZPCOUAAXDMZQMTLDFNNKEZDGRNUZQA");
 
 	machine3 m3 = MakeMachine3("B213");
 	Ring(m3, "zcp");
-	m3.Setting(alpha::Y, alpha::T, alpha::L);
+	m3.Setting(alpha::M, alpha::U, alpha::M);
 	std::cout << "# ";
 	m3.ReportSettings(std::cout);
 	std::cout << "\n# Ready\n";
@@ -88,8 +92,12 @@ int main()
 	a.results_[0].fill(0);
 	match_test(std::begin(ct), std::end(ct) - 1, a.arena_[0], a.results_[0], modalpha(0));
 	auto mst_n = use_ees_test(std::begin(ct), std::end(ct) - 1, std::begin(a.arena_[0]), a.pos_[0], modalpha(0), m3.machine_settings());
-	match_test(std::begin(ct), std::end(ct) - 1, a.arena_[1], a.results_[1], modalpha(1));
-	mst_n = use_ees_test(std::begin(ct), std::end(ct) - 1, std::begin(a.arena_[1]), a.pos_[0], modalpha(1), m3.machine_settings());
-//	hillclimb_test(std::begin(ct), std::end(ct) - 1, std::begin(a.arena_[0]), a.pos_[0], modalpha(0), mst_n);
+//	hillclimb_test(std::begin(ct), std::end(ct) - 1, a.pos_[0], modalpha(0), mst_n);
+//	hillclimb_test(std::begin(ct), std::end(ct) - 1, a.pos_[0], modalpha(0), m3.machine_settings());
+//	a.results_[1].fill(0);
+//	match_test(std::begin(ct), std::end(ct) - 1, a.arena_[1], a.results_[1], modalpha(1));
+//	mst_n = use_ees_test(std::begin(ct), std::end(ct) - 1, std::begin(a.arena_[1]), a.pos_[0], modalpha(1), m3.machine_settings());
+//	hillclimb_test(std::begin(ct), std::end(ct) - 1, a.pos_[0], modalpha(1), mst_n);
+//	hillclimb_test(std::begin(ct), std::end(ct) - 1, a.pos_[0], modalpha(1), m3.machine_settings());
 #endif
 }

@@ -371,7 +371,7 @@ template<typename IC, typename IA, typename R> void use_ees(IC ctb, IC cte, IA b
 		else // keep!
 			ioc = iocn;
 	}
-	if ( ioc > 0.055)
+	if ( ioc > 0.070)
 		r.emplace_back(m3.machine_settings(), ioc);
 }
 
@@ -413,6 +413,7 @@ template<typename IC, typename IA> machine_settings_t use_ees_test(IC ctb, IC ct
 		}
 	}
 	m3.ReportSettings(std::cout);
+	decode(ctb, cte, m3, vo);
 	std::cout << " - ";
 	std::cout << ioc << " - ";
 	for (auto c : vo)
@@ -421,7 +422,7 @@ template<typename IC, typename IA> machine_settings_t use_ees_test(IC ctb, IC ct
 	return m3.machine_settings();
 }
 
-template<typename IC, typename IA> void hillclimb_test(IC ctb, IC cte, IA base, position const& pos, modalpha bs, machine_settings_t const & mst_j)
+template<typename IC> void hillclimb_test(IC ctb, IC cte, position const& pos, modalpha bs, machine_settings_t const & mst_j)
 {
 	// prepare a machine
 	machine_settings_t mst(mst_j);
@@ -434,10 +435,11 @@ template<typename IC, typename IA> void hillclimb_test(IC ctb, IC cte, IA base, 
 	auto ioc = index_of_coincidence(std::begin(vo), std::end(vo));
 	for (int cnt = 0; cnt < 5; ++cnt)
 	{
+		modalpha mx = 0;
+		modalpha my = 0;
 		for (int fi = 0; fi < alpha_max; ++fi)
 		{
 			modalpha f{ fi };
-			modalpha mx = f;
 			for (int ti = fi + 1; ti < alpha_max; ++ti)
 			{
 				modalpha t{ ti };
@@ -455,15 +457,16 @@ template<typename IC, typename IA> void hillclimb_test(IC ctb, IC cte, IA base, 
 #endif
 				if (iocn > ioc)
 				{
-					mx = t;
+					mx = f;
+					my = t;
 					ioc = iocn;
 				}
 				m3.PopStecker();
 			}
-			if (mx != f)
-				m3.ApplyPlug(f, mx);
 		}
+		m3.ApplyPlug(mx, my);
 		m3.ReportSettings(std::cout);
+		decode(ctb, cte, m3, vo);
 		std::cout << " - ";
 		std::cout << ioc << " - ";
 		for (auto c : vo)
