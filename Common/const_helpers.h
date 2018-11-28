@@ -22,6 +22,15 @@ namespace epicyclism
 		return o;
 	}
 
+	template <typename I1, typename F> constexpr void cfor_each(I1 b, I1 e, F f)
+	{
+		while (b != e)
+		{
+			f(*b);
+			++b;
+		}
+	}
+
 	template<typename I> constexpr void qsort(I b, I e)
 	{
 		auto swap = [&](I l, I r)

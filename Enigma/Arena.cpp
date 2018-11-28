@@ -12,6 +12,7 @@
 #include "scores.h"
 #include "match.h"
 #include "arena.h"
+#include "jobs.h"
 
 constexpr  char version[] = "v0.03";
 
@@ -34,18 +35,45 @@ std::vector<modalpha> read_ciphertext()
 
 void Help()
 {
-	std::cerr << "arena " << version << " : Enigma Stecker hunt.\n\n";
+	std::cerr << "arena " << version << " : Enigma settings hunt.\n\n";
 	std::cerr << "For example,\n\n";
-	std::cerr << "./arena B125 fvn\n";
-	std::cerr << "Configures a machine for wheels B125 and ring fvn then reads ciphertext from stdin\n";
-	std::cerr << "and attempts to find plug settings that produce a decrypt\n\n";
+	std::cerr << "./arena BC 12345\n";
+	std::cerr << "Reads ciphertext from stdin then searches all wheel orders formed from reflectors BC and";
+	std::cerr << "wheels 12345 and attempts to find wheels and plug settings that produce a decrypt\n\n";
 }
 
 using arena_t = arena_base<26*26*26 + 256>;
 
-arena_t a;
+arena_t arena;
 
-template<typename CI> struct job
+template<typename CI> struct job_wheels
+{
+	machine_settings_t mst_;
+
+	CI ctb_;
+	CI cte_;
+
+	job_wheels(machine_settings_t const& mst, CI ctb, CI cte)
+		: mst_(mst), ctb_(ctb), cte_(cte)
+	{}
+};
+
+template<typename J, typename... ARGS> auto make_job_list_t(std::string_view reflector, std::string_view wheels, ARGS... args) -> std::vector<J>
+{
+	machine_settings_t mst;
+	ZeroRing(mst);
+//	Ring(mst, "zcp");
+	std::vector <J> vjb;
+	mst.ref_ = reflector[0];
+	mst.w3_ = wheels[0];
+	mst.w2_ = wheels[1];
+	mst.w1_ = wheels[2];
+	vjb.emplace_back(mst, args...);
+
+	return vjb;
+}
+
+template<typename CI> struct job_arena
 {
 	machine_settings_t mst_;
 
@@ -55,15 +83,30 @@ template<typename CI> struct job
 	arena_t::position_t     const& pos_;
 	arena_t::results_t           & r_;
 	modalpha                const  bs_;
+	std::vector<result_t>          vr_;
 
-	job(machine_settings_t const& mst, CI ctb, CI cte, arena_t::line_t const& l, arena_t::position_t const& pos, arena_t::results_t& r, modalpha bs)
+	job_arena(machine_settings_t const& mst, CI ctb, CI cte, arena_t::line_t const& l, arena_t::position_t const& pos, arena_t::results_t& r, modalpha bs)
 		: mst_(mst), ctb_(ctb), cte_(cte), line_(l), pos_(pos), r_(r), bs_(bs)
-	{}
+	{
+		vr_.reserve(256);
+	}
 };
+
+template<typename J, typename CI> auto make_job_list_arena(machine_settings_t mst, arena_t& a, CI ctb, CI cte) ->std::vector<J>
+{
+	std::vector<J> vjb;
+	for (int i = 0; i < 26; ++i)
+	{
+		a.results_[i].fill(0);
+		vjb.emplace_back(mst, ctb, cte, a.arena_[i], a.pos_, a.results_[i], modalpha(i));
+	}
+
+	return vjb;
+}
 
 // these are sort of shared and could be common...
 //
-template<typename J, typename R> void collect_results(J const& j, R& r)
+template<typename J> void collect_results(J& j)
 {
 	unsigned cnt_ = 0;
 	auto sz = std::distance(j.ctb_, j.cte_);
@@ -79,11 +122,10 @@ template<typename J, typename R> void collect_results(J const& j, R& r)
 		{
 			++cnt_;
 			auto off = std::distance(std::begin(j.r_), rb);
-			use_ees(j.ctb_, j.cte_, std::begin(j.line_) + off, *(itp + off), j.bs_, j.mst_, r);
+			use_ees(j.ctb_, j.cte_, std::begin(j.line_) + off, *(itp + off), j.bs_, j.mst_, j.vr_);
 		}
 		++rb;
 	}
-	std::cout << "Evaluated " << cnt_ << " results.\n";
 }
 
 template<typename I> void report_result(result_t const& r, I cb, I ce)
@@ -116,51 +158,62 @@ int main(int ac, char**av)
 #endif
 	try
 	{
-#if 0
-		machine3 m3 = MakeMachine3(av[1]);
-		Ring(m3, av[2]);
-#else
-		machine3 m3 = MakeMachine3("B213");
-		Ring(m3, "zcp");
-#endif
-		m3.Setting(alpha::A, alpha::A, alpha::A);
-		std::cout << "arena " << version << " configured : ";
-		m3.ReportSettings(std::cout);
 		std::cout << "\nReady\n";
 		// capture the ciphertext
 //		auto ct = read_ciphertext();
 		auto ct = make_alpha_array("YNDXIHNTJYETDDJVBPCAPORBPPASUKHYHTHETMFGJNPUFWAMEBFIKQBZGGFZZXJMUYNJDWXJXZDMEEVPYRDGPYMAXWTWHUGDQZTMJWKYQRDQXKVGTZYIIMPBVDJPQVJLOIOSXQENZZHCNTWCQYQYMHCOXPNTDXMTZWABTWRVYIGMJEICMHXHHEITFPKXEFWMICOVTIVIBIEACPFVXZILJXWTBRVBEFENEWQZTCCDMWVWGLDZTXGUDJWSTR");
 
-		std::cout << "\nInitialising search\n";
-		fill_arena(m3.Wheels(), a, 0);
-		// create the jobs
-//		std::vector < job< std::vector<modalpha>::const_iterator>> vjb;
-		std::vector < job< std::array<modalpha, 251>::const_iterator>> vjb;
-		vjb.reserve(alpha_max);
-		for ( int i = 0; i < alpha_max; ++i)
-		{
-			vjb.emplace_back(m3.machine_settings(), std::begin(ct), std::end(ct), a.arena_[i], a.pos_, a.results_[i], modalpha(i));
+		std::cout << "Initialising search\n";
+		using job_wheels_t = job_wheels<decltype(ct.cbegin())> ;
+//		std::vector<job_wheels_t> vjbw = make_job_list<job_wheels_t>(av[1], av[2], std::begin(ct), std::end(ct));
+//		std::vector<job_wheels_t> vjbw = make_job_list<job_wheels_t>("B", "123", std::begin(ct), std::end(ct));
+		std::vector<job_wheels_t> vjbw = make_job_list_t<job_wheels_t>("B", "213", std::begin(ct), std::end(ct));
 
-		}
-		// run the jobs
 		std::cout << "Searching\n";
-		std::for_each(std::execution::par, std::begin(vjb), std::end(vjb), [](auto& j)
-		{
-			match_search(j.ctb_, j.cte_, j.line_, j.r_, j.bs_);
-		});
 
-		// evaluate and report!
-		std::cout << "Evaluating\n";
-		std::vector<result_t> results;
-		for (auto& j : vjb)
+		// work through the wheel orders linearly
+		for (auto & j : vjbw)
 		{
-			collect_results(j, results);
-		}
-		for (auto& res : results)
-		{
-			report_result(res, std::begin(ct), std::end(ct));
-		}
+			std::cout << j.mst_ << "\n";
+			// search each wheel order in parallel
+			do
+			{
+				machine3 m3 = MakeMachine3(j.mst_);
+				// fill the arena
+				fill_arena(m3.Wheels(), arena, 0);
+				// job list
+				using job_arena_t = job_arena<decltype(ct.cbegin())>;
+				auto vjb = make_job_list_arena<job_arena_t>(j.mst_, arena, j.ctb_, j.cte_);
+				// do the search for quite likely
+				std::for_each(std::execution::par, std::begin(vjb), std::end(vjb), [](auto& aj)
+				{
+					match_search(aj.ctb_, aj.cte_, aj.line_, aj.r_, aj.bs_);
+				});
 
+				// do the search for more likely
+				std::for_each(std::execution::par, std::begin(vjb), std::end(vjb), [](auto& aj)
+				{
+					collect_results(aj);
+				});
+				// debug report
+				for (auto& aj : vjb)
+				{
+					for (auto r : aj.vr_)
+					{
+						machine3 m3 = MakeMachine3(r.mst_);
+						std::vector<modalpha> vo;
+						vo.reserve(std::distance(j.ctb_, j.cte_));
+						decode(j.ctb_, j.cte_, m3, vo);
+						// report
+						std::cout << r.mst_ << " = " << r.ioc_ << " - ";
+						for (auto c : vo)
+							std::cout << c;
+						std::cout << "\n";
+					}
+				}
+			} while (AdvanceRing(j.mst_));
+			// do the search for most likely
+		}
 		std::cout << "Finished\n";
 	}
 	catch (std::exception& ex)

@@ -277,7 +277,7 @@ template<typename IC, typename IA> int match_ciphertext(IC ctb, IC cte, IA base,
 	// work out the 10 best...
 	return nbest(psm.begin(), psm.end()) ;
 }
-
+#if 0
 template<typename IC, typename IA> linkset match_ciphertext_get(IC ctb, IC cte, IA base, modalpha bs)
 {
 	plug_set_msg psm;
@@ -295,6 +295,7 @@ template<typename IC, typename IA> linkset match_ciphertext_get(IC ctb, IC cte, 
 	// work out the 10 best...
 	return nbest_get(psm.begin(), psm.end()) ;
 }
+#endif
 
 template<typename IC, typename IA> plug_set_msg match_ciphertext_psm(IC ctb, IC cte, IA base, modalpha bs)
 {
@@ -317,7 +318,6 @@ template<typename IC, typename IA> plug_set_msg match_ciphertext_psm(IC ctb, IC 
 
 	return psm ;
 }
-
 template<typename I, size_t W> void match_search(I cb, I ce, std::array<modalpha, W> const& row, std::array<unsigned, W>& counts, modalpha bs)
 {
 	auto itb = std::begin(row);

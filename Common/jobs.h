@@ -45,9 +45,10 @@ void check_wheels(std::string_view whls)
 }
 
 // duh
-unsigned factorial(unsigned n)
+template<typename F> F factorial(F n)
 {
-	unsigned f = 1;
+	static_assert(std::is_integral_v<F>, "factorial only makes sense with an integral type, preferably unsigned!");
+	F f = 1;
 	while (n > 1)
 	{
 		f *= n;
@@ -63,7 +64,7 @@ unsigned factorial(unsigned n)
 // eg. auto vj = MakeJobList("BC"sv, "12345"sv);
 //
 
-template<typename J, typename... ARGS> std::vector<J> make_job_list(std::string_view reflectors, std::string_view wheels, ARGS... args)
+template<typename J, typename... ARGS> auto make_job_list(std::string_view reflectors, std::string_view wheels, ARGS... args) -> std::vector<J>
 {
 	// reflectors
 	std::string ref(reflectors);
@@ -75,6 +76,7 @@ template<typename J, typename... ARGS> std::vector<J> make_job_list(std::string_
 
 	machine_settings_t mst;
 	ZeroRing(mst);
+//	Ring(mst, "zcp");
 	std::vector <J> vjb;
 	auto skip = factorial(whl.size() - 3); // whl.size() is at least 3...
 	auto cnt = skip;

@@ -278,6 +278,16 @@ inline bool AdvanceRing(machine_settings_t& mst)
 {
 	++mst.r1_;
 	if (mst.r1_ == modalpha(0))
+		return false; // finished!
+
+	// don't care about r2 and r3.
+	return true;
+}
+
+inline bool AdvanceRingAll(machine_settings_t& mst)
+{
+	++mst.r1_;
+	if (mst.r1_ == modalpha(0))
 	{
 		++mst.r2_;
 		if (mst.r2_ == modalpha(0))
@@ -289,10 +299,15 @@ inline bool AdvanceRing(machine_settings_t& mst)
 
 // won't constexpr right now. damn it.
 //
+// when called with a string the trailing null is included in N.
+// so adapt.
+//
 template<typename M, std::size_t N> constexpr auto make_alpha_array(const M(&msg)[N])
 {
-	std::array<modalpha, N> rv;
-	epicyclism::ctransform(std::begin(msg), std::end(msg), std::begin(rv),
+	static_assert(N > 1, "Trying to call 'make_alpha_array' with an empty argument.");
+
+	std::array<modalpha, N-1> rv;
+	epicyclism::ctransform(std::begin(msg), std::end(msg)-1, std::begin(rv),
 		[](M c)
 	{
 		return from_printable(c);

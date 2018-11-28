@@ -71,7 +71,7 @@ inline std::ostream& operator<<(std::ostream& o, machine_settings_t const& m)
 {
 	o << m.ref_ << m.w3_ << m.w2_ << m.w1_ << " ";
 	o << to_printable_lower(m.r3_) << to_printable_lower(m.r2_) << to_printable_lower(m.r1_) ;
-	o << m.pos_ << " \"";
+	o << " " << m.pos_ << " \"";
 	m.stecker_.Report(o);
 	o << "\"";
 
