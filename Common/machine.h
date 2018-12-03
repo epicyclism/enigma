@@ -297,6 +297,24 @@ inline bool AdvanceRingAll(machine_settings_t& mst)
 	return true;
 }
 
+// trivial decoder
+// takes output container by reference so it can be called repeatedly without reallocation
+// (because from the callers pov the length is not changing...)
+// leaves the machine in the state it found it
+//
+template<typename IC, typename O> void decode(IC ctb, IC cte, machine3& m3, O& o)
+{
+	o.clear();
+	position pos = m3.Position();
+	while (ctb != cte)
+	{
+		o.push_back(m3.Transform(*ctb));
+		++ctb;
+	}
+	// reset machine
+	m3.Position(pos);
+}
+
 // won't constexpr right now. damn it.
 //
 // when called with a string the trailing null is included in N.

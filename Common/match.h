@@ -332,20 +332,6 @@ template<typename I, size_t W> void match_search(I cb, I ce, std::array<modalpha
 	}
 }
 
-template<typename IC, typename O> void decode(IC ctb, IC cte, machine3& m3, O& o)
-{
-	o.clear();
-	position pos = m3.Position();
-	auto ct = ctb;
-	while (ct != cte)
-	{
-		o.push_back(m3.Transform(*ct));
-		++ct;
-	}
-	// reset machine
-	m3.Position(pos);
-}
-
 template<typename IC, typename IA, typename R> void use_ees(IC ctb, IC cte, IA base, position const& pos, modalpha bs, machine_settings_t const & mst_j, R& r)
 {
 	// collect the likely candidate pairs
