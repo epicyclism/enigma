@@ -9,7 +9,8 @@
 #include "const_helpers.h"
 #include "machine.h"
 #include "arena.h"
-#include "scores.h"
+#include "ioc.h"
+#include "bigram.h"
 #include "match.h"
 
 using arena_t = arena_base<26 * 26 * 26 + 256>;
@@ -66,18 +67,62 @@ void reportall(arena_t const& a)
 	std::cout << "\n";
 }
 
+template<typename I> void operate( I ctb, I cte, machine3 const& m3, arena_t& a)
+{
+	std::vector<result_t>          vr;
+	a.results_[0].fill(0);
+	match_search(ctb, cte, a.arena_[0], a.results_[0], modalpha(0));
+	auto rb = std::begin(a.results_[0]);
+	int cnt = 0;
+	unsigned threshold = std::distance(ctb, cte) / 13;
+	while (rb != std::end(a.results_[0]))
+	{
+		auto score = *rb;
+
+		if (score > threshold) // decode!
+		{
+			++cnt;
+			auto off = std::distance(std::begin(a.results_[0]), rb);
+			use_ees(ctb, cte, std::begin(a.arena_[0]) + off, *(std::begin(a.pos_) + off), modalpha(0), m3.machine_settings(), vr);
+		}
+		++rb;
+	}
+	std::cout << "threshold = " << threshold << ", " << cnt << " qualified.\n";
+	std::vector<result_t>          vr2;
+	for (auto r : vr)
+	{
+		if (r.ioc_ > 0.055)
+			hillclimb(ctb, cte, r.mst_, vr2);
+	}
+	for (auto r : vr2)
+	{
+		if (r.ioc_ > 21000)
+		{
+			machine3 m3 = MakeMachine3(r.mst_);
+			std::vector<modalpha> vo;
+			vo.reserve(std::distance(ctb, cte));
+			decode(ctb, cte, m3, vo);
+			// report
+			std::cout << r.mst_ << " = " << r.ioc_ << " - ";
+			for (auto c : vo)
+				std::cout << c;
+			std::cout << "\n";
+		}
+	}
+}
+
 int main()
 {
 	// B213 zcp YTL "BM DV KT LN RS UP XZ EA QW OI"
-	//auto ct = make_alpha_array("SIAZKQGEMLIVDBIYWAKCAMPYKCFLOPQDCWPVMITCWAYWKBRUJAVGRYYCISIJZSGRMTZEKGEQLWUXIXYPMQLUHODQFPNRKBZDISWXPHYDBNEQHJUZJRZFWWMVTGIXFSFCQIBVMHGENWKNKYXMQRYSMAWCMBWFHYPNWJEBVYBZEZRCUFZYLIFFJCQFKGOGBYGXMDJLUJMMKZDLNNNJIYEAOYUVDFRFCCUVPWYPJHWFSGGRLXQDFFOKLSKGXZ");
+	auto ct1 = make_alpha_array("SIAZKQGEMLIVDBIYWAKCAMPYKCFLOPQDCWPVMITCWAYWKBRUJAVGRYYCISIJZSGRMTZEKGEQLWUXIXYPMQLUHODQFPNRKBZDISWXPHYDBNEQHJUZJRZFWWMVTGIXFSFCQIBVMHGENWKNKYXMQRYSMAWCMBWFHYPNWJEBVYBZEZRCUFZYLIFFJCQFKGOGBYGXMDJLUJMMKZDLNNNJIYEAOYUVDFRFCCUVPWYPJHWFSGGRLXQDFFOKLSKGXZ");
 	// B213 zcp MUM "BM DV KT LN RS UP XZ EA QW OI"
-	auto ct = make_alpha_array("YNDXIHNTJYETDDJVBPCAPORBPPASUKHYHTHETMFGJNPUFWAMEBFIKQBZGGFZZXJMUYNJDWXJXZDMEEVPYRDGPYMAXWTWHUGDQZTMJWKYQRDQXKVGTZYIIMPBVDJPQVJLOIOSXQENZZHCNTWCQYQYMHCOXPNTDXMTZWABTWRVYIGMJEICMHXHHEITFPKXEFWMICOVTIVIBIEACPFVXZILJXWTBRVBEFENEWQZTCCDMWVWGLDZTXGUDJWSTR");
+	auto ct2 = make_alpha_array("YNDXIHNTJYETDDJVBPCAPORBPPASUKHYHTHETMFGJNPUFWAMEBFIKQBZGGFZZXJMUYNJDWXJXZDMEEVPYRDGPYMAXWTWHUGDQZTMJWKYQRDQXKVGTZYIIMPBVDJPQVJLOIOSXQENZZHCNTWCQYQYMHCOXPNTDXMTZWABTWRVYIGMJEICMHXHHEITFPKXEFWMICOVTIVIBIEACPFVXZILJXWTBRVBEFENEWQZTCCDMWVWGLDZTXGUDJWSTR");
 	// B213 zcp NWF "BM DV KT LN RS UP XZ EA QW OI"
-	//auto ct = make_alpha_array("BKWVQICHPWRRYJDAXQEIQJKQQYMLTPVAKYCJZZTDAODOLSTOKLSSXJRTQCKIKGRRDRJZYZWWJPTABZJEOWGRUKLASPPBMKZBJRHIOKPAKYFZPCOUAAXDMZQMTLDFNNKEZDGRNUZQA");
+	auto ct3 = make_alpha_array("BKWVQICHPWRRYJDAXQEIQJKQQYMLTPVAKYCJZZTDAODOLSTOKLSSXJRTQCKIKGRRDRJZYZWWJPTABZJEOWGRUKLASPPBMKZBJRHIOKPAKYFZPCOUAAXDMZQMTLDFNNKEZDGRNUZQA");
 
 	machine3 m3 = MakeMachine3("B213");
 	Ring(m3, "zcp");
-	m3.Setting(alpha::M, alpha::U, alpha::M);
+	m3.Setting(alpha::A, alpha::A, alpha::A);
 	std::cout << "# ";
 	m3.ReportSettings(std::cout);
 	std::cout << "\n# Ready\n";
@@ -90,15 +135,8 @@ int main()
 	}
 	reportall(a);
 #else
-	a.results_[0].fill(0);
-	match_test(std::begin(ct), std::end(ct), a.arena_[0], a.results_[0], modalpha(0));
-	auto mst_n = use_ees_test(std::begin(ct), std::end(ct), std::begin(a.arena_[0]), a.pos_[0], modalpha(0), m3.machine_settings());
-//	hillclimb_test(std::begin(ct), std::end(ct), a.pos_[0], modalpha(0), mst_n);
-//	hillclimb_test(std::begin(ct), std::end(ct), a.pos_[0], modalpha(0), m3.machine_settings());
-//	a.results_[1].fill(0);
-//	match_test(std::begin(ct), std::end(ct), a.arena_[1], a.results_[1], modalpha(1));
-//	mst_n = use_ees_test(std::begin(ct), std::end(ct), std::begin(a.arena_[1]), a.pos_[0], modalpha(1), m3.machine_settings());
-//	hillclimb_test(std::begin(ct), std::end(ct), a.pos_[0], modalpha(1), mst_n);
-//	hillclimb_test(std::begin(ct), std::end(ct), a.pos_[0], modalpha(1), m3.machine_settings());
+	operate(std::begin(ct1), std::end(ct1), m3, a);
+	operate(std::begin(ct2), std::end(ct2), m3, a);
+	operate(std::begin(ct3), std::end(ct3), m3, a);
 #endif
 }

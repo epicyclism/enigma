@@ -8,7 +8,7 @@
 #include <numeric>
 #include "machine.h"
 #include "arena.h"
-#include "scores.h"
+#include "ioc.h"
 
 constexpr  char version[] = "v0.03";
 

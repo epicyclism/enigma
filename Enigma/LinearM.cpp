@@ -10,7 +10,7 @@
 #include <string>
 #include "machine.h"
 #include "arena.h"
-#include "scores.h"
+#include "ioc.h"
 #include "jobs.h"
 
 constexpr  char version[] = "v0.05";

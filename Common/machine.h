@@ -58,6 +58,7 @@ public:
 	template<typename I> std::vector<modalpha> Transform(I b, I e) noexcept
 	{
 		std::vector<modalpha> r;
+		r.reserve(std::distance(b, e));
 		std::transform(b, e, std::back_inserter(r), [&](auto in)
 		{
 			if (in == modalpha(alpha::SZ))
@@ -102,7 +103,7 @@ public:
 		w_.Position(p);
 	}
 	// get machine settings so can recreate as wanted.
-	machine_settings_t machine_settings()// const
+	machine_settings_t machine_settings() const
 	{
 		machine_settings_t mst = w_.Config();
 		mst.stecker_ = s_;
@@ -135,6 +136,10 @@ public:
 			s_.Clear(t);
 		}
 		s_.Set(f, t);
+	}
+	[[nodiscard]] modalpha Eval(modalpha m) noexcept
+	{
+		return s_.Eval(m);
 	}
 };
 

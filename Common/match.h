@@ -277,25 +277,6 @@ template<typename IC, typename IA> int match_ciphertext(IC ctb, IC cte, IA base,
 	// work out the 10 best...
 	return nbest(psm.begin(), psm.end()) ;
 }
-#if 0
-template<typename IC, typename IA> linkset match_ciphertext_get(IC ctb, IC cte, IA base, modalpha bs)
-{
-	plug_set_msg psm;
-	// collect stecker possibles
-	std::for_each(ctb, cte, [&base, &psm](auto const c)
-	{
-		psm.set( c, *base);
-		++base;
-	});
-	if (bs != alpha::E)
-	{
-		psm.merge_direct(bs, alpha::E);
-	}
-//	psm.print(std::cout);
-	// work out the 10 best...
-	return nbest_get(psm.begin(), psm.end()) ;
-}
-#endif
 
 template<typename IC, typename IA> plug_set_msg match_ciphertext_psm(IC ctb, IC cte, IA base, modalpha bs)
 {
@@ -318,6 +299,7 @@ template<typename IC, typename IA> plug_set_msg match_ciphertext_psm(IC ctb, IC 
 
 	return psm ;
 }
+
 template<typename I, size_t W> void match_search(I cb, I ce, std::array<modalpha, W> const& row, std::array<unsigned, W>& counts, modalpha bs)
 {
 	auto itb = std::begin(row);
@@ -357,55 +339,7 @@ template<typename IC, typename IA, typename R> void use_ees(IC ctb, IC cte, IA b
 		else // keep!
 			ioc = iocn;
 	}
-	if ( ioc > 0.070)
-		r.emplace_back(m3.machine_settings(), ioc);
-}
-
-template<typename IC, typename IA> machine_settings_t use_ees_test(IC ctb, IC cte, IA base, position const& pos, modalpha bs, machine_settings_t const & mst_j)
-{
-	// collect the likely candidate pairs
-	auto psm = match_ciphertext_psm(ctb, cte, base, bs);
-	// prepare a machine
-	machine_settings_t mst(mst_j);
-	machine3 m3 = MakeMachine3(mst);
-	m3.Position(pos);
-	std::vector<modalpha> vo;
-	vo.reserve(std::distance(ctb, cte));
-	// establish the baseline
-	decode(ctb, cte, m3, vo);
-	auto ioc = index_of_coincidence(std::begin(vo), std::end(vo));
-	// now for each candidate, remove a clash, apply it, if ioc improves keep it.
-	for (auto& s : psm)
-	{
-		m3.PushStecker();
-		m3.ApplyPlug(s.f_, s.t_);
-		decode(ctb, cte, m3, vo);
-		auto iocn = index_of_coincidence(std::begin(vo), std::end(vo));
-#if 0
-		m3.ReportSettings(std::cout);
-		std::cout << " - ";
-		std::cout << iocn << " - ";
-		for (auto c : vo)
-			std::cout << c;
-		std::cout << "\n";
-#endif
-		if (ioc > iocn) // undo
-		{
-			m3.PopStecker();
-		}
-		else // keep!
-		{
-			ioc = iocn;
-		}
-	}
-	m3.ReportSettings(std::cout);
-	decode(ctb, cte, m3, vo);
-	std::cout << " - ";
-	std::cout << ioc << " - ";
-	for (auto c : vo)
-		std::cout << c;
-	std::cout << "\n";
-	return m3.machine_settings();
+	r.emplace_back(m3.machine_settings(), ioc);
 }
 
 template<typename IC> void hillclimb_test(IC ctb, IC cte, position const& pos, modalpha bs, machine_settings_t const & mst_j)
@@ -461,13 +395,43 @@ template<typename IC> void hillclimb_test(IC ctb, IC cte, position const& pos, m
 	}
 }
 
-template<typename I, size_t W> void match_test(I cb, I ce, std::array<modalpha, W> const& row, std::array<unsigned, W>& counts, modalpha bs)
+template<typename IC, typename R> void hillclimb(IC ctb, IC cte, machine_settings_t mst, R& r)
 {
-	auto itb = std::begin(row);
-	auto ite = std::end(row) - std::distance(cb, ce);
-	auto ito = std::begin(counts);
-	auto i = match_ciphertext(cb, ce, itb, bs);
-	std::cout << i << "\n";
-	i = match_ciphertext(cb, ce, itb + 1, bs);
-	std::cout << i << "\n";
+	// prepare a machine
+	machine3 m3 = MakeMachine3(mst);
+	std::vector<modalpha> vo;
+	vo.reserve(std::distance(ctb, cte));
+	// establish the baseline
+	decode(ctb, cte, m3, vo);
+	auto scr = bigram_score(std::begin(vo), std::end(vo)) / ( 2 * vo.size() - 2);
+	bool improved = true;
+	while (improved)
+	{
+		improved = false;
+		modalpha mx = 0;
+		modalpha my = 0;
+		for (int fi = 0; fi < alpha_max; ++fi)
+		{
+			modalpha f{ fi };
+			for (int ti = fi + 1; ti < alpha_max; ++ti)
+			{
+				modalpha t{ ti };
+				m3.PushStecker();
+				m3.ApplyPlug(f, t);
+				decode(ctb, cte, m3, vo);
+				auto scrn = bigram_score(std::begin(vo), std::end(vo)) / (2 * vo.size() - 2);
+				if (scrn > scr)
+				{
+					mx = f;
+					my = t;
+					scr = scrn;
+					improved = true;
+				}
+				m3.PopStecker();
+			}
+		}
+		if (improved)
+			m3.ApplyPlug(mx, my);
+	}
+	r.emplace_back(m3.machine_settings(), scr);
 }
