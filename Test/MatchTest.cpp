@@ -69,12 +69,12 @@ void reportall(arena_t const& a)
 
 template<typename I> void operate( I ctb, I cte, machine3 const& m3, arena_t& a)
 {
-	std::vector<result_t>          vr;
+	std::vector<result_ioc_t>          vr;
 	a.results_[0].fill(0);
 	match_search(ctb, cte, a.arena_[0], a.results_[0], modalpha(0));
 	auto rb = std::begin(a.results_[0]);
 	int cnt = 0;
-	unsigned threshold = std::distance(ctb, cte) / 13;
+	auto threshold = std::distance(ctb, cte) / 11;
 	while (rb != std::end(a.results_[0]))
 	{
 		auto score = *rb;
@@ -88,7 +88,7 @@ template<typename I> void operate( I ctb, I cte, machine3 const& m3, arena_t& a)
 		++rb;
 	}
 	std::cout << "threshold = " << threshold << ", " << cnt << " qualified.\n";
-	std::vector<result_t>          vr2;
+	std::vector<result_scr_t>          vr2;
 	for (auto r : vr)
 	{
 		if (r.ioc_ > 0.055)
@@ -96,14 +96,14 @@ template<typename I> void operate( I ctb, I cte, machine3 const& m3, arena_t& a)
 	}
 	for (auto r : vr2)
 	{
-		if (r.ioc_ > 21000)
+		if (r.scr_ > 45000)
 		{
 			machine3 m3 = MakeMachine3(r.mst_);
 			std::vector<modalpha> vo;
 			vo.reserve(std::distance(ctb, cte));
 			decode(ctb, cte, m3, vo);
 			// report
-			std::cout << r.mst_ << " = " << r.ioc_ << " - ";
+			std::cout << r.mst_ << " = " << r.scr_ << " - ";
 			for (auto c : vo)
 				std::cout << c;
 			std::cout << "\n";

@@ -80,10 +80,18 @@ inline std::ostream& operator<<(std::ostream& o, machine_settings_t const& m)
 
 // a result for consideration.
 //
-struct result_t
+struct result_ioc_t
 {
 	machine_settings_t mst_;
 	double ioc_;
-	result_t(machine_settings_t const& mst, double ioc) : mst_(mst), ioc_(ioc)
+	explicit result_ioc_t(machine_settings_t const& mst, double ioc) : mst_(mst), ioc_(ioc)
+	{}
+};
+
+struct result_scr_t
+{
+	machine_settings_t mst_;
+	unsigned scr_;
+	explicit result_scr_t(machine_settings_t const& mst, unsigned scr) : mst_(mst), scr_(scr)
 	{}
 };

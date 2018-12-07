@@ -9,6 +9,7 @@
 #include "match.h"
 #include "ioc.h"
 #include "bigram.h"
+#include "trigram.h"
 
 constexpr  char version[] = "v0.04";
 
@@ -87,15 +88,16 @@ int main(int ac, char**av)
 		{
 			std::cout << "Statistics!\n";
 			std::cout << "message length = " << vo.size() << "\n";
-			std::cout << "ees    = " << calc_ees(std::begin(vo), std::end(vo), mst) << "\n";
-			std::cout << "ioc    = " << index_of_coincidence(std::begin(vo), std::end(vo)) << "\n";
-			std::cout << "bigram = " << bigram_score(std::begin(vo), std::end(vo)) / (vo.size() * 2 - 2) << "\n";
+			std::cout << "ees     = " << calc_ees(std::begin(vo), std::end(vo), mst) << "\n";
+			std::cout << "ioc     = " << index_of_coincidence(std::begin(vo), std::end(vo)) << "\n";
+			std::cout << "bigram  = " << bigram_score(std::begin(vo), std::end(vo)) << "\n";
+			std::cout << "trigram = " << trigram_score(std::begin(vo), std::end(vo)) << "\n";
 		}
 	}
 	catch (std::exception& ex)
 	{
 		std::cerr << "Error configuring machine. >" << ex.what() << "<\n\n";
-		return -1;
+		return -1; 
 	}
 
 	return 0;

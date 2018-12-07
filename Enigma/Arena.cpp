@@ -15,7 +15,7 @@
 #include "arena.h"
 #include "jobs.h"
 
-constexpr  char version[] = "v0.03";
+constexpr  char version[] = "v0.04";
 
 std::vector<modalpha> read_ciphertext()
 {
@@ -74,6 +74,19 @@ template<typename J, typename... ARGS> auto make_job_list_t(std::string_view ref
 	return vjb;
 }
 
+// a results type that can hold the sequence of scores we use and the evolving mst
+//
+struct result_t
+{
+	machine_settings_t mst_;
+	unsigned mtch_;
+	double   ioc_;
+	unsigned bg_;
+
+	explicit result_t(machine_settings_t const& mst, double ioc) : mst_(mst), ioc_(ioc)
+	{}
+};
+
 template<typename CI> struct job_arena
 {
 	machine_settings_t mst_;
@@ -84,7 +97,7 @@ template<typename CI> struct job_arena
 	arena_t::position_t     const& pos_;
 	arena_t::results_t           & r_;
 	modalpha                const  bs_;
-	std::vector<result_t>          vr_;
+	std::vector<result_t>      vr_;
 
 	job_arena(machine_settings_t const& mst, CI ctb, CI cte, arena_t::line_t const& l, arena_t::position_t const& pos, arena_t::results_t& r, modalpha bs)
 		: mst_(mst), ctb_(ctb), cte_(cte), line_(l), pos_(pos), r_(r), bs_(bs)
@@ -124,12 +137,28 @@ template<typename J> void collect_results(J& j)
 			++cnt_;
 			auto off = std::distance(std::begin(j.r_), rb);
 			use_ees(j.ctb_, j.cte_, std::begin(j.line_) + off, *(itp + off), j.bs_, j.mst_, j.vr_);
+			// ick
+			j.vr_.back().mtch_ = score;
 		}
 		++rb;
 	}
 }
 
-template<typename I> void report_result(result_t const& r, I cb, I ce)
+template<typename J> std::vector<result_t> collate_results_ioc(std::vector<J> const& vj) 
+{
+	std::vector<result_t> vr;
+	for (auto const& j : vj)
+	{
+		for (auto const& r : j.vr_)
+		{
+			if (r.ioc_ > 0.055)
+				vr.emplace_back(r);
+		}
+	}
+	return vr;
+}
+
+template<typename I> void report_result(result_ioc_t const& r, I cb, I ce)
 {
 	machine3 m3 = MakeMachine3(r.mst_);
 	std::vector<modalpha> vo;
@@ -148,6 +177,15 @@ template<typename I> void report_result(result_t const& r, I cb, I ce)
 	std::cout << "\n";
 }
 
+void collate_results_bg(std::vector<result_t> const& in, std::vector<result_t>& out)
+{
+	for (auto& r : in)
+	{
+		if (r.bg_ > 45000)
+			out.emplace_back(r);
+	}
+}
+
 int main(int ac, char**av)
 {
 #if 0
@@ -157,6 +195,8 @@ int main(int ac, char**av)
 		return 0;
 	}
 #endif
+	// this is where we collect the overall results!
+	std::vector<result_t> vr_oall;
 	try
 	{
 		std::cout << "\nReady\n";
@@ -175,10 +215,10 @@ int main(int ac, char**av)
 		// work through the wheel orders linearly
 		for (auto & j : vjbw)
 		{
-			std::cout << j.mst_ << "\n";
 			// search each wheel order in parallel
 			do
 			{
+				std::cout << j.mst_ << "\n";
 				machine3 m3 = MakeMachine3(j.mst_);
 				// fill the arena
 				fill_arena(m3.Wheels(), arena, 0);
@@ -187,33 +227,36 @@ int main(int ac, char**av)
 				auto vjb = make_job_list_arena<job_arena_t>(j.mst_, arena, j.ctb_, j.cte_);
 				// do the search for quite likely
 				std::for_each(std::execution::par, std::begin(vjb), std::end(vjb), [](auto& aj)
-				{
-					match_search(aj.ctb_, aj.cte_, aj.line_, aj.r_, aj.bs_);
-				});
+					{
+						match_search(aj.ctb_, aj.cte_, aj.line_, aj.r_, aj.bs_);
+					});
 
 				// do the search for more likely
 				std::for_each(std::execution::par, std::begin(vjb), std::end(vjb), [](auto& aj)
-				{
-					collect_results(aj);
-				});
-				// debug report
-				for (auto& aj : vjb)
-				{
-					for (auto r : aj.vr_)
 					{
-						machine3 m3 = MakeMachine3(r.mst_);
-						std::vector<modalpha> vo;
-						vo.reserve(std::distance(j.ctb_, j.cte_));
-						decode(j.ctb_, j.cte_, m3, vo);
-						// report
-						std::cout << r.mst_ << " = " << r.ioc_ << " - ";
-						for (auto c : vo)
-							std::cout << c;
-						std::cout << "\n";
-					}
+						collect_results(aj);
+					});
+				// do the search for most likely
+				auto vr = collate_results_ioc(vjb);
+				std::for_each(std::execution::par, std::begin(vr), std::end(vr), [&ct](auto& r)
+					{
+						hillclimb(std::begin(ct), std::end(ct), r.mst_, r.bg_);
+					});
+				collate_results_bg(vr, vr_oall);
+				// debug report
+				for (auto r : vr_oall)
+				{
+					machine3 m3 = MakeMachine3(r.mst_);
+					std::vector<modalpha> vo;
+					vo.reserve(std::distance(j.ctb_, j.cte_));
+					decode(j.ctb_, j.cte_, m3, vo);
+					// report
+					std::cout << r.mst_ << " { " << r.mtch_ << ", " << r.ioc_ << ", " << r.bg_ << " } : ";
+					for (auto c : vo)
+						std::cout << c;
+					std::cout << "\n";
 				}
 			} while (AdvanceRing(j.mst_));
-			// do the search for most likely
 		}
 		std::cout << "Finished\n";
 	}

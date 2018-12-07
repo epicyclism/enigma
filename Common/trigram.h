@@ -2,6 +2,7 @@
 
 #include "modalpha.h"
 #include "const_helpers.h"
+#include "gram_common.h"
 
 // definitions for the static table, that shouldn't end up in the binary...
 ///
@@ -13,18 +14,10 @@ struct tg_def
 	unsigned score_;
 };
 
-constexpr inline int from_printable_flex(char const ch)
-{
-	if (ch > 'Z')
-		return ch - 'a';
-	return ch - 'A';
-}
-
 // the table we end up with.
 //
 struct trigram_table
 {
-	constexpr int stride_ = 32;
 	const std::array<unsigned, stride_ * stride_ * alpha_max> tab_;
 
 	[[nodiscard]] const unsigned wt(modalpha a, modalpha b, modalpha c) const noexcept
@@ -38,22 +31,28 @@ struct trigram_table
 constexpr trigram_table make_trigram_table(tg_def const* b, tg_def const* e)
 {
 	std::array<unsigned, stride_ * stride_ * alpha_max> wking{};
-	epicyclism::cfor_each(std::begin(wking), std::end(wking), [](auto& v) { v = 0; });
-	epicyclism::cfor_each(b, e, [&wking](auto const& bg)
-	{
-		wking[from_printable_flex(bg.a_) * stride_ + from_printable_flex(bg.b_) * stride_+ from_printable_flex(bg.c_)] = tg.score_;
-	});
+	for (auto& v : wking)
+		v = 0;
+//	epicyclism::cfor_each(std::begin(wking), std::end(wking), [](auto& v) { v = 0; });
+	epicyclism::cfor_each(b, e, [&wking](auto const& tg)
+		{
+			wking[from_printable_flex(tg.a_) * stride_ + from_printable_flex(tg.b_) * stride_ + from_printable_flex(tg.c_)] = tg.score_;
+		});
 	return trigram_table{ wking };
 }
 
+// the end result used for scoring.
+//
 #include "trigram_data.h"
+constexpr trigram_table gen_tg = make_trigram_table(std::begin(gen_tg_def), std::end(gen_tg_def));
 
-// score with the given bigram table.
+// score with the given trigram table.
 //
 template<typename I> unsigned trigram_score(I b, I e, trigram_table const& tt)
 {
 	if (std::distance(b, e) < 3)
 		return 0;
+	auto len = std::distance(b, e);
 	unsigned score = 0;
 	auto m = b + 1;
 	auto n = m + 1;
@@ -64,14 +63,8 @@ template<typename I> unsigned trigram_score(I b, I e, trigram_table const& tt)
 		++m;
 		++n;
 	}
-	return score;
+	return score / (static_cast<unsigned>(len) - 2);
 }
-
-// the end result used for scoring.
-//
-// might want to move the table into a separate compilation unit.
-//
-constexpr trigram_table gen_tg = make_trigram_table(std::begin(gen_tg_def), std::end(gen_tg_def));
 
 // convenience function.
 //

@@ -403,7 +403,7 @@ template<typename IC, typename R> void hillclimb(IC ctb, IC cte, machine_setting
 	vo.reserve(std::distance(ctb, cte));
 	// establish the baseline
 	decode(ctb, cte, m3, vo);
-	auto scr = bigram_score(std::begin(vo), std::end(vo)) / ( 2 * vo.size() - 2);
+	auto scr = bigram_score(std::begin(vo), std::end(vo)) ;
 	bool improved = true;
 	while (improved)
 	{
@@ -419,7 +419,7 @@ template<typename IC, typename R> void hillclimb(IC ctb, IC cte, machine_setting
 				m3.PushStecker();
 				m3.ApplyPlug(f, t);
 				decode(ctb, cte, m3, vo);
-				auto scrn = bigram_score(std::begin(vo), std::end(vo)) / (2 * vo.size() - 2);
+				auto scrn = bigram_score(std::begin(vo), std::end(vo)) ;
 				if (scrn > scr)
 				{
 					mx = f;
@@ -434,4 +434,48 @@ template<typename IC, typename R> void hillclimb(IC ctb, IC cte, machine_setting
 			m3.ApplyPlug(mx, my);
 	}
 	r.emplace_back(m3.machine_settings(), scr);
+}
+
+// in and out on the machine settings and the score
+//
+template<typename IC> void hillclimb(IC ctb, IC cte, machine_settings_t& mst, unsigned& scr_out)
+{
+	// prepare a machine
+	machine3 m3 = MakeMachine3(mst);
+	std::vector<modalpha> vo;
+	vo.reserve(std::distance(ctb, cte));
+	// establish the baseline
+	decode(ctb, cte, m3, vo);
+	auto scr = bigram_score(std::begin(vo), std::end(vo));
+	bool improved = true;
+	while (improved)
+	{
+		improved = false;
+		modalpha mx = 0;
+		modalpha my = 0;
+		for (int fi = 0; fi < alpha_max; ++fi)
+		{
+			modalpha f{ fi };
+			for (int ti = fi + 1; ti < alpha_max; ++ti)
+			{
+				modalpha t{ ti };
+				m3.PushStecker();
+				m3.ApplyPlug(f, t);
+				decode(ctb, cte, m3, vo);
+				auto scrn = bigram_score(std::begin(vo), std::end(vo));
+				if (scrn > scr)
+				{
+					mx = f;
+					my = t;
+					scr = scrn;
+					improved = true;
+				}
+				m3.PopStecker();
+			}
+		}
+		if (improved)
+			m3.ApplyPlug(mx, my);
+	}
+	mst = m3.machine_settings();
+	scr_out = scr;
 }

@@ -54,7 +54,7 @@ template<typename I, typename L, typename R> void report_results(machine_setting
 	}
 }
 
-template<typename I> void report_result(result_t const& r, I cb, I ce)
+template<typename I> void report_result(result_ioc_t const& r, I cb, I ce)
 {
 	machine3 m3 = MakeMachine3(r.mst_);
 	std::vector<modalpha> vo;
@@ -189,7 +189,7 @@ int main(int ac, char**av)
 		// just used as a counter
 		machine_settings_t mst = vjb[0].mst_;
 		// collect results here
-		std::vector<result_t> results;
+		std::vector<result_ioc_t> results;
 		while (1)
 		{
 			std::cout << to_printable_lower(mst.r3_) << to_printable_lower(mst.r2_) << to_printable_lower(mst.r1_) ;
