@@ -190,7 +190,7 @@ void collate_results_bg(std::vector<result_t> const& in, std::vector<result_t>& 
 
 int main(int ac, char**av)
 {
-#if 1
+#if 0
 	if (ac < 3)
 	{
 		Help();
@@ -206,13 +206,13 @@ int main(int ac, char**av)
 	{
 		std::cout << "\nReady\n";
 		// capture the ciphertext
-		auto ct = read_ciphertext();
-//		auto ct = make_alpha_array("YNDXIHNTJYETDDJVBPCAPORBPPASUKHYHTHETMFGJNPUFWAMEBFIKQBZGGFZZXJMUYNJDWXJXZDMEEVPYRDGPYMAXWTWHUGDQZTMJWKYQRDQXKVGTZYIIMPBVDJPQVJLOIOSXQENZZHCNTWCQYQYMHCOXPNTDXMTZWABTWRVYIGMJEICMHXHHEITFPKXEFWMICOVTIVIBIEACPFVXZILJXWTBRVBEFENEWQZTCCDMWVWGLDZTXGUDJWSTR");
+//		auto ct = read_ciphertext();
+		auto ct = make_alpha_array("YNDXIHNTJYETDDJVBPCAPORBPPASUKHYHTHETMFGJNPUFWAMEBFIKQBZGGFZZXJMUYNJDWXJXZDMEEVPYRDGPYMAXWTWHUGDQZTMJWKYQRDQXKVGTZYIIMPBVDJPQVJLOIOSXQENZZHCNTWCQYQYMHCOXPNTDXMTZWABTWRVYIGMJEICMHXHHEITFPKXEFWMICOVTIVIBIEACPFVXZILJXWTBRVBEFENEWQZTCCDMWVWGLDZTXGUDJWSTR");
 
 		std::cout << "Initialising search\n";
 		using job_wheels_t = job_wheels<decltype(ct.cbegin())> ;
-		std::vector<job_wheels_t> vjbw = make_job_list<job_wheels_t>(av[1], av[2], joboffset, std::begin(ct), std::end(ct));
-//		std::vector<job_wheels_t> vjbw = make_job_list<job_wheels_t>("B", "123", joboffset, std::begin(ct), std::end(ct));
+//		std::vector<job_wheels_t> vjbw = make_job_list<job_wheels_t>(av[1], av[2], joboffset, std::begin(ct), std::end(ct));
+		std::vector<job_wheels_t> vjbw = make_job_list_t<job_wheels_t>("B", "123", std::begin(ct), std::end(ct));
 //		std::vector<job_wheels_t> vjbw = make_job_list_t<job_wheels_t>("B", "213", std::begin(ct), std::end(ct));
 
 		std::cout << "Searching " << vjbw.size() << " wheel and reflector arrangements.\n";
