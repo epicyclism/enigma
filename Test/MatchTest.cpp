@@ -6,6 +6,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <chrono>
 #include "const_helpers.h"
 #include "machine.h"
 #include "arena.h"
@@ -126,7 +127,11 @@ int main()
 	std::cout << "# ";
 	m3.ReportSettings(std::cout);
 	std::cout << "\n# Ready\n";
+
+	auto start = std::chrono::steady_clock::now();
 	fill_arena(m3.Wheels(), a, 0);
+	auto now = std::chrono::steady_clock::now();
+	std::cout << "Fill arena time: " << std::chrono::duration<double, std::nano>(now - start).count() << "ns\n";
 #if 0	
 	for (int i = 0; i < 26; ++i)
 	{
@@ -135,8 +140,17 @@ int main()
 	}
 	reportall(a);
 #else
+	start = std::chrono::steady_clock::now();
 	operate(std::begin(ct1), std::end(ct1), m3, a);
+	now = std::chrono::steady_clock::now();
+	std::cout << "time: " << std::chrono::duration<double, std::milli>(now - start).count() << "ms\n";
+	start = std::chrono::steady_clock::now();
 	operate(std::begin(ct2), std::end(ct2), m3, a);
+	now = std::chrono::steady_clock::now();
+	std::cout << "time: " << std::chrono::duration<double, std::milli>(now - start).count() << "ms\n";
+	start = std::chrono::steady_clock::now();
 	operate(std::begin(ct3), std::end(ct3), m3, a);
+	now = std::chrono::steady_clock::now();
+	std::cout << "time: " << std::chrono::duration<double, std::milli>(now - start).count() << "ms\n";
 #endif
 }

@@ -38,12 +38,14 @@ void Help()
 {
 	std::cerr << "arena " << version << " : Enigma settings hunt.\n\n";
 	std::cerr << "For example,\n\n";
-	std::cerr << "./arena BC 12345\n";
-	std::cerr << "Reads ciphertext from stdin then searches all wheel orders formed from reflectors BC and";
-	std::cerr << "wheels 12345 and attempts to find wheels and plug settings that produce a decrypt\n\n";
+	std::cerr << "./arena BC 12345 [n]\n";
+	std::cerr << "Reads ciphertext from stdin then searches all wheel orders formed from reflectors BC and\n";
+	std::cerr << "wheels 12345 and attempts to find wheels, ring and plug settings that produce a decrypt.\n";
+	std::cerr << "The optional trailing 'n' determines where in the order to start, so that sessions can\n";
+	std::cerr << "(effectively) be interrupted and restarted.\n\n";
 }
 
-using arena_t = arena_base<26*26*26 + 256>;
+using arena_t = arena_base<26*26*26 + 512>;
 
 arena_t arena;
 
@@ -106,7 +108,7 @@ template<typename CI> struct job_arena
 	}
 };
 
-template<typename J, typename CI> auto make_job_list_arena(machine_settings_t mst, arena_t& a, CI ctb, CI cte) ->std::vector<J>
+template<typename J, typename CI> auto make_job_list_arena(machine_settings_t mst, arena_t& a, CI ctb, CI cte) -> std::vector<J>
 {
 	std::vector<J> vjb;
 	for (int i = 0; i < 26; ++i)
@@ -125,12 +127,12 @@ template<typename J> void collect_results(J& j)
 	unsigned cnt_ = 0;
 	auto sz = std::distance(j.ctb_, j.cte_);
 	auto itp = std::begin(j.pos_);
-	int threshold = 24;
+	auto threshold = sz / 12;
 
 	auto rb = std::begin(j.r_);
 	while (rb != std::end(j.r_))
 	{
-		int score = *rb;
+		auto score = *rb;
 
 		if (score > threshold) // decode!
 		{
@@ -158,7 +160,7 @@ template<typename J> std::vector<result_t> collate_results_ioc(std::vector<J> co
 	return vr;
 }
 
-template<typename I> void report_result(result_ioc_t const& r, I cb, I ce)
+template<typename I> void report_result(result_t const& r, I cb, I ce)
 {
 	machine3 m3 = MakeMachine3(r.mst_);
 	std::vector<modalpha> vo;
@@ -188,12 +190,15 @@ void collate_results_bg(std::vector<result_t> const& in, std::vector<result_t>& 
 
 int main(int ac, char**av)
 {
-#if 0
+#if 1
 	if (ac < 3)
 	{
 		Help();
 		return 0;
 	}
+	int joboffset = 0;
+	if (ac > 3)
+		joboffset = ::atoi(av[3]);
 #endif
 	// this is where we collect the overall results!
 	std::vector<result_t> vr_oall;
@@ -201,16 +206,16 @@ int main(int ac, char**av)
 	{
 		std::cout << "\nReady\n";
 		// capture the ciphertext
-//		auto ct = read_ciphertext();
-		auto ct = make_alpha_array("YNDXIHNTJYETDDJVBPCAPORBPPASUKHYHTHETMFGJNPUFWAMEBFIKQBZGGFZZXJMUYNJDWXJXZDMEEVPYRDGPYMAXWTWHUGDQZTMJWKYQRDQXKVGTZYIIMPBVDJPQVJLOIOSXQENZZHCNTWCQYQYMHCOXPNTDXMTZWABTWRVYIGMJEICMHXHHEITFPKXEFWMICOVTIVIBIEACPFVXZILJXWTBRVBEFENEWQZTCCDMWVWGLDZTXGUDJWSTR");
+		auto ct = read_ciphertext();
+//		auto ct = make_alpha_array("YNDXIHNTJYETDDJVBPCAPORBPPASUKHYHTHETMFGJNPUFWAMEBFIKQBZGGFZZXJMUYNJDWXJXZDMEEVPYRDGPYMAXWTWHUGDQZTMJWKYQRDQXKVGTZYIIMPBVDJPQVJLOIOSXQENZZHCNTWCQYQYMHCOXPNTDXMTZWABTWRVYIGMJEICMHXHHEITFPKXEFWMICOVTIVIBIEACPFVXZILJXWTBRVBEFENEWQZTCCDMWVWGLDZTXGUDJWSTR");
 
 		std::cout << "Initialising search\n";
 		using job_wheels_t = job_wheels<decltype(ct.cbegin())> ;
-//		std::vector<job_wheels_t> vjbw = make_job_list<job_wheels_t>(av[1], av[2], std::begin(ct), std::end(ct));
-//		std::vector<job_wheels_t> vjbw = make_job_list<job_wheels_t>("B", "123", std::begin(ct), std::end(ct));
-		std::vector<job_wheels_t> vjbw = make_job_list_t<job_wheels_t>("B", "213", std::begin(ct), std::end(ct));
+		std::vector<job_wheels_t> vjbw = make_job_list<job_wheels_t>(av[1], av[2], joboffset, std::begin(ct), std::end(ct));
+//		std::vector<job_wheels_t> vjbw = make_job_list<job_wheels_t>("B", "123", joboffset, std::begin(ct), std::end(ct));
+//		std::vector<job_wheels_t> vjbw = make_job_list_t<job_wheels_t>("B", "213", std::begin(ct), std::end(ct));
 
-		std::cout << "Searching\n";
+		std::cout << "Searching " << vjbw.size() << " wheel and reflector arrangements.\n";
 
 		// work through the wheel orders linearly
 		for (auto & j : vjbw)
@@ -218,7 +223,7 @@ int main(int ac, char**av)
 			// search each wheel order in parallel
 			do
 			{
-				std::cout << j.mst_ << "\n";
+				std::cout << j.mst_ << " " << vr_oall.size() << "\n";
 				machine3 m3 = MakeMachine3(j.mst_);
 				// fill the arena
 				fill_arena(m3.Wheels(), arena, 0);
@@ -242,23 +247,36 @@ int main(int ac, char**av)
 					{
 						hillclimb(std::begin(ct), std::end(ct), r.mst_, r.bg_);
 					});
+				auto n = vr_oall.size();
 				collate_results_bg(vr, vr_oall);
-				// debug report
-				for (auto r : vr_oall)
-				{
-					machine3 m3 = MakeMachine3(r.mst_);
-					std::vector<modalpha> vo;
-					vo.reserve(std::distance(j.ctb_, j.cte_));
-					decode(j.ctb_, j.cte_, m3, vo);
-					// report
-					std::cout << r.mst_ << " { " << r.mtch_ << ", " << r.ioc_ << ", " << r.bg_ << " } : ";
-					for (auto c : vo)
-						std::cout << c;
-					std::cout << "\n";
-				}
+				std::for_each(vr_oall.begin() + n, vr_oall.end(), [&ct](auto& r)
+					{
+						machine3 m3 = MakeMachine3(r.mst_);
+						std::vector<modalpha> vo;
+						vo.reserve(ct.size());
+						decode(std::begin(ct), std::end(ct), m3, vo);
+						// report
+						std::cout << r.mst_ << " { " << r.mtch_ << ", " << r.ioc_ << ", " << r.bg_ << " } : ";
+						for (auto c : vo)
+							std::cout << c;
+						std::cout << "\n";
+					});
 			} while (AdvanceRing(j.mst_));
 		}
 		std::cout << "Finished\n";
+		// report
+		for (auto r : vr_oall)
+		{
+			machine3 m3 = MakeMachine3(r.mst_);
+			std::vector<modalpha> vo;
+			vo.reserve(ct.size());
+			decode(std::begin(ct), std::end(ct), m3, vo);
+			// report
+			std::cout << r.mst_ << " { " << r.mtch_ << ", " << r.ioc_ << ", " << r.bg_ << " } : ";
+			for (auto c : vo)
+				std::cout << c;
+			std::cout << "\n";
+		}
 	}
 	catch (std::exception& ex)
 	{

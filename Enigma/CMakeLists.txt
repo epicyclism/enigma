@@ -16,4 +16,4 @@ target_link_libraries(Arena Common )
 target_link_libraries(Linear Common )
 target_link_libraries(LinearM Common )
 
-install(TARGETS Enigma DESTINATION $(PROJECT_SOURCE_DIR)/bin)
+install(TARGETS Enigma Arena DESTINATION d:/projects/enigmachallenge)

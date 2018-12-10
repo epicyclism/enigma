@@ -64,7 +64,7 @@ template<typename F> F factorial(F n)
 // eg. auto vj = MakeJobList("BC"sv, "12345"sv);
 //
 
-template<typename J, typename... ARGS> auto make_job_list(std::string_view reflectors, std::string_view wheels, ARGS... args) -> std::vector<J>
+template<typename J, typename... ARGS> auto make_job_list(std::string_view reflectors, std::string_view wheels, int offset, ARGS... args) -> std::vector<J>
 {
 	// reflectors
 	std::string ref(reflectors);
@@ -76,7 +76,7 @@ template<typename J, typename... ARGS> auto make_job_list(std::string_view refle
 
 	machine_settings_t mst;
 	ZeroRing(mst);
-//	Ring(mst, "zcp");
+
 	std::vector <J> vjb;
 	auto skip = factorial(whl.size() - 3); // whl.size() is at least 3...
 	auto cnt = skip;
@@ -87,11 +87,16 @@ template<typename J, typename... ARGS> auto make_job_list(std::string_view refle
 			--cnt; // take out the permutations of the wheels we're not taking to avoid duplication.
 			if (cnt == 0)
 			{
-				mst.ref_ = ref[0];
-				mst.w3_ = whl[0];
-				mst.w2_ = whl[1];
-				mst.w1_ = whl[2];
-				vjb.emplace_back(mst, args...);
+				if (offset == 0) // skip the first 'offset' of the possible orders, lets us either restart or share the effort.
+				{
+					mst.ref_ = ref[0];
+					mst.w3_ = whl[0];
+					mst.w2_ = whl[1];
+					mst.w1_ = whl[2];
+					vjb.emplace_back(mst, args...);
+				}
+				else
+					--offset;
 				cnt = skip;
 			}
 		} while (std::next_permutation(std::begin(whl), std::end(whl)));

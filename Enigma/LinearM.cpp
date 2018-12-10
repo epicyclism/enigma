@@ -183,7 +183,7 @@ int main(int ac, char**av)
 		}
 		std::cout << "Message length is " << ct.size() << " characters.\n";
 		// make the job list
-		auto vjb = make_job_list<job>(av[1], av[2], std::begin(ct), std::end(ct));
+		auto vjb = make_job_list<job>(av[1], av[2], 0, std::begin(ct), std::end(ct));
 
 		std::cout << "\nSearching\n";
 		// just used as a counter
