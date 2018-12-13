@@ -13,4 +13,6 @@ add_subdirectory ("Enigma")
 add_subdirectory ("Common")
 add_subdirectory ("Test")
 
-find_package(TBB REQUIRED)
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+	find_package(TBB REQUIRED)
+endif()

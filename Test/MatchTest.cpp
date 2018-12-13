@@ -114,15 +114,11 @@ template<typename I> void operate( I ctb, I cte, machine3 const& m3, arena_t& a)
 
 int main()
 {
-	// B213 zcp YTL "BM DV KT LN RS UP XZ EA QW OI"
-	auto ct1 = make_alpha_array("SIAZKQGEMLIVDBIYWAKCAMPYKCFLOPQDCWPVMITCWAYWKBRUJAVGRYYCISIJZSGRMTZEKGEQLWUXIXYPMQLUHODQFPNRKBZDISWXPHYDBNEQHJUZJRZFWWMVTGIXFSFCQIBVMHGENWKNKYXMQRYSMAWCMBWFHYPNWJEBVYBZEZRCUFZYLIFFJCQFKGOGBYGXMDJLUJMMKZDLNNNJIYEAOYUVDFRFCCUVPWYPJHWFSGGRLXQDFFOKLSKGXZ");
-	// B213 zcp MUM "BM DV KT LN RS UP XZ EA QW OI"
-	auto ct2 = make_alpha_array("YNDXIHNTJYETDDJVBPCAPORBPPASUKHYHTHETMFGJNPUFWAMEBFIKQBZGGFZZXJMUYNJDWXJXZDMEEVPYRDGPYMAXWTWHUGDQZTMJWKYQRDQXKVGTZYIIMPBVDJPQVJLOIOSXQENZZHCNTWCQYQYMHCOXPNTDXMTZWABTWRVYIGMJEICMHXHHEITFPKXEFWMICOVTIVIBIEACPFVXZILJXWTBRVBEFENEWQZTCCDMWVWGLDZTXGUDJWSTR");
-	// B213 zcp NWF "BM DV KT LN RS UP XZ EA QW OI"
-	auto ct3 = make_alpha_array("BKWVQICHPWRRYJDAXQEIQJKQQYMLTPVAKYCJZZTDAODOLSTOKLSSXJRTQCKIKGRRDRJZYZWWJPTABZJEOWGRUKLASPPBMKZBJRHIOKPAKYFZPCOUAAXDMZQMTLDFNNKEZDGRNUZQA");
+	// B251 bcn UED "AO BV DS EX FT HZ IQ JW KU PR"
+	auto ct1 = make_alpha_array("UPONTXBBWFYAQNFLZTBHLBWXSOZUDCDYIZNRRHPPBNSV");
 
-	machine3 m3 = MakeMachine3("B213");
-	Ring(m3, "zcp");
+	machine3 m3 = MakeMachine3("B251");
+	Ring(m3, "bcn");
 	m3.Setting(alpha::A, alpha::A, alpha::A);
 	std::cout << "# ";
 	m3.ReportSettings(std::cout);
@@ -132,25 +128,10 @@ int main()
 	fill_arena(m3.Wheels(), a, 0);
 	auto now = std::chrono::steady_clock::now();
 	std::cout << "Fill arena time: " << std::chrono::duration<double, std::nano>(now - start).count() << "ns\n";
-#if 0	
-	for (int i = 0; i < 26; ++i)
-	{
-		a.results_[i].fill(0);
-		match_search(std::begin(ct), std::end(ct) - 1, a.arena_[i], a.results_[i], modalpha(i));
-	}
-	reportall(a);
-#else
+
 	start = std::chrono::steady_clock::now();
 	operate(std::begin(ct1), std::end(ct1), m3, a);
 	now = std::chrono::steady_clock::now();
 	std::cout << "time: " << std::chrono::duration<double, std::milli>(now - start).count() << "ms\n";
-	start = std::chrono::steady_clock::now();
-	operate(std::begin(ct2), std::end(ct2), m3, a);
-	now = std::chrono::steady_clock::now();
 	std::cout << "time: " << std::chrono::duration<double, std::milli>(now - start).count() << "ms\n";
-	start = std::chrono::steady_clock::now();
-	operate(std::begin(ct3), std::end(ct3), m3, a);
-	now = std::chrono::steady_clock::now();
-	std::cout << "time: " << std::chrono::duration<double, std::milli>(now - start).count() << "ms\n";
-#endif
 }

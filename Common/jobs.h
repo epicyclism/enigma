@@ -44,6 +44,24 @@ void check_wheels(std::string_view whls)
 	}
 }
 
+// string contains valid ring setting
+// throws on error.
+//
+void check_ring(std::string_view ring)
+{
+	if (ring.size() < 3)
+	{
+		throw std::out_of_range("Invalid ring settings for a 3 rotor machine.");
+	}
+	for (auto r : ring)
+	{
+		if (!valid_ring_id(r))
+		{
+			throw std::out_of_range("Invalid ring.");
+		}
+	}
+}
+
 // duh
 template<typename F> F factorial(F n)
 {

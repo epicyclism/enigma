@@ -6,6 +6,8 @@
 #if defined ( __GNUC__)
 #include <pstl/execution>
 #include <pstl/numeric>
+#else
+#include <execution>
 #endif
 
 // maintain alpha_max rows of width W, each row is the output of encoding continuous letters in the machine.

@@ -20,7 +20,7 @@
 #include "ioc.h"
 #include "jobs.h"
 
-constexpr  char version[] = "v0.05";
+constexpr  char version[] = "v0.06";
 
 template<typename I, typename L, typename R> void report_results(machine_settings_t const& mst, I cb, I ce, L const& a, R& r)
 {
@@ -86,7 +86,7 @@ void Help()
 	std::cerr << "linearM " << version << " : searches for the ciphertext supplied on stdin in the output of the set of enigma machines defined by\n";
 	std::cerr << "a collection of rotors and reflectors.\n\n";
 	std::cerr << "For example,\n\n";
-	std::cerr << "./linearM BC 12345 \"AH BO CG DP FL JQ KS MU TZ WY\"\n\n";
+	std::cerr << "./linearM BC 12345 fvn \"AH BO CG DP FL JQ KS MU TZ WY\"\n\n";
 	std::cerr << "Configures a 'machine' with all permutations of reflectors B and C, rotors 1, 2, 3, 4, 5, ring setting fvn\n";
 	std::cerr << "and plug board as indicated. The plug settings can optionally be condensed and the quotes omitted.\n";
 	std::cerr << "Then when given\n";
@@ -175,7 +175,14 @@ int main(int ac, char**av)
 		// validate the arguments (these throw on problems)
 		check_reflectors(av[1]);
 		check_wheels(av[2]);
-
+		int stecker_arg = 3;
+		bool simple = false;
+		if (ac > 4)
+		{
+			check_ring(av[3]);
+			stecker_arg = 4;
+			simple = true;
+		}
 		// capture the ciphertext
 		std::vector<modalpha> ct;
 		while (1)
@@ -192,10 +199,19 @@ int main(int ac, char**av)
 		std::cout << "Message length is " << ct.size() << " characters.\n";
 		// make the job list
 		auto vjb = make_job_list<job>(av[1], av[2], 0, std::begin(ct), std::end(ct));
-
+		if (simple)
+		{
+			std::for_each(std::begin(vjb), std::end(vjb), [&av, stecker_arg](auto& j)
+			{
+				Stecker(j.mst_, av[stecker_arg]);
+				Ring(j.mst_, av[3]);
+			});
+		}
 		std::cout << "\nSearching\n";
 		// just used as a counter
 		machine_settings_t mst = vjb[0].mst_;
+		if (simple)
+			std::cout << mst << "\n";
 		// collect results here
 		std::vector<result_ioc_t> results;
 		while (1)
@@ -206,6 +222,8 @@ int main(int ac, char**av)
 			{
 				collect_results(r, results);
 			}
+			if (simple)
+				break;
 			if (!AdvanceRing(mst))
 				break;
 			std::for_each(std::begin(vjb), std::end(vjb), [](auto& j) { AdvanceRing(j.mst_); });

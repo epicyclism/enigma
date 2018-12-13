@@ -86,3 +86,10 @@ struct wheel
 		return false;
 	}
 };
+
+inline bool valid_ring_id(char ch)
+{
+	if ( ch >= 'a' && ch <= 'z' )
+		return true;
+	return false;
+}
