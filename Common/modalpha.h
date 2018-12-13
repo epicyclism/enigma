@@ -3,6 +3,7 @@
 #include <limits>
 #include <type_traits>
 #include <ostream>
+#include <array>
 
 #include "modular.h"
 
