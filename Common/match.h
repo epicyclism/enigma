@@ -1,6 +1,8 @@
 #pragma once
 
 #include "modalpha.h"
+#include "ioc.h"
+#include "bigram.h"
 
 // count possible plug, includes a flag to work the matching algorithm
 //
@@ -117,7 +119,7 @@ public:
 	}
 };
 
-struct link
+struct link_t
 {
 	modalpha f_, t_;
 	int score_;
@@ -130,7 +132,7 @@ struct link
 class linkset
 {
 private:
-	std::array<link, 10> links_;
+	std::array<link_t, 10> links_;
 	int anti_score_;
 public:
 	linkset() noexcept

@@ -4,9 +4,16 @@
 #include <iostream>
 #include <iomanip>
 #include <vector>
+#if !defined ( __GNUC__ )
 #include <execution>
+#endif
 #include <algorithm>
 #include <numeric>
+#if defined ( __GNUC__ )
+#include <pstl/execution>
+#include <pstl/algorithm>
+#include <pstl/numeric>
+#endif
 #include <string>
 #include "machine.h"
 #include "arena.h"
@@ -20,8 +27,9 @@ template<typename I, typename L, typename R> void report_results(machine_setting
 	auto sz = std::distance(cb, ce);
 	auto itp = std::begin(a.pos_);
 	auto threshold = sz / 11;
-
+	auto max_ioc {0.0};
 	auto rb = std::begin(r);
+
 	while ( rb != std::end(r))
 	{
 		if (*rb > threshold) // decode!

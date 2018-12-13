@@ -11,9 +11,9 @@ add_executable (Linear "Linear.cpp" )
 add_executable (LinearM "LinearM.cpp" )
 add_executable (LetterCount "letter_count.cpp")
 
-target_link_libraries(Enigma Common )
-target_link_libraries(Arena Common )
-target_link_libraries(Linear Common )
-target_link_libraries(LinearM Common )
+target_link_libraries(Enigma Common tbb)
+target_link_libraries(Arena Common tbb)
+target_link_libraries(Linear Common tbb)
+target_link_libraries(LinearM Common tbb)
 
 install(TARGETS Enigma Arena DESTINATION d:/projects/enigmachallenge)

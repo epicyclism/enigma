@@ -14,7 +14,7 @@ namespace std
 	template<> class numeric_limits<alpha> : public numeric_limits<char>
 	{
 	public:
-		_NODISCARD static constexpr char (max)() noexcept
+		[[nodiscard]]  static constexpr char (max)() noexcept
 		{	// return maximum value
 			return (char(alpha::SZ));
 		}

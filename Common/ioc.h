@@ -2,6 +2,10 @@
 
 #include <algorithm>
 #include <numeric>
+#if defined ( __GNUC__ )
+#include <pstl/execution>
+#include <pstl/numeric>
+#endif
 
 // Score a piece of text (presumably a trial decrypt) using the 'index of coincidence'
 // as documented widely, for example, https://en.wikipedia.org/wiki/Index_of_coincidence
@@ -24,7 +28,7 @@ template<typename I> double index_of_coincidence(I b, I e)
 	// calculate
 	double nn = double(N) * double(N - 1);
 
-	return 	std::transform_reduce(std::begin(tab), std::end(tab), 0.0, std::plus{}, [nn](auto n)
+	return 	std::transform_reduce(std::execution::seq, std::begin(tab), std::end(tab), 0.0, std::plus{}, [nn](auto n)
 	{
 		return double(n * (n - 1)) / nn;
 	});

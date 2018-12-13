@@ -36,7 +36,7 @@ public:
 		operator++();
 		return t;
 	}
-	mod_t& operator--() noexcept
+	constexpr mod_t& operator--() noexcept
 	{
 		if (val_ == 0)
 			val_ = M - 1;
@@ -44,7 +44,7 @@ public:
 			--val_;
 		return *this;
 	}
-	mod_t operator--(int) noexcept
+	constexpr mod_t operator--(int) noexcept
 	{
 		mod_t t(*this);
 		operator--();

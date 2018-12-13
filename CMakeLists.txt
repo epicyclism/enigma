@@ -12,3 +12,5 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_subdirectory ("Enigma")
 add_subdirectory ("Common")
 add_subdirectory ("Test")
+
+find_package(TBB REQUIRED)
