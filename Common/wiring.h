@@ -4,7 +4,7 @@
 // the wiring relates the nominal input to output for each wheel,
 // this is specified right to left (as fitted to the machine) in terms
 // of letters, we need this converted to values we can do arithmetic with
-// and return through the wheel from left to right. So this is computed in a
+// and return through the wheel from left to right. So this is computed in
 // a constexpr function at compile time.
 //
 #pragma warning ( disable : 4514)
@@ -26,8 +26,8 @@ struct wiring
 	constexpr wiring (wiring const& w) : rl_{}, lr_{}, id_{ w.id_ }
 	{
 		// seriously????
-		epicyclism::ctransform(std::begin(rl_), std::end(rl_), std::begin(rl_), [](auto m) { return m; });
-		epicyclism::ctransform(std::begin(lr_), std::end(lr_), std::begin(lr_), [](auto m) { return m; });
+		epicyclism::ctransform(std::begin(w.rl_), std::end(w.rl_), std::begin(rl_), [](auto m) { return m; });
+		epicyclism::ctransform(std::begin(w.lr_), std::end(w.lr_), std::begin(lr_), [](auto m) { return m; });
 	}
 	constexpr modalpha evalRL(modalpha val) const
 	{

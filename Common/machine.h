@@ -55,6 +55,16 @@ public:
 		x = w_.Evaluate(x);
 		return s_.Eval(x);
 	}
+	[[nodiscard]] modalpha Transform(modalpha m, std::ostream& ostr) noexcept
+	{
+		if (m == modalpha(alpha::SZ))
+			return modalpha(alpha::SZ);
+		w_.Step(ostr);
+		ostr << ' ' << m;
+		auto x = s_.Eval(m, ostr);
+		x = w_.Evaluate(x, ostr);
+		return s_.Eval(x, ostr);
+	}
 	template<typename I> std::vector<modalpha> Transform(I b, I e) noexcept
 	{
 		std::vector<modalpha> r;
