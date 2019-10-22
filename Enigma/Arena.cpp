@@ -154,7 +154,7 @@ template<typename J> std::vector<result_t> collate_results_ioc(std::vector<J> co
 		for (auto const& r : j.vr_)
 		{
 //			if (r.ioc_ > 0.055)
-			if (r.ioc_ > 0.052)
+			if (r.ioc_ > 0.05)
 				vr.emplace_back(r);
 		}
 	}
