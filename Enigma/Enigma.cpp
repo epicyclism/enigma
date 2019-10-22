@@ -11,7 +11,7 @@
 #include "bigram.h"
 #include "trigram.h"
 
-constexpr  char version[] = "v0.05";
+constexpr  char version[] = "v0.06";
 
 // compute a statistic for the '-stats' option
 //
@@ -88,6 +88,7 @@ int main(int ac, char**av)
 		if (stats)
 			std::cout << "'stats' enabled\n";
 		std::cout << "\nReady\n\n";
+		std::vector<modalpha> vi;
 		std::vector<modalpha> vo;
 		while (std::cin)
 		{
@@ -95,15 +96,17 @@ int main(int ac, char**av)
 			std::cin >> c;
 			if (valid_from_char(c))
 			{
+				auto cc = from_printable(c);
+				vi.push_back(cc);
 				if (debug)
 				{
-					auto x = m3.Transform(from_printable(c), std::cout);
+					auto x = m3.Transform(cc, std::cout);
 					std::cout << x << "\n";
 					vo.push_back(x);
 				}
 				else
 				{
-					auto x = m3.Transform(from_printable(c));
+					auto x = m3.Transform(cc);
 					std::cout << x;
 					vo.push_back(x);
 				}
@@ -114,7 +117,7 @@ int main(int ac, char**av)
 		{
 			std::cout << "Statistics!\n";
 			std::cout << "message length = " << vo.size() << "\n";
-			std::cout << "ees     = " << calc_ees(std::begin(vo), std::end(vo), mst) << "\n";
+			std::cout << "ees     = " << calc_ees(std::begin(vi), std::end(vi), mst) << "\n";
 			std::cout << "ioc     = " << index_of_coincidence(std::begin(vo), std::end(vo)) << "\n";
 			std::cout << "bigram  = " << bigram_score(std::begin(vo), std::end(vo)) << "\n";
 			std::cout << "trigram = " << trigram_score(std::begin(vo), std::end(vo)) << "\n";
