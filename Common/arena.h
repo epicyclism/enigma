@@ -3,12 +3,7 @@
 #include <array>
 #include "wheelset.h"
 
-#if defined ( __GNUC__)
-#include <pstl/execution>
-#include <pstl/numeric>
-#else
 #include <execution>
-#endif
 
 // maintain alpha_max rows of width W, each row is the output of encoding continuous letters in the machine.
 // position recorded to ensure can go back without having to separate out the stepping process.

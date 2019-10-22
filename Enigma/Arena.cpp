@@ -3,16 +3,9 @@
 
 #include <iostream>
 #include <iomanip>
-#if !defined (__GNUC__)
 #include <execution>
-#endif
 #include <algorithm>
 #include <numeric>
-#if defined (__GNUC__)
-#include <pstl/execution>
-#include <pstl/algorithm>
-#include <pstl/numeric>
-#endif
 #include "wheelset.h"
 #include "machine.h"
 #include "position.h"
@@ -160,7 +153,8 @@ template<typename J> std::vector<result_t> collate_results_ioc(std::vector<J> co
 	{
 		for (auto const& r : j.vr_)
 		{
-			if (r.ioc_ > 0.055)
+//			if (r.ioc_ > 0.055)
+			if (r.ioc_ > 0.052)
 				vr.emplace_back(r);
 		}
 	}
@@ -190,14 +184,15 @@ void collate_results_bg(std::vector<result_t> const& in, std::vector<result_t>& 
 {
 	for (auto& r : in)
 	{
-		if (r.bg_ > 45000)
+//		if (r.bg_ > 45000)
+		if (r.bg_ > 42000)
 			out.emplace_back(r);
 	}
 }
 
 int main(int ac, char**av)
 {
-#if 0
+#if 1
 	if (ac < 3)
 	{
 		Help();
@@ -213,17 +208,17 @@ int main(int ac, char**av)
 	{
 		std::cout << "\nReady\n";
 		// capture the ciphertext
-//		auto ct = read_ciphertext();
+		auto ct = read_ciphertext();
 		// B251 bcn UED "AO BV DS EX FT HZ IQ JW KU PR"
-		auto ct = make_alpha_array("UPONTXBBWFYAQNFLZTBHLBWXSOZUDCDYIZNRRHPPBNSV");
+//		auto ct = make_alpha_array("UPONTXBBWFYAQNFLZTBHLBWXSOZUDCDYIZNRRHPPBNSV");
 		std::cout << "Ciphertext is - ";
 		for (auto c : ct)
 			std::cout << c;
 		std::cout << "\nInitialising search\n";
 		using job_wheels_t = job_wheels<decltype(ct.cbegin())> ;
-//		std::vector<job_wheels_t> vjbw = make_job_list<job_wheels_t>(av[1], av[2], joboffset, std::begin(ct), std::end(ct));
+		std::vector<job_wheels_t> vjbw = make_job_list<job_wheels_t>(av[1], av[2], joboffset, std::begin(ct), std::end(ct));
 //		std::vector<job_wheels_t> vjbw = make_job_list_t<job_wheels_t>("B", "123", std::begin(ct), std::end(ct));
-		std::vector<job_wheels_t> vjbw = make_job_list_t<job_wheels_t>("B", "251", std::begin(ct), std::end(ct));
+//		std::vector<job_wheels_t> vjbw = make_job_list_t<job_wheels_t>("B", "251", std::begin(ct), std::end(ct));
 
 		std::cout << "Searching " << vjbw.size() << " wheel and reflector arrangements.\n";
 

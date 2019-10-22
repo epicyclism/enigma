@@ -2,12 +2,7 @@
 
 #include <algorithm>
 #include <numeric>
-#if defined ( __GNUC__ )
-#include <pstl/execution>
-#include <pstl/numeric>
-#else
 #include <execution>
-#endif
 
 // Score a piece of text (presumably a trial decrypt) using the 'index of coincidence'
 // as documented widely, for example, https://en.wikipedia.org/wiki/Index_of_coincidence

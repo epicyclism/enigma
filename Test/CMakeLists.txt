@@ -13,7 +13,11 @@ add_executable (MachineTest "MachineTest.cpp" )
 add_executable (MatchTest "MatchTest.cpp" )
 
 target_link_libraries(MachineTest Common )
-target_link_libraries(MatchTest Common )
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+	target_link_libraries(MatchTest Common ${TBB_IMPORTED_TARGETS})
+else()
+	target_link_libraries(MatchTest Common)
+endif()
 
 #if ( CMAKE_CXX_COMPILER_ID MATCHES "Clang|AppleClang|GNU" )
 #    target_compile_options( Enigma PRIVATE -Wall -Wextra -Wunreachable-code -Wpedantic -fexceptions)

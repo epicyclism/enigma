@@ -4,17 +4,11 @@
 #include <iostream>
 #include <iomanip>
 #include <vector>
-#if !defined ( __GNUC__ )
 #include <execution>
-#endif
 #include <algorithm>
 #include <numeric>
-#if defined ( __GNUC__ )
-#include <pstl/execution>
-#include <pstl/algorithm>
-#include <pstl/numeric>
-#endif
 #include <string>
+
 #include "machine.h"
 #include "arena.h"
 #include "ioc.h"
