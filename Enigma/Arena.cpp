@@ -130,11 +130,13 @@ template<typename J> void collect_results(J& j)
 //	auto threshold = sz / 12;
 	auto threshold = 14; // 14 percent using new ees mechanism.
 
+	unsigned max_score = 0;
 	auto rb = std::begin(j.r_);
 	while (rb != std::end(j.r_))
 	{
 		auto score = *rb;
-
+		if (score > max_score)
+			max_score = score;
 		if (score > threshold) // decode!
 		{
 			++cnt_;
@@ -145,6 +147,7 @@ template<typename J> void collect_results(J& j)
 		}
 		++rb;
 	}
+	std::cout << "max_score = " << max_score << '\n';
 }
 
 template<typename J> std::vector<result_t> collate_results_ioc(std::vector<J> const& vj) 
@@ -267,7 +270,7 @@ int main(int ac, char**av)
 							std::cout << c;
 						std::cout << "\n";
 					});
-			} while (AdvanceRing(j.mst_));
+			} while (AdvanceRingAll(j.mst_));
 		}
 		std::cout << "Finished\n";
 		// report
