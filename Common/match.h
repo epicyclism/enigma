@@ -334,6 +334,15 @@ template<typename IC, typename IA> plug_set_msg match_ciphertext_psm(IC ctb, IC 
 	return psm ;
 }
 
+template<typename IC, typename IA>
+unsigned match_worker(IC ctb, IC cte, IA base, modalpha bs)
+{
+	auto psm = match_ciphertext_psm(ctb, cte, base, bs);
+	psm.trim();
+
+	return std::accumulate(psm.begin(), psm.begin() + 10, 0, [](auto& l, auto& r) { return l + r.cnt_; }) * 100 / std::distance(ctb, cte);
+}
+
 template<typename I, size_t W> void match_search(I cb, I ce, std::array<modalpha, W> const& row, std::array<unsigned, W>& counts, modalpha bs)
 {
 	auto itb = std::begin(row);
@@ -342,7 +351,8 @@ template<typename I, size_t W> void match_search(I cb, I ce, std::array<modalpha
 
 	while (itb != ite)
 	{
-		*ito += match_ciphertext(cb, ce, itb, bs);
+//		*ito += match_ciphertext(cb, ce, itb, bs);
+		*ito = match_worker(cb, ce, itb, bs);
 		++ito;
 		++itb;
 	}

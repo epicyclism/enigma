@@ -15,7 +15,7 @@
 #include "arena.h"
 #include "jobs.h"
 
-constexpr  char version[] = "v0.04";
+constexpr  char version[] = "v0.05";
 
 std::vector<modalpha> read_ciphertext()
 {
@@ -127,7 +127,8 @@ template<typename J> void collect_results(J& j)
 	unsigned cnt_ = 0;
 	auto sz = std::distance(j.ctb_, j.cte_);
 	auto itp = std::begin(j.pos_);
-	auto threshold = sz / 12;
+//	auto threshold = sz / 12;
+	auto threshold = 14; // 14 percent using new ees mechanism.
 
 	auto rb = std::begin(j.r_);
 	while (rb != std::end(j.r_))

@@ -10,6 +10,12 @@
 #include "arena.h"
 #include "match.h"
 
+// B423 gto SDV "AD EH GY IM KN LR OZ QV TX UW"
+// FDZCJJDKVWPYFDWPOQZGTJQYYXAFRHSQESERKGJBWBYPEOOKFMMPOMKQDDOLCPKHYPGUZYXBZYANYSAXIPXVQCPJBFFFDRDXFIJJPPPEYALCYKVLKXQHWIRZANGWUJBWVJYCKESMJQRYKQHCQKMMYWMCKVLZJDVZXRUMRMNWFDZBQGXJQAPFFFZTAHJQZPWQWNIVZWUIJTHOYXGDCOJUW
+
+// B425 agm QAY "DM EP FL HI JR KY NQ OU SW TZ"
+// QKXETVPZQOHSXMBIZPHTCTRMAUZYSTJIMDUYOZBFRTZOUHBGOROUVRQEJRDRJHZPZIBQQHKMMJZCIIRCUOLXLCIOQKHRLIGGFJFTLLGDRARDZQUQKLTKXXXYKRUVFULBQLAYRZVJFULCGQJXFJURMURSELYFVFOKUHYUHSYLOMEFYAIIP
+
 constexpr  char version[] = "v0.01";
 
 // version 1, use the highest 10 as an estimate.
@@ -20,8 +26,8 @@ unsigned match_worker1(IC ctb, IC cte, IA base, modalpha bs)
 	auto psm = match_ciphertext_psm(ctb, cte, base, bs);
 	psm.trim();
 
-	return std::accumulate(psm.begin(), psm.end(), 0, [](auto& l, auto& r) { return l + r.cnt_; }) ;
-//	return std::accumulate(psm.begin(), psm.begin() + 10, 0, [](auto& l, auto& r) { return l + r.cnt_; }) ;
+//	return std::accumulate(psm.begin(), psm.end(), 0, [](auto& l, auto& r) { return l + r.cnt_; }) ;
+	return std::accumulate(psm.begin(), psm.begin() + 10, 0, [](auto& l, auto& r) { return l + r.cnt_; }) ;
 }
 
 template<typename I, size_t W> void ees_search(I cb, I ce, std::array<modalpha, W> const& row, std::array<unsigned, W>& counts, modalpha E)
@@ -39,17 +45,16 @@ template<typename I, size_t W> void ees_search(I cb, I ce, std::array<modalpha, 
 
 template<size_t W> void report_results(std::array<unsigned, W> const& cnts)
 {
-	std::array<unsigned, 32> hist{ 0 };
+	std::array<unsigned, 64> hist{ 0 };
+	unsigned mx = 0;
 	for (auto cnt : cnts)
 	{
+		if (cnt > mx)
+			mx = cnt;
 		++hist[cnt];
 	}
-	int n = 0;
-	for (auto h : hist)
-	{
-		std::cout << n << ' ' << h << '\n';
-		++n;
-	}
+	for(int n = 0; n < mx + 1; ++n)
+		std::cout << n << ' ' << hist[n] << '\n';
 }
 
 void Help()
