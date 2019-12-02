@@ -124,22 +124,17 @@ template<typename J, typename CI> auto make_job_list_arena(machine_settings_t ms
 //
 template<typename J> void collect_results(J& j)
 {
-	unsigned cnt_ = 0;
 	auto sz = std::distance(j.ctb_, j.cte_);
 	auto itp = std::begin(j.pos_);
 //	auto threshold = sz / 12;
 	auto threshold = 14; // 14 percent using new ees mechanism.
 
-	unsigned max_score = 0;
 	auto rb = std::begin(j.r_);
 	while (rb != std::end(j.r_))
 	{
 		auto score = *rb;
-		if (score > max_score)
-			max_score = score;
 		if (score > threshold) // decode!
 		{
-			++cnt_;
 			auto off = std::distance(std::begin(j.r_), rb);
 			use_ees(j.ctb_, j.cte_, std::begin(j.line_) + off, *(itp + off), j.bs_, j.mst_, j.vr_);
 			// ick
@@ -147,7 +142,6 @@ template<typename J> void collect_results(J& j)
 		}
 		++rb;
 	}
-	std::cout << "max_score = " << max_score << '\n';
 }
 
 template<typename J> std::vector<result_t> collate_results_ioc(std::vector<J> const& vj) 
