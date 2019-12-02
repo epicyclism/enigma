@@ -21,6 +21,8 @@ class plug_set_msg
 private:
 	std::array<plug_stat_chk, 256> psm_;
 	ptrdiff_t end_;
+	std::array<unsigned, alpha_max> cnts_;
+	unsigned direct_;
 public:
 	plug_set_msg()
 	{
@@ -42,9 +44,18 @@ public:
 			s.b_ = false;
 		}
 		end_ = 0;
+		cnts_.fill(0);
+		direct_ = 0;
 	}
 	void set(modalpha f, modalpha t) noexcept
 	{
+		++cnts_[f.Val()];
+		++cnts_[t.Val()];
+		if (f == t)
+		{
+			++direct_;
+			return;
+		}
 		if (f > t)
 		{
 			std::swap(f, t);
@@ -104,18 +115,39 @@ public:
 			++it;
 		}
 	}
+	unsigned direct() const
+	{
+		return direct_;
+	}
+	void trim()
+	{
+		// erase the max...
+		auto mx = std::max_element(cnts_.begin(), cnts_.end());
+		auto mv = std::distance(cnts_.begin(), mx);
+		std::for_each(std::begin(psm_), std::begin(psm_) + end_, [&](auto& v)
+			{
+				if (v.f_ == mv || v.t_ == mv)
+					v.cnt_ = 0;
+			});
+	}
 	template<typename O> void print(O& ostr)
 	{
+#if 0
 		std::sort(std::begin(psm_), std::begin(psm_) + end_,
 			[](auto const& l, auto const& r)
 			{
 				return l.cnt_ > r.cnt_;
 			});
+#endif
 		std::for_each(std::begin(psm_), std::begin(psm_) + end_, 
-			[&ostr](auto const& v)
+			[&](auto const& v)
 			{
-				ostr << v.f_ << "<->" << v.t_ << " - " << v.cnt_ << "\n"; 
+				ostr << v.f_ << "<->" << v.t_ << " - " << v.cnt_ << " [" << cnts_[v.f_.Val()] << ", " << cnts_[v.t_.Val()] <<"]\n"; 
 			});
+		std::cout << "Direct = " << direct_ << "\n";
+		for (auto n : cnts_)
+			ostr << n << " ";
+		ostr << "\n";
 	}
 };
 

@@ -18,10 +18,18 @@ constexpr  char version[] = "v0.06";
 template<typename I> unsigned calc_ees(I ctb, I cte, machine_settings_t mst)
 {
 	machine3 m3 = MakeMachine3(mst);
+	m3.Stecker();
 	std::vector<modalpha> ees(std::distance(ctb, cte), alpha::E);
 	std::vector<modalpha> enc_ees = m3.Transform(std::begin(ees), std::end(ees));
-
+#if 0
 	return match_ciphertext(ctb, cte, std::begin(enc_ees), m3.Eval(alpha::E));
+#else
+	auto psm = match_ciphertext_psm(ctb, cte, std::begin(enc_ees), m3.Eval(alpha::E));
+	psm.trim();
+	psm.print(std::cout);
+	return std::accumulate(psm.begin(), psm.end(), 0, [](auto& l, auto& r) { return l + r.cnt_; }) + psm.direct();
+//	return std::accumulate(psm.begin(), psm.begin() + 10, 0, [](auto& l, auto& r) { return l + r.cnt_; }) ;
+#endif
 }
 
 void Help()
