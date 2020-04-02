@@ -72,32 +72,45 @@ template<typename I> void operate( I ctb, I cte, machine3 const& m3, arena_t& a)
 {
 	std::vector<result_ioc_t>          vr;
 	a.results_[0].fill(0);
-	match_search(ctb, cte, a.arena_[0], a.results_[0], modalpha(0));
+	match_search(ctb, cte, a.arena_[15], a.results_[0], alpha::P);
 	auto rb = std::begin(a.results_[0]);
 	int cnt = 0;
-	auto threshold = std::distance(ctb, cte) / 11;
+	int cp = 0;
+	auto threshold = std::distance(ctb, cte) / 10;
+//	auto threshold = 12;
 	while (rb != std::end(a.results_[0]))
 	{
 		auto score = *rb;
-
 		if (score > threshold) // decode!
 		{
 			++cnt;
 			auto off = std::distance(std::begin(a.results_[0]), rb);
-			use_ees(ctb, cte, std::begin(a.arena_[0]) + off, *(std::begin(a.pos_) + off), modalpha(0), m3.machine_settings(), vr);
+			use_ees(ctb, cte, std::begin(a.arena_[15]) + off, *(std::begin(a.pos_) + off), modalpha(15), m3.machine_settings(), vr);
 		}
+#if 1
+		if (*(std::begin(a.pos_) + cp) == position(alpha::Q, alpha::A, alpha::Y))
+		{
+			std::cout << "QAY score = " << score << '\n';
+			std::cout << vr.back().mst_ << '\n';
+			std::cout << "ioc = " << vr.back().ioc_ << '\n';
+		}
+		++cp;
+#endif
 		++rb;
 	}
-	std::cout << "threshold = " << threshold << ", " << cnt << " qualified.\n";
+	std::cout << "threshold = " << threshold << ", " << cnt << "(" << a.results_[0].size() << ") qualified.\n";
 	std::vector<result_scr_t>          vr2;
 	for (auto r : vr)
 	{
-		if (r.ioc_ > 0.055)
+//		if (r.ioc_ > 0.05)
 			hillclimb(ctb, cte, r.mst_, vr2);
 	}
+	std::cout << vr2.size() << " survived hillclimb, max score = " << (*std::max_element(vr2.begin(), vr2.end(), [](auto& l, auto& r) { return l.scr_ < r.scr_; })).scr_ << '\n';
 	for (auto r : vr2)
 	{
-		if (r.scr_ > 45000)
+//		if (r.scr_ > 42000)
+//		if (r.scr_ > 30000)
+		if(r.mst_.pos_ == position(alpha::Q, alpha::A, alpha::Y))
 		{
 			machine3 m3 = MakeMachine3(r.mst_);
 			std::vector<modalpha> vo;
@@ -114,12 +127,19 @@ template<typename I> void operate( I ctb, I cte, machine3 const& m3, arena_t& a)
 
 int main()
 {
-	// B251 bcn UED "AO BV DS EX FT HZ IQ JW KU PR"
-	auto ct1 = make_alpha_array("UPONTXBBWFYAQNFLZTBHLBWXSOZUDCDYIZNRRHPPBNSV");
+	// B425 agm QAY "DM EP FL HI JR KY NQ OU SW TZ"
+	auto ct1 = make_alpha_array("QKXETVPZQOHSXMBIZPHTCTRMAUZYSTJIMDUYOZBFRTZOUHBGOROUVRQEJRDRJHZPZIBQQHKMMJZCIIRCUOLXLCIOQKHRLIGGFJFTLLGDRARDZQUQKLTKXXXYKRUVFULBQLAYRZVJFULCGQJXFJURMURSELYFVFOKUHYUHSYLOMEFYAIIP");
+	machine3 m3 = MakeMachine3("B425");
+	Ring(m3, "agm");
 
-	machine3 m3 = MakeMachine3("B251");
-	Ring(m3, "bcn");
+	// B251 bcn UED "AO BV DS EX FT HZ IQ JW KU PR"
+	//auto ct1 = make_alpha_array("UPONTXBBWFYAQNFLZTBHLBWXSOZUDCDYIZNRRHPPBNSV");
+	//machine3 m3 = MakeMachine3("B251");
+	//Ring(m3, "bcn");
+	
 	m3.Setting(alpha::A, alpha::A, alpha::A);
+//	m3.Setting(alpha::Q, alpha::A, alpha::Y);
+
 	std::cout << "# ";
 	m3.ReportSettings(std::cout);
 	std::cout << "\n# Ready\n";
@@ -132,6 +152,5 @@ int main()
 	start = std::chrono::steady_clock::now();
 	operate(std::begin(ct1), std::end(ct1), m3, a);
 	now = std::chrono::steady_clock::now();
-	std::cout << "time: " << std::chrono::duration<double, std::milli>(now - start).count() << "ms\n";
 	std::cout << "time: " << std::chrono::duration<double, std::milli>(now - start).count() << "ms\n";
 }

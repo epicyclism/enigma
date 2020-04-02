@@ -24,7 +24,6 @@ template<typename IC, typename IA>
 unsigned match_worker1(IC ctb, IC cte, IA base, modalpha bs)
 {
 	auto psm = match_ciphertext_psm(ctb, cte, base, bs);
-	psm.trim();
 
 //	return std::accumulate(psm.begin(), psm.end(), 0, [](auto& l, auto& r) { return l + r.cnt_; }) ;
 	return std::accumulate(psm.begin(), psm.begin() + 10, 0, [](auto& l, auto& r) { return l + r.cnt_; }) ;

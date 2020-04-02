@@ -21,8 +21,8 @@ class plug_set_msg
 private:
 	std::array<plug_stat_chk, 256> psm_;
 	ptrdiff_t end_;
-	std::array<unsigned, alpha_max> cnts_;
 	unsigned direct_;
+	unsigned total_;
 public:
 	plug_set_msg()
 	{
@@ -44,13 +44,12 @@ public:
 			s.b_ = false;
 		}
 		end_ = 0;
-		cnts_.fill(0);
 		direct_ = 0;
+		total_ = 0;
 	}
 	void set(modalpha f, modalpha t) noexcept
 	{
-		++cnts_[f.Val()];
-		++cnts_[t.Val()];
+		++total_;
 		if (f == t)
 		{
 			++direct_;
@@ -83,18 +82,13 @@ public:
 	void merge_direct(modalpha f, modalpha t)
 	{
 		if (f == t)
+		{
+			direct_ *= 5;
+			direct_ /= 25;
 			return;
+		}
 		if (f > t)
 			std::swap(f, t);
-		int cnt = 0;
-		for (auto& n : psm_)
-		{
-			if (n.f_ == n.t_ && n.cnt_ > 1)
-			{
-				cnt += n.cnt_;
-				n.cnt_ = 0;
-			}
-		}
 		auto it = std::begin(psm_);
 		while (it != std::end(psm_))
 		{
@@ -103,13 +97,9 @@ public:
 			{
 				pg.f_ = f;
 				pg.t_ = t;
-				pg.cnt_ = cnt;
+				pg.cnt_ = (direct_ * 7) / 25;
+				direct_ = 0;
 				++end_;
-				break;
-			}
-			if (pg.f_ == f && pg.t_ == t)
-			{
-				pg.cnt_ += cnt;
 				break;
 			}
 			++it;
@@ -119,177 +109,17 @@ public:
 	{
 		return direct_;
 	}
-	void trim()
-	{
-		// erase the max...
-		auto mx = std::max_element(cnts_.begin(), cnts_.end());
-		auto mv = std::distance(cnts_.begin(), mx);
-		std::for_each(std::begin(psm_), std::begin(psm_) + end_, [&](auto& v)
-			{
-				if (v.f_ == mv || v.t_ == mv)
-					v.cnt_ = 0;
-			});
-	}
 	template<typename O> void print(O& ostr)
 	{
-#if 0
-		std::sort(std::begin(psm_), std::begin(psm_) + end_,
-			[](auto const& l, auto const& r)
-			{
-				return l.cnt_ > r.cnt_;
-			});
-#endif
 		std::for_each(std::begin(psm_), std::begin(psm_) + end_, 
 			[&](auto const& v)
 			{
-				ostr << v.f_ << "<->" << v.t_ << " - " << v.cnt_ << " [" << cnts_[v.f_.Val()] << ", " << cnts_[v.t_.Val()] <<"]\n"; 
+				ostr << v.f_ << "<->" << v.t_ << " - " << v.cnt_ << "\n"; 
 			});
-		std::cout << "Direct = " << direct_ << "\n";
-		for (auto n : cnts_)
-			ostr << n << " ";
-		ostr << "\n";
+		ostr << "Direct = " << direct_ << "\n";
+		ostr << "Count  = " << total_ << "\n";
 	}
 };
-
-struct link_t
-{
-	modalpha f_, t_;
-	int score_;
-	bool is(modalpha f, modalpha t)
-	{
-		return f == f_ || f == t_ || t == f_ || t == t_;
-	}
-};
-
-class linkset
-{
-private:
-	std::array<link_t, 10> links_;
-	int anti_score_;
-public:
-	linkset() noexcept
-	{
-		for (auto& l : links_)
-			l.score_ = 0;
-		anti_score_ = 0;
-	}
-	auto begin() const
-	{
-		return std::begin(links_);
-	}
-	auto end() const
-	{
-		return std::end(links_);
-	}
-	// returns true if link inserted.
-	//
-	bool insertlink(modalpha f, modalpha t, int score) noexcept
-	{
-		// look for an existing connection to one of our ends
-		for (auto& l : links_)
-		{
-			if (l.is(f, t))
-			{
-				if (l.score_ < score)
-				{
-					anti_score_ += l.score_;
-					// replace
-					l.f_ = f;
-					l.t_ = t;
-					l.score_ = score;
-					return true;
-				}
-				else
-				{
-					anti_score_ += score;
-					return false;
-				}
-			}
-		}
-		// then look for an empty entry
-		for (auto& l : links_)
-		{
-			if (l.score_ == 0)
-			{
-				l.f_ = f;
-				l.t_ = t;
-				l.score_ = score;
-				return true;
-			}
-		}
-		// last look for a lesser entry
-		auto lst = std::min_element(std::begin(links_), std::end(links_), [](auto& l, auto& r) { return l.score_ < r.score_; });
-		if ((*lst).score_ < score)
-		{
-			anti_score_ += (*lst).score_;
-			// replace
-			(*lst).f_ = f;
-			(*lst).t_ = t;
-			(*lst).score_ = score;
-			return true;
-		}
-		// failure to improve with this link
-		anti_score_ += score;
-		return false;
-	}
-	int score() const noexcept
-	{
-		return std::accumulate(std::begin(links_), std::end(links_), 0, [](auto l, auto r) { return l + r.score_; });
-	}
-	int anti_score() const noexcept
-	{
-		return anti_score_;
-	}
-	template<typename O> void report(O& ostr)
-	{
-		for (auto& l : links_)
-		{
-			ostr << l.f_ << l.t_ << " ";
-		}
-		ostr << "\n";
-	}
-};
-
-template<typename I> int nbest(I b, I e)
-{
-	linkset ls;
-	bool bchg = false;
-	do
-	{
-		bchg = false;
-		auto bb = b;
-		while (bb != e)
-		{
-			// try and insert *bb to the advantage
-			if ((*bb).cnt_ > 1 && ls.insertlink((*bb).f_, (*bb).t_, (*bb).cnt_))
-				bchg = true;
-			++bb;
-		}
-	} while (bchg);
-//	ls.report(std::cout);
-//	std::cout << "nbest " << ls.score() << ", " << ls.anti_score() << "\n";
-	return ls.score() - (ls.anti_score() / 16);
-}
-
-template<typename I> linkset nbest_get(I b, I e)
-{
-	linkset ls;
-	bool bchg = false;
-	do
-	{
-		bchg = false;
-		auto bb = b;
-		while (bb != e)
-		{
-			// try and insert *bb to the advantage
-			if ((*bb).cnt_ > 1 && ls.insertlink((*bb).f_, (*bb).t_, (*bb).cnt_))
-				bchg = true;
-			++bb;
-		}
-	} while (bchg);
-
-	return ls;
-}
 
 // returns our pseudo 'E' score, and fills out the plug set that corresponds
 // the caller can then judge whether to record or discard
@@ -321,10 +151,7 @@ template<typename IC, typename IA> plug_set_msg match_ciphertext_psm(IC ctb, IC 
 		psm.set( c, *base);
 		++base;
 	});
-	if (bs != alpha::E)
-	{
-		psm.merge_direct(bs, alpha::E);
-	}
+	psm.merge_direct(bs, alpha::E);
 	// sort highest cnt first
 	std::sort(std::begin(psm), std::end(psm), [](auto const& l, auto const& r) { return l.cnt_ > r.cnt_; });
 	// remove all cnt = '1' entries
@@ -338,7 +165,6 @@ template<typename IC, typename IA>
 unsigned match_worker(IC ctb, IC cte, IA base, modalpha bs)
 {
 	auto psm = match_ciphertext_psm(ctb, cte, base, bs);
-	psm.trim();
 
 	return std::accumulate(psm.begin(), psm.begin() + 10, 0, [](auto& l, auto& r) { return l + r.cnt_; }) * 100 / std::distance(ctb, cte);
 }
@@ -371,6 +197,7 @@ template<typename IC, typename IA, typename R> void use_ees(IC ctb, IC cte, IA b
 	// establish the baseline
 	decode(ctb, cte, m3, vo);
 	auto ioc = index_of_coincidence(std::begin(vo), std::end(vo));
+#if 0
 	// now for each candidate, remove a clash, apply it, if ioc improves keep it.
 	for (auto& s : psm)
 	{
@@ -383,6 +210,7 @@ template<typename IC, typename IA, typename R> void use_ees(IC ctb, IC cte, IA b
 		else // keep!
 			ioc = iocn;
 	}
+#endif
 	r.emplace_back(m3.machine_settings(), ioc);
 }
 
@@ -503,6 +331,8 @@ template<typename IC> void hillclimb(IC ctb, IC cte, machine_settings_t& mst, un
 			for (int ti = fi + 1; ti < alpha_max; ++ti)
 			{
 				modalpha t{ ti };
+//				if (fi == from_printable('F') && ti == from_printable('L'))
+//					std::cout << "Trying FL\n";
 				m3.PushStecker();
 				m3.ApplyPlug(f, t);
 				decode(ctb, cte, m3, vo);
@@ -523,3 +353,48 @@ template<typename IC> void hillclimb(IC ctb, IC cte, machine_settings_t& mst, un
 	mst = m3.machine_settings();
 	scr_out = scr;
 }
+
+// in and out on the machine settings and the score
+//
+template<typename IC> void hillclimb3(IC ctb, IC cte, machine_settings_t& mst, unsigned& scr_out)
+{
+	// prepare a machine
+	machine3 m3 = MakeMachine3(mst);
+	std::vector<modalpha> vo;
+	vo.reserve(std::distance(ctb, cte));
+	// establish the baseline
+	decode(ctb, cte, m3, vo);
+	auto scr = trigram_score(std::begin(vo), std::end(vo));
+	bool improved = true;
+	while (improved)
+	{
+		improved = false;
+		modalpha mx = 0;
+		modalpha my = 0;
+		for (int fi = 0; fi < alpha_max; ++fi)
+		{
+			modalpha f{ fi };
+			for (int ti = fi + 1; ti < alpha_max; ++ti)
+			{
+				modalpha t{ ti };
+				m3.PushStecker();
+				m3.ApplyPlug(f, t);
+				decode(ctb, cte, m3, vo);
+				auto scrn = trigram_score(std::begin(vo), std::end(vo));
+				if (scrn > scr)
+				{
+					mx = f;
+					my = t;
+					scr = scrn;
+					improved = true;
+				}
+				m3.PopStecker();
+			}
+		}
+		if (improved)
+			m3.ApplyPlug(mx, my);
+	}
+	mst = m3.machine_settings();
+	scr_out = scr;
+}
+
