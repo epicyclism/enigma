@@ -10,6 +10,7 @@
 #include <string_view>
 #include <vector>
 #include <algorithm>
+#include <limits>
 
 #include "wiring.h"
 #include "rotor.h"
@@ -82,7 +83,7 @@ template<typename F> F factorial(F n)
 // eg. auto vj = MakeJobList("BC"sv, "12345"sv);
 //
 
-template<typename J, typename... ARGS> auto make_job_list(std::string_view reflectors, std::string_view wheels, int offset, ARGS... args) -> std::vector<J>
+template<typename J, typename... ARGS> auto make_job_list(std::string_view reflectors, std::string_view wheels, int offset, int endoff, ARGS... args) -> std::vector<J>
 {
 	// reflectors
 	std::string ref(reflectors);
@@ -98,6 +99,9 @@ template<typename J, typename... ARGS> auto make_job_list(std::string_view refle
 	std::vector <J> vjb;
 	auto skip = factorial(whl.size() - 3); // whl.size() is at least 3...
 	auto cnt = skip;
+	if (endoff == -1)
+		endoff = std::numeric_limits<decltype(endoff)>::max();
+	auto rng = endoff - offset;
 	do
 	{
 		do
@@ -112,6 +116,9 @@ template<typename J, typename... ARGS> auto make_job_list(std::string_view refle
 					mst.w2_ = whl[1];
 					mst.w1_ = whl[2];
 					vjb.emplace_back(mst, args...);
+					--rng;
+					if (rng == 0)
+						goto out;
 				}
 				else
 					--offset;
@@ -119,6 +126,49 @@ template<typename J, typename... ARGS> auto make_job_list(std::string_view refle
 			}
 		} while (std::next_permutation(std::begin(whl), std::end(whl)));
 	} while (std::next_permutation(std::begin(ref), std::end(ref)));
+out:
+	return vjb;
+}
+
+template<typename CI> struct job_wheels
+{
+	machine_settings_t mst_;
+
+	CI ctb_;
+	CI cte_;
+
+	job_wheels(machine_settings_t const& mst, CI ctb, CI cte)
+		: mst_(mst), ctb_(ctb), cte_(cte)
+	{}
+};
+
+template<typename A, typename R, typename CI> struct job_arena
+{
+	machine_settings_t mst_;
+
+	CI ctb_;
+	CI cte_;
+	typename A::line_t     const&  line_;
+	typename A::position_t const&  pos_;
+	typename A::results_t&         r_;
+	modalpha       const  bs_;
+	std::vector<R>        vr_;
+
+	job_arena(machine_settings_t const& mst, CI ctb, CI cte, typename A::line_t const& l, typename A::position_t const& pos, typename A::results_t& r, modalpha bs)
+		: mst_(mst), ctb_(ctb), cte_(cte), line_(l), pos_(pos), r_(r), bs_(bs)
+	{
+		vr_.reserve(256);
+	}
+};
+
+template<typename J, typename A, typename CI> auto make_job_list_arena(machine_settings_t mst, A& a, CI ctb, CI cte) -> std::vector<J>
+{
+	std::vector<J> vjb;
+	for (int i = 0; i < 26; ++i)
+	{
+		a.results_[i].fill(0);
+		vjb.emplace_back(mst, ctb, cte, a.arena_[i], a.pos_, a.results_[i], modalpha(i));
+	}
 
 	return vjb;
 }

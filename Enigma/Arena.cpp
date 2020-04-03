@@ -49,18 +49,6 @@ using arena_t = arena_base<26*26*26 + 512>;
 
 arena_t arena;
 
-template<typename CI> struct job_wheels
-{
-	machine_settings_t mst_;
-
-	CI ctb_;
-	CI cte_;
-
-	job_wheels(machine_settings_t const& mst, CI ctb, CI cte)
-		: mst_(mst), ctb_(ctb), cte_(cte)
-	{}
-};
-
 template<typename J, typename... ARGS> auto make_job_list_t(std::string_view reflector, std::string_view wheels, ARGS... args) -> std::vector<J>
 {
 	machine_settings_t mst;
@@ -88,37 +76,6 @@ struct result_t
 	explicit result_t(machine_settings_t const& mst, double ioc) : mst_(mst), ioc_(ioc)
 	{}
 };
-
-template<typename CI> struct job_arena
-{
-	machine_settings_t mst_;
-
-	CI ctb_;
-	CI cte_;
-	arena_t::line_t         const& line_;
-	arena_t::position_t     const& pos_;
-	arena_t::results_t           & r_;
-	modalpha                const  bs_;
-	std::vector<result_t>      vr_;
-
-	job_arena(machine_settings_t const& mst, CI ctb, CI cte, arena_t::line_t const& l, arena_t::position_t const& pos, arena_t::results_t& r, modalpha bs)
-		: mst_(mst), ctb_(ctb), cte_(cte), line_(l), pos_(pos), r_(r), bs_(bs)
-	{
-		vr_.reserve(256);
-	}
-};
-
-template<typename J, typename CI> auto make_job_list_arena(machine_settings_t mst, arena_t& a, CI ctb, CI cte) -> std::vector<J>
-{
-	std::vector<J> vjb;
-	for (int i = 0; i < 26; ++i)
-	{
-		a.results_[i].fill(0);
-		vjb.emplace_back(mst, ctb, cte, a.arena_[i], a.pos_, a.results_[i], modalpha(i));
-	}
-
-	return vjb;
-}
 
 // these are sort of shared and could be common...
 //
@@ -214,7 +171,7 @@ int main(int ac, char**av)
 			std::cout << c;
 		std::cout << "\nInitialising search\n";
 		using job_wheels_t = job_wheels<decltype(ct.cbegin())> ;
-		std::vector<job_wheels_t> vjbw = make_job_list<job_wheels_t>(av[1], av[2], joboffset, std::begin(ct), std::end(ct));
+		std::vector<job_wheels_t> vjbw = make_job_list<job_wheels_t>(av[1], av[2], joboffset, -1, std::begin(ct), std::end(ct));
 //		std::vector<job_wheels_t> vjbw = make_job_list_t<job_wheels_t>("B", "123", std::begin(ct), std::end(ct));
 //		std::vector<job_wheels_t> vjbw = make_job_list_t<job_wheels_t>("B", "251", std::begin(ct), std::end(ct));
 
@@ -231,7 +188,7 @@ int main(int ac, char**av)
 				// fill the arena
 				fill_arena(m3.Wheels(), arena, 0);
 				// job list
-				using job_arena_t = job_arena<decltype(ct.cbegin())>;
+				using job_arena_t = job_arena<arena_t, result_t, decltype(ct.cbegin())>;
 				auto vjb = make_job_list_arena<job_arena_t>(j.mst_, arena, j.ctb_, j.cte_);
 				// do the search for quite likely
 				std::for_each(std::execution::par, std::begin(vjb), std::end(vjb), [](auto& aj)

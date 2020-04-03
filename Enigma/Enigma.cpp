@@ -11,42 +11,11 @@
 #include "bigram.h"
 #include "trigram.h"
 
-constexpr  char version[] = "v0.07";
+constexpr  char version[] = "v0.08";
 
 template<typename I> unsigned count_ees(I ptb, I pte)
 {
 	return std::count_if(ptb, pte, [](auto c) {return c == alpha::E; });
-}
-
-// compute a statistic for the '-stats' option
-//
-template<typename I> unsigned calc_ees(I ctb, I cte, machine_settings_t mst)
-{
-	machine3 m3 = MakeMachine3(mst);
-	m3.Stecker();
-	std::vector<modalpha> ees(std::distance(ctb, cte), alpha::P);
-	std::vector<modalpha> enc_ees = m3.Transform(std::begin(ees), std::end(ees));
-	auto psm = match_ciphertext_psm(ctb, cte, std::begin(enc_ees), m3.Eval(alpha::P));
-	psm.print(std::cout);
-	mst.stecker_.Clear();
-	mst.stecker_.Set(from_printable('F'), from_printable('L'));
-	mst.stecker_.Set(from_printable('O'), from_printable('U'));
-	mst.stecker_.Set(from_printable('T'), from_printable('Z'));
-
-	unsigned scr;
-	hillclimb(ctb, cte, mst, scr);
-	std::cout << "hillclimb score = " << scr << '\n';
-	std::cout << mst << '\n';
-	hillclimb3(ctb, cte, mst, scr);
-	std::cout << "hillclimb3 score = " << scr << '\n';
-	std::cout << mst << '\n';
-	std::vector<modalpha> vo;
-	decode(ctb, cte, MakeMachine3(mst), vo);
-	for (auto c : vo)
-		std::cout << c;
-	std::cout << "\n";
-
-	return std::accumulate(psm.begin(), psm.begin() + 10, 0, [](auto& l, auto& r) { return l + r.cnt_; }) * 100 / std::distance(ctb, cte);
 }
 
 void Help()
@@ -142,9 +111,8 @@ int main(int ac, char**av)
 		{
 			std::cout << "Statistics!\n";
 			std::cout << "message length = " << vo.size() << "\n";
-			std::cout << "ees     = " << calc_ees(std::begin(vi), std::end(vi), mst) << "\n";
 			auto cnt_e = count_ees(std::begin(vo), std::end(vo));
-			std::cout << "e base  = " << cnt_e << " (" << cnt_e * 100 / vo.size() << "%)\n";
+			std::cout << "e count = " << cnt_e << " (" << double(cnt_e) * 100 / vo.size() << "%)\n";
 			std::cout << "ioc     = " << index_of_coincidence(std::begin(vo), std::end(vo)) << "\n";
 			std::cout << "bigram  = " << bigram_score(std::begin(vo), std::end(vo)) << "\n";
 			std::cout << "trigram = " << trigram_score(std::begin(vo), std::end(vo)) << "\n";
