@@ -118,3 +118,40 @@ template<typename M, typename L> void fill_line(M& m3, L& l, modalpha ch)
 		return m3.Transform(ch);
 	});
 }
+
+// work on an arena
+//
+// A arena
+// CI ciphertext iterator
+// R is a result to collect good hits into.
+//   and is therefore somewhat optional
+//
+template<typename A, typename R, typename CI> struct job_arena
+{
+	machine_settings_t mst_;
+
+	CI ctb_;
+	CI cte_;
+	typename A::line_t     const& line_;
+	typename A::position_t const& pos_;
+	typename A::results_t& r_;
+	modalpha       const  bs_;
+	std::vector<R>        vr_;
+
+	job_arena(machine_settings_t const& mst, CI ctb, CI cte, typename A::line_t const& l, typename A::position_t const& pos, typename A::results_t& r, modalpha bs)
+		: mst_(mst), ctb_(ctb), cte_(cte), line_(l), pos_(pos), r_(r), bs_(bs)
+	{
+	}
+};
+
+template<typename J, typename A, typename CI> auto make_job_list_arena(machine_settings_t mst, A& a, CI ctb, CI cte) -> std::vector<J>
+{
+	std::vector<J> vjb;
+	for (int i = 0; i < 26; ++i)
+	{
+		a.results_[i].fill(0);
+		vjb.emplace_back(mst, ctb, cte, a.arena_[i], a.pos_, a.results_[i], modalpha(i));
+	}
+
+	return vjb;
+}

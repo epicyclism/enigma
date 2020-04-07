@@ -30,6 +30,8 @@ public:
 	}
 	auto begin() noexcept { return psm_.begin(); }
 	auto end()   noexcept { return psm_.begin() + end_; }
+	auto begin() const noexcept  { return psm_.begin(); }
+	auto end()   const noexcept  { return psm_.begin() + end_; }
 	template<typename I> void set_end(I e) noexcept
 	{
 		end_ = std::distance(psm_.begin(), e);
