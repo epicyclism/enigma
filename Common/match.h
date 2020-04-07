@@ -3,6 +3,7 @@
 #include "modalpha.h"
 #include "ioc.h"
 #include "bigram.h"
+#include "trigram.h"
 
 // count possible plug, includes a flag to work the matching algorithm
 //
@@ -141,7 +142,12 @@ template<typename IC, typename IA> int match_ciphertext(IC ctb, IC cte, IA base,
 		psm.merge_direct(bs, alpha::E);
 	}
 	// work out the 10 best...
-	return nbest(psm.begin(), psm.end()) ;
+//	return nbest(psm.begin(), psm.end()) ;
+	// sort highest cnt first
+	std::sort(std::begin(psm), std::end(psm), [](auto const& l, auto const& r) { return l.cnt_ > r.cnt_; });
+	// remove all cnt = '1' entries
+	psm.set_end(std::find_if(std::begin(psm), std::end(psm), [](auto& v) { return v.cnt_ == 1; }));
+	return std::accumulate(psm.begin(), psm.begin() + 10, 0, [](auto& l, auto& r) { return l + r.cnt_; }) * 100 / std::distance(ctb, cte);
 }
 
 template<typename IC, typename IA> plug_set_msg match_ciphertext_psm(IC ctb, IC cte, IA base, modalpha bs)
