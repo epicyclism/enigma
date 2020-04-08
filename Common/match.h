@@ -196,6 +196,7 @@ template<typename IC, typename IA, typename R> void use_ees(IC ctb, IC cte, IA b
 {
 	// collect the likely candidate pairs
 	auto psm = match_ciphertext_psm(ctb, cte, base, bs);
+	psm.print(std::cout);
 	// prepare a machine
 	machine_settings_t mst(mst_j);
 	machine3 m3 = MakeMachine3(mst);

@@ -12,7 +12,7 @@
 #include "arena.h"
 #include "jobs.h"
 
-constexpr  char version[] = "v0.01";
+constexpr  char version[] = "v0.02";
 
 std::vector<modalpha> read_ciphertext()
 {
@@ -154,7 +154,10 @@ int main(int ac, char** av)
 						aj.vr_.fill(0);
 						for (auto p : aj.r_)
 							++aj.vr_[p];
-
+						// the number of actual results is less than the size of the result vector because
+						// of the length of the ciphertext, so we collect a bunch of '0' results which
+						// don't need to be counted. Blanking them out seems most efficient.
+						aj.vr_[0] = 0;
 					});
 				// gather the stats
 				std::for_each(std::begin(vjb), std::end(vjb), [&](auto& aj)
