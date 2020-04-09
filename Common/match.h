@@ -329,7 +329,7 @@ template<typename IC, typename R> void hillclimb(IC ctb, IC cte, machine_setting
 	r.emplace_back(m3.machine_settings(), scr);
 }
 
-template<typename IC, typename F, typename R> void hillclimb(IC ctb, IC cte, machine_settings_t mst, F f, R& r)
+template<typename IC, typename F, typename R> void hillclimb(IC ctb, IC cte, machine_settings_t mst, R& r)
 {
 	// prepare a machine
  	machine3 m3 = MakeMachine3(mst);
@@ -354,7 +354,7 @@ template<typename IC, typename F, typename R> void hillclimb(IC ctb, IC cte, mac
 				m3.PushStecker();
 				m3.ApplyPlug(f, t);
 				decode(ctb, cte, m3, vo);
-				auto scrn = f(std::begin(vo), std::end(vo)) ;
+				auto scrn = F(std::begin(vo), std::end(vo)) ;
 				if (scrn > scr)
 				{
 					std::cout << f << t << " " << scr << " -> " << scrn << '\n';

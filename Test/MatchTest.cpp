@@ -128,20 +128,22 @@ template<typename I> void operate( I ctb, I cte, machine3 const& m3, modalpha bs
 	for (auto r : vr)
 	{
 //		if (r.ioc_ > 0.05)
-		hillclimb(ctb, cte, r.mst_, &index_of_coincidence, vr2);
+		hillclimb(ctb, cte, r.mst_, vr2);
 		for(int n = 1; n < 10; ++n)
-			hillclimb(ctb, cte, vr2.back().mst_, &index_of_coincidence, vr2);
+			hillclimb(ctb, cte, vr2.back().mst_, vr2);
 	}
 	std::cout << vr2.size() << " survived hillclimb1, max score = " << (*std::max_element(vr2.begin(), vr2.end(), [](auto& l, auto& r) { return l.scr_ < r.scr_; })).scr_ << '\n';
+#if 0
 	std::vector<result_scr_t>          vr3;
 	for (auto r : vr2)
 	{
 //		if (r.ioc_ > 0.05)
-		hillclimb(ctb, cte, r.mst_, &bigram_score, vr3);
+		hillclimb(ctb, cte, r.mst_, bigram_score, vr3);
 		for(int n = 1; n < 10; ++n)
-			hillclimb(ctb, cte, vr3.back().mst_, &bigram_score, vr3);
+			hillclimb(ctb, cte, vr3.back().mst_, bigram_score, vr3);
 	}
-	std::cout << vr2.size() << " survived hillclimb2, max score = " << (*std::max_element(vr2.begin(), vr2.end(), [](auto& l, auto& r) { return l.scr_ < r.scr_; })).scr_ << '\n';
+	std::cout << vr3.size() << " survived hillclimb2, max score = " << (*std::max_element(vr2.begin(), vr2.end(), [](auto& l, auto& r) { return l.scr_ < r.scr_; })).scr_ << '\n';
+#endif
 	for (auto r : vr2)
 	{
 //		if (r.scr_ > 42000)
