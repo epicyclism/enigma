@@ -87,26 +87,38 @@ template<typename I> void operate( I ctb, I cte, machine3 const& m3, modalpha bs
 			++cnt;
 #if 0
 			auto off = std::distance(std::begin(a.results_[row]), rb);
-			use_ees(ctb, cte, std::begin(a.arena_[row]) + off, *(std::begin(a.pos_) + off), modalpha(15), m3.machine_settings(), vr);
+			use_ees(ctb, cte, std::begin(a.arena_[row]) + off, *(std::begin(a.pos_) + off), bs, m3.machine_settings(), vr);
 #endif
 		}
-#if 1
+#if 0
 		if (*(std::begin(a.pos_) + cp) == position(alpha::Q, alpha::A, alpha::Y))
 		{
 			auto off = std::distance(std::begin(a.results_[row]), rb);
-			use_ees(ctb, cte, std::begin(a.arena_[row]) + off, *(std::begin(a.pos_) + off), modalpha(15), m3.machine_settings(), vr);
+			use_ees(ctb, cte, std::begin(a.arena_[row]) + off, *(std::begin(a.pos_) + off), bs, m3.machine_settings(), vr);
 			std::cout << "QAY score = " << score << '\n';
 			std::cout << vr.back().mst_ << '\n';
 			std::cout << "ioc = " << vr.back().ioc_ << '\n';
 		}
-		if (*(std::begin(a.pos_) + cp) == position(alpha::F, alpha::B, alpha::N))
+#endif
+#if 1
+		if (*(std::begin(a.pos_) + cp) == position(alpha::U, alpha::E, alpha::D))
 		{
 			auto off = std::distance(std::begin(a.results_[row]), rb);
-			use_ees(ctb, cte, std::begin(a.arena_[row]) + off, *(std::begin(a.pos_) + off), modalpha(15), m3.machine_settings(), vr);
-			std::cout << "FBN score = " << score << '\n';
+			use_ees(ctb, cte, std::begin(a.arena_[row]) + off, *(std::begin(a.pos_) + off), bs, m3.machine_settings(), vr);
+			std::cout << "UED score = " << score << '\n';
 			std::cout << vr.back().mst_ << '\n';
 			std::cout << "ioc = " << vr.back().ioc_ << '\n';
 		}
+#if 0
+		if (*(std::begin(a.pos_) + cp) == position(alpha::B, alpha::L, alpha::Q))
+		{
+			auto off = std::distance(std::begin(a.results_[row]), rb);
+			use_ees(ctb, cte, std::begin(a.arena_[row]) + off, *(std::begin(a.pos_) + off), bs, m3.machine_settings(), vr);
+			std::cout << "BLQ score = " << score << '\n';
+			std::cout << vr.back().mst_ << '\n';
+			std::cout << "ioc = " << vr.back().ioc_ << '\n';
+		}
+#endif
 		++cp;
 #endif
 		++rb;
@@ -116,14 +128,25 @@ template<typename I> void operate( I ctb, I cte, machine3 const& m3, modalpha bs
 	for (auto r : vr)
 	{
 //		if (r.ioc_ > 0.05)
-			hillclimb(ctb, cte, r.mst_, vr2);
+		hillclimb(ctb, cte, r.mst_, &index_of_coincidence, vr2);
+		for(int n = 1; n < 10; ++n)
+			hillclimb(ctb, cte, vr2.back().mst_, &index_of_coincidence, vr2);
 	}
-	std::cout << vr2.size() << " survived hillclimb, max score = " << (*std::max_element(vr2.begin(), vr2.end(), [](auto& l, auto& r) { return l.scr_ < r.scr_; })).scr_ << '\n';
+	std::cout << vr2.size() << " survived hillclimb1, max score = " << (*std::max_element(vr2.begin(), vr2.end(), [](auto& l, auto& r) { return l.scr_ < r.scr_; })).scr_ << '\n';
+	std::vector<result_scr_t>          vr3;
+	for (auto r : vr2)
+	{
+//		if (r.ioc_ > 0.05)
+		hillclimb(ctb, cte, r.mst_, &bigram_score, vr3);
+		for(int n = 1; n < 10; ++n)
+			hillclimb(ctb, cte, vr3.back().mst_, &bigram_score, vr3);
+	}
+	std::cout << vr2.size() << " survived hillclimb2, max score = " << (*std::max_element(vr2.begin(), vr2.end(), [](auto& l, auto& r) { return l.scr_ < r.scr_; })).scr_ << '\n';
 	for (auto r : vr2)
 	{
 //		if (r.scr_ > 42000)
 //		if (r.scr_ > 30000)
-		if(r.mst_.pos_ == position(alpha::Q, alpha::A, alpha::Y))
+//		if(r.mst_.pos_ == position(alpha::Q, alpha::A, alpha::Y))
 		{
 			machine3 m3 = MakeMachine3(r.mst_);
 			std::vector<modalpha> vo;
@@ -141,19 +164,18 @@ template<typename I> void operate( I ctb, I cte, machine3 const& m3, modalpha bs
 int main()
 {
 	// B425 agm QAY "DM EP FL HI JR KY NQ OU SW TZ"
-	auto ct1 = make_alpha_array("QKXETVPZQOHSXMBIZPHTCTRMAUZYSTJIMDUYOZBFRTZOUHBGOROUVRQEJRDRJHZPZIBQQHKMMJZCIIRCUOLXLCIOQKHRLIGGFJFTLLGDRARDZQUQKLTKXXXYKRUVFULBQLAYRZVJFULCGQJXFJURMURSELYFVFOKUHYUHSYLOMEFYAIIP");
-	machine3 m3 = MakeMachine3("B425");
-	Ring(m3, "agm");
-	modalpha erow = alpha::P;
+	//auto ct1 = make_alpha_array("QKXETVPZQOHSXMBIZPHTCTRMAUZYSTJIMDUYOZBFRTZOUHBGOROUVRQEJRDRJHZPZIBQQHKMMJZCIIRCUOLXLCIOQKHRLIGGFJFTLLGDRARDZQUQKLTKXXXYKRUVFULBQLAYRZVJFULCGQJXFJURMURSELYFVFOKUHYUHSYLOMEFYAIIP");
+	//machine3 m3 = MakeMachine3("B425");
+	//Ring(m3, "agm");
+	//modalpha erow = alpha::P;
 
 	// B251 bcn UED "AO BV DS EX FT HZ IQ JW KU PR"
-	//auto ct1 = make_alpha_array("UPONTXBBWFYAQNFLZTBHLBWXSOZUDCDYIZNRRHPPBNSV");
-	//machine3 m3 = MakeMachine3("B251");
-	//Ring(m3, "bcn");
-	//modalpha erow = alpha::X;
+	auto ct1 = make_alpha_array("UPONTXBBWFYAQNFLZTBHLBWXSOZUDCDYIZNRRHPPBNSV");
+	machine3 m3 = MakeMachine3("B251");
+	Ring(m3, "bcn");
+	modalpha erow = alpha::X;
 	
 	m3.Setting(alpha::A, alpha::A, alpha::A);
-//	m3.Setting(alpha::Q, alpha::A, alpha::Y);
 
 	std::cout << "# ";
 	m3.ReportSettings(std::cout);

@@ -196,7 +196,7 @@ template<typename IC, typename IA, typename R> void use_ees(IC ctb, IC cte, IA b
 {
 	// collect the likely candidate pairs
 	auto psm = match_ciphertext_psm(ctb, cte, base, bs);
-	psm.print(std::cout);
+//	psm.print(std::cout);
 	// prepare a machine
 	machine_settings_t mst(mst_j);
 	machine3 m3 = MakeMachine3(mst);
@@ -206,7 +206,8 @@ template<typename IC, typename IA, typename R> void use_ees(IC ctb, IC cte, IA b
 	// establish the baseline
 	decode(ctb, cte, m3, vo);
 	auto ioc = index_of_coincidence(std::begin(vo), std::end(vo));
-#if 0
+	auto iocb = ioc;
+#if 1
 	// now for each candidate, remove a clash, apply it, if ioc improves keep it.
 	for (auto& s : psm)
 	{
@@ -220,6 +221,14 @@ template<typename IC, typename IA, typename R> void use_ees(IC ctb, IC cte, IA b
 			ioc = iocn;
 	}
 #endif
+	std::cout << "ioc from " << iocb << " to " << ioc << '\n';
+	// report
+	m3.ReportSettings(std::cout);
+	std::cout << " = ";
+	for (auto c : vo)
+		std::cout << c;
+	std::cout << "\n";
+
 	r.emplace_back(m3.machine_settings(), ioc);
 }
 
@@ -279,12 +288,13 @@ template<typename IC> void hillclimb_test(IC ctb, IC cte, position const& pos, m
 template<typename IC, typename R> void hillclimb(IC ctb, IC cte, machine_settings_t mst, R& r)
 {
 	// prepare a machine
-	machine3 m3 = MakeMachine3(mst);
+ 	machine3 m3 = MakeMachine3(mst);
 	std::vector<modalpha> vo;
 	vo.reserve(std::distance(ctb, cte));
 	// establish the baseline
 	decode(ctb, cte, m3, vo);
 	auto scr = bigram_score(std::begin(vo), std::end(vo)) ;
+	auto scrb = scr;
 	bool improved = true;
 	while (improved)
 	{
@@ -303,6 +313,7 @@ template<typename IC, typename R> void hillclimb(IC ctb, IC cte, machine_setting
 				auto scrn = bigram_score(std::begin(vo), std::end(vo)) ;
 				if (scrn > scr)
 				{
+					std::cout << f << t << " " << scr << " -> " << scrn << '\n';
 					mx = f;
 					my = t;
 					scr = scrn;
@@ -314,6 +325,51 @@ template<typename IC, typename R> void hillclimb(IC ctb, IC cte, machine_setting
 		if (improved)
 			m3.ApplyPlug(mx, my);
 	}
+	std::cout << "bg from " << scrb << " to " << scr << '\n';
+	r.emplace_back(m3.machine_settings(), scr);
+}
+
+template<typename IC, typename F, typename R> void hillclimb(IC ctb, IC cte, machine_settings_t mst, F f, R& r)
+{
+	// prepare a machine
+ 	machine3 m3 = MakeMachine3(mst);
+	std::vector<modalpha> vo;
+	vo.reserve(std::distance(ctb, cte));
+	// establish the baseline
+	decode(ctb, cte, m3, vo);
+	auto scr = f(std::begin(vo), std::end(vo)) ;
+	auto scrb = scr;
+	bool improved = true;
+	while (improved)
+	{
+		improved = false;
+		modalpha mx = 0;
+		modalpha my = 0;
+		for (int fi = 0; fi < alpha_max; ++fi)
+		{
+			modalpha f{ fi };
+			for (int ti = fi + 1; ti < alpha_max; ++ti)
+			{
+				modalpha t{ ti };
+				m3.PushStecker();
+				m3.ApplyPlug(f, t);
+				decode(ctb, cte, m3, vo);
+				auto scrn = f(std::begin(vo), std::end(vo)) ;
+				if (scrn > scr)
+				{
+					std::cout << f << t << " " << scr << " -> " << scrn << '\n';
+					mx = f;
+					my = t;
+					scr = scrn;
+					improved = true;
+				}
+				m3.PopStecker();
+			}
+		}
+		if (improved)
+			m3.ApplyPlug(mx, my);
+	}
+	std::cout << "bg from " << scrb << " to " << scr << '\n';
 	r.emplace_back(m3.machine_settings(), scr);
 }
 
