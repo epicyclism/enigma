@@ -337,7 +337,7 @@ template<typename IC, typename F, typename R> void hillclimb(IC ctb, IC cte, mac
 	vo.reserve(std::distance(ctb, cte));
 	// establish the baseline
 	decode(ctb, cte, m3, vo);
-	auto scr = f(std::begin(vo), std::end(vo)) ;
+	auto scr = fn(std::begin(vo), std::end(vo)) ;
 	auto scrb = scr;
 	bool improved = true;
 	while (improved)
