@@ -13,6 +13,7 @@
 #include "ioc.h"
 #include "bigram.h"
 #include "match.h"
+#include "hillclimb.h"
 
 using arena_t = arena_base<26 * 26 * 26 + 256>;
 
@@ -90,7 +91,7 @@ template<typename I> void operate( I ctb, I cte, machine3 const& m3, modalpha bs
 			use_ees(ctb, cte, std::begin(a.arena_[row]) + off, *(std::begin(a.pos_) + off), bs, m3.machine_settings(), vr);
 #endif
 		}
-#if 0
+#if 1
 		if (*(std::begin(a.pos_) + cp) == position(alpha::Q, alpha::A, alpha::Y))
 		{
 			auto off = std::distance(std::begin(a.results_[row]), rb);
@@ -100,7 +101,7 @@ template<typename I> void operate( I ctb, I cte, machine3 const& m3, modalpha bs
 			std::cout << "ioc = " << vr.back().ioc_ << '\n';
 		}
 #endif
-#if 1
+#if 0
 		if (*(std::begin(a.pos_) + cp) == position(alpha::U, alpha::E, alpha::D))
 		{
 			auto off = std::distance(std::begin(a.results_[row]), rb);
@@ -109,6 +110,7 @@ template<typename I> void operate( I ctb, I cte, machine3 const& m3, modalpha bs
 			std::cout << vr.back().mst_ << '\n';
 			std::cout << "ioc = " << vr.back().ioc_ << '\n';
 		}
+#endif
 #if 0
 		if (*(std::begin(a.pos_) + cp) == position(alpha::B, alpha::L, alpha::Q))
 		{
@@ -120,7 +122,6 @@ template<typename I> void operate( I ctb, I cte, machine3 const& m3, modalpha bs
 		}
 #endif
 		++cp;
-#endif
 		++rb;
 	}
 	std::cout << "threshold = " << threshold << ", " << cnt << "(" << a.results_[row].size() << ") qualified.\n";
@@ -166,16 +167,16 @@ template<typename I> void operate( I ctb, I cte, machine3 const& m3, modalpha bs
 int main()
 {
 	// B425 agm QAY "DM EP FL HI JR KY NQ OU SW TZ"
-	//auto ct1 = make_alpha_array("QKXETVPZQOHSXMBIZPHTCTRMAUZYSTJIMDUYOZBFRTZOUHBGOROUVRQEJRDRJHZPZIBQQHKMMJZCIIRCUOLXLCIOQKHRLIGGFJFTLLGDRARDZQUQKLTKXXXYKRUVFULBQLAYRZVJFULCGQJXFJURMURSELYFVFOKUHYUHSYLOMEFYAIIP");
-	//machine3 m3 = MakeMachine3("B425");
-	//Ring(m3, "agm");
-	//modalpha erow = alpha::P;
+	auto ct1 = make_alpha_array("QKXETVPZQOHSXMBIZPHTCTRMAUZYSTJIMDUYOZBFRTZOUHBGOROUVRQEJRDRJHZPZIBQQHKMMJZCIIRCUOLXLCIOQKHRLIGGFJFTLLGDRARDZQUQKLTKXXXYKRUVFULBQLAYRZVJFULCGQJXFJURMURSELYFVFOKUHYUHSYLOMEFYAIIP");
+	machine3 m3 = MakeMachine3("B425");
+	Ring(m3, "agm");
+	modalpha erow = alpha::P;
 
 	// B251 bcn UED "AO BV DS EX FT HZ IQ JW KU PR"
-	auto ct1 = make_alpha_array("UPONTXBBWFYAQNFLZTBHLBWXSOZUDCDYIZNRRHPPBNSV");
-	machine3 m3 = MakeMachine3("B251");
-	Ring(m3, "bcn");
-	modalpha erow = alpha::X;
+	//auto ct1 = make_alpha_array("UPONTXBBWFYAQNFLZTBHLBWXSOZUDCDYIZNRRHPPBNSV");
+	//machine3 m3 = MakeMachine3("B251");
+	//Ring(m3, "bcn");
+	//modalpha erow = alpha::X;
 	
 	m3.Setting(alpha::A, alpha::A, alpha::A);
 

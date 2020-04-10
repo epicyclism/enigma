@@ -12,6 +12,7 @@
 #include "ioc.h"
 #include "bigram.h"
 #include "match.h"
+#include "hillclimb.h"
 #include "arena.h"
 #include "jobs.h"
 
@@ -69,11 +70,10 @@ template<typename J, typename... ARGS> auto make_job_list_t(std::string_view ref
 struct result_t
 {
 	machine_settings_t mst_;
-	unsigned mtch_;
 	double   ioc_;
 	unsigned bg_;
 
-	explicit result_t(machine_settings_t const& mst, double ioc) : mst_(mst), ioc_(ioc)
+	explicit result_t(machine_settings_t const& mst, unsigned scr) : mst_(mst), bg_(scr)
 	{}
 };
 
@@ -95,7 +95,7 @@ template<typename J> void collect_results(J& j)
 			auto off = std::distance(std::begin(j.r_), rb);
 			use_ees(j.ctb_, j.cte_, std::begin(j.line_) + off, *(itp + off), j.bs_, j.mst_, j.vr_);
 			// ick
-			j.vr_.back().mtch_ = score;
+			j.vr_.back().bg_ = score;
 		}
 		++rb;
 	}
@@ -139,8 +139,8 @@ void collate_results_bg(std::vector<result_t> const& in, std::vector<result_t>& 
 {
 	for (auto& r : in)
 	{
-//		if (r.bg_ > 45000)
-		if (r.bg_ > 42000)
+		if (r.bg_ > 45000)
+//		if (r.bg_ > 42000)
 			out.emplace_back(r);
 	}
 }
@@ -195,7 +195,6 @@ int main(int ac, char**av)
 					{
 						match_search(aj.ctb_, aj.cte_, aj.line_, aj.r_, aj.bs_);
 					});
-
 				// do the search for more likely
 				std::for_each(std::execution::par, std::begin(vjb), std::end(vjb), [](auto& aj)
 					{
@@ -205,7 +204,7 @@ int main(int ac, char**av)
 				auto vr = collate_results_ioc(vjb);
 				std::for_each(std::execution::par, std::begin(vr), std::end(vr), [&ct](auto& r)
 					{
-						hillclimb(std::begin(ct), std::end(ct), r.mst_, r.bg_);
+						hillclimb2(std::begin(ct), std::end(ct), r.mst_, r.bg_);
 					});
 				auto n = vr_oall.size();
 				collate_results_bg(vr, vr_oall);
@@ -216,7 +215,7 @@ int main(int ac, char**av)
 						vo.reserve(ct.size());
 						decode(std::begin(ct), std::end(ct), m3, vo);
 						// report
-						std::cout << r.mst_ << " { " << r.mtch_ << ", " << r.ioc_ << ", " << r.bg_ << " } : ";
+						std::cout << r.mst_ << " { " << r.ioc_ << ", " << r.bg_ << " } : ";
 						for (auto c : vo)
 							std::cout << c;
 						std::cout << "\n";
@@ -232,7 +231,7 @@ int main(int ac, char**av)
 			vo.reserve(ct.size());
 			decode(std::begin(ct), std::end(ct), m3, vo);
 			// report
-			std::cout << r.mst_ << " { " << r.mtch_ << ", " << r.ioc_ << ", " << r.bg_ << " } : ";
+			std::cout << r.mst_ << " { " << r.ioc_ << ", " << r.bg_ << " } : ";
 			for (auto c : vo)
 				std::cout << c;
 			std::cout << "\n";

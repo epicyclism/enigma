@@ -99,6 +99,7 @@ template<typename J, typename... ARGS> auto make_job_list(std::string_view refle
 	std::vector <J> vjb;
 	auto skip = factorial(whl.size() - 3); // whl.size() is at least 3...
 	auto cnt = skip;
+	auto jobs = endoff - offset; // endoff tested for -1 later...
 	do
 	{
 		do
@@ -123,7 +124,7 @@ template<typename J, typename... ARGS> auto make_job_list(std::string_view refle
 
 	if (endoff != -1)
 		// erase the overspill
-		vjb.erase(vjb.begin() + endoff, vjb.end());
+		vjb.erase(vjb.begin() + jobs, vjb.end());
 
 	return vjb;
 }
