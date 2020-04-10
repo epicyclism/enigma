@@ -9,6 +9,57 @@ template<typename IC, typename IA, typename R> void use_ees(IC ctb, IC cte, IA b
 {
 	// collect the likely candidate pairs
 	auto psm = match_ciphertext_psm(ctb, cte, base, bs);
+//	psm.print(std::cout);
+	// prepare a machine
+	machine_settings_t mst(mst_j);
+	machine3 m3 = MakeMachine3(mst);
+	m3.Position(pos);
+	std::vector<modalpha> vo;
+	vo.reserve(std::distance(ctb, cte));
+	// establish the baseline
+	decode(ctb, cte, m3, vo);
+	auto ioc = index_of_coincidence(std::begin(vo), std::end(vo));
+	for (auto& s : psm)
+	{
+		m3.PushStecker();
+		m3.ApplyPlug(s.f_, s.t_);
+		decode(ctb, cte, m3, vo);
+		s.ioc_ = index_of_coincidence(std::begin(vo), std::end(vo));
+	}
+//	psm.print_ioc(std::cout);
+	// sort good->bad
+	std::sort(std::begin(psm), std::end(psm), [](auto const& l, auto const& r) { return l.ioc_ > r.ioc_; });
+	// remove all detrimental options
+	psm.set_end(std::find_if(std::begin(psm), std::end(psm), [ioc](auto& v) { return v.ioc_ < ioc; }));
+//	psm.print_ioc(std::cout);
+	// apply
+	auto pr = psm.begin() + 10;
+	do
+	{
+		--pr;
+		auto& s = *pr;
+		m3.ApplyPlug(s.f_, s.t_);
+	} while (pr != psm.begin());
+
+	decode(ctb, cte, m3, vo);
+	auto iocn = index_of_coincidence(std::begin(vo), std::end(vo));
+#if 0
+	std::cout << "ioc from " << ioc << " to " << iocn << '\n';
+	// report
+	m3.ReportSettings(std::cout);
+	std::cout << " = ";
+	for (auto c : vo)
+		std::cout << c;
+	std::cout << "\n";
+#endif
+	r.emplace_back(m3.machine_settings(), iocn);
+}
+
+
+template<typename IC, typename IA, typename R> void use_ees_back(IC ctb, IC cte, IA base, position const& pos, modalpha bs, machine_settings_t const& mst_j, R& r)
+{
+	// collect the likely candidate pairs
+	auto psm = match_ciphertext_psm(ctb, cte, base, bs);
 	//	psm.print(std::cout);
 	// prepare a machine
 	machine_settings_t mst(mst_j);
@@ -20,7 +71,6 @@ template<typename IC, typename IA, typename R> void use_ees(IC ctb, IC cte, IA b
 	decode(ctb, cte, m3, vo);
 	auto ioc = index_of_coincidence(std::begin(vo), std::end(vo));
 	auto iocb = ioc;
-#if 1
 	// now for each candidate, remove a clash, apply it, if ioc improves keep it.
 	// go from back, least interesting, to front, most interesting
 	auto pr = psm.end();
@@ -37,7 +87,6 @@ template<typename IC, typename IA, typename R> void use_ees(IC ctb, IC cte, IA b
 		else // keep!
 			ioc = iocn;
 	} while (pr != psm.begin());
-#endif
 #if 0
 	std::cout << "ioc from " << iocb << " to " << ioc << '\n';
 	// report
@@ -65,7 +114,6 @@ template<typename IC, typename IA, typename R> void use_ees_forward(IC ctb, IC c
 	decode(ctb, cte, m3, vo);
 	auto ioc = index_of_coincidence(std::begin(vo), std::end(vo));
 	auto iocb = ioc;
-#if 1
 	// now for each candidate, remove a clash, apply it, if ioc improves keep it.
 	for (auto& s : psm)
 	{
@@ -78,7 +126,6 @@ template<typename IC, typename IA, typename R> void use_ees_forward(IC ctb, IC c
 		else // keep!
 			ioc = iocn;
 	}
-#endif
 	std::cout << "ioc from " << iocb << " to " << ioc << '\n';
 	// report
 	m3.ReportSettings(std::cout);
@@ -162,13 +209,59 @@ template<typename IC, typename R> void hillclimb(IC ctb, IC cte, machine_setting
 		for (int fi = 0; fi < alpha_max; ++fi)
 		{
 			modalpha f{ fi };
-			for (int ti = fi + 1; ti < alpha_max; ++ti)
+//			for (int ti = fi + 1; ti < alpha_max; ++ti)
+			for (int ti = fi; ti < alpha_max; ++ti)
 			{
 				modalpha t{ ti };
 				m3.PushStecker();
 				m3.ApplyPlug(f, t);
 				decode(ctb, cte, m3, vo);
 				auto scrn = bigram_score(std::begin(vo), std::end(vo));
+				if (scrn > scr)
+				{
+//					std::cout << f << t << " " << scr << " -> " << scrn << '\n';
+					mx = f;
+					my = t;
+					scr = scrn;
+					improved = true;
+				}
+				m3.PopStecker();
+			}
+		}
+		if (improved)
+			m3.ApplyPlug(mx, my);
+	}
+	std::cout << "bg from " << scrb << " to " << scr << '\n';
+	r.emplace_back(m3.machine_settings(), scr);
+}
+
+template<typename IC, typename R> void hillclimb_tg(IC ctb, IC cte, machine_settings_t mst, R& r)
+{
+	// prepare a machine
+	machine3 m3 = MakeMachine3(mst);
+	std::vector<modalpha> vo;
+	vo.reserve(std::distance(ctb, cte));
+	// establish the baseline
+	decode(ctb, cte, m3, vo);
+	auto scr = trigram_score(std::begin(vo), std::end(vo));
+	auto scrb = scr;
+	bool improved = true;
+	while (improved)
+	{
+		improved = false;
+		modalpha mx = 0;
+		modalpha my = 0;
+		for (int fi = 0; fi < alpha_max; ++fi)
+		{
+			modalpha f{ fi };
+//			for (int ti = fi + 1; ti < alpha_max; ++ti)
+			for (int ti = fi; ti < alpha_max; ++ti)
+			{
+				modalpha t{ ti };
+				m3.PushStecker();
+				m3.ApplyPlug(f, t);
+				decode(ctb, cte, m3, vo);
+				auto scrn = trigram_score(std::begin(vo), std::end(vo));
 				if (scrn > scr)
 				{
 					std::cout << f << t << " " << scr << " -> " << scrn << '\n';
@@ -183,7 +276,7 @@ template<typename IC, typename R> void hillclimb(IC ctb, IC cte, machine_setting
 		if (improved)
 			m3.ApplyPlug(mx, my);
 	}
-	std::cout << "bg from " << scrb << " to " << scr << '\n';
+//	std::cout << "bg from " << scrb << " to " << scr << '\n';
 	r.emplace_back(m3.machine_settings(), scr);
 }
 

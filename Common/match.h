@@ -12,7 +12,11 @@ struct plug_stat_chk
 	modalpha f_;
 	modalpha t_;
 	bool     b_;
-	int      cnt_;
+	union
+	{
+		int      cnt_;
+		double   ioc_;
+	};
 };
 
 // assumed max message length
@@ -120,6 +124,15 @@ public:
 				ostr << v.f_ << "<->" << v.t_ << " - " << v.cnt_ << "\n"; 
 			});
 		ostr << "Direct = " << direct_ << "\n";
+		ostr << "Count  = " << total_ << "\n";
+	}
+	template<typename O> void print_ioc(O& ostr)
+	{
+		std::for_each(std::begin(psm_), std::begin(psm_) + end_, 
+			[&](auto const& v)
+			{
+				ostr << v.f_ << "<->" << v.t_ << " - " << v.ioc_ << "\n"; 
+			});
 		ostr << "Count  = " << total_ << "\n";
 	}
 };
