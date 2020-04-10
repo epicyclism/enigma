@@ -74,7 +74,13 @@ struct result_t
 	unsigned bg_;
 
 	explicit result_t(machine_settings_t const& mst, unsigned scr) : mst_(mst), bg_(scr)
-	{}
+	{
+		ioc_ = 0.0;
+	}
+	explicit result_t(machine_settings_t const& mst, double ioc) : mst_(mst), ioc_(ioc)
+	{
+		bg_ = 0;
+	}
 };
 
 // these are sort of shared and could be common...
@@ -83,8 +89,8 @@ template<typename J> void collect_results(J& j)
 {
 	auto sz = std::distance(j.ctb_, j.cte_);
 	auto itp = std::begin(j.pos_);
-//	auto threshold = sz / 12;
-	auto threshold = 14; // 14 percent using new ees mechanism.
+	auto threshold = sz / 10 - 1;
+//	auto threshold = 14; // 14 percent using new ees mechanism.
 
 	auto rb = std::begin(j.r_);
 	while (rb != std::end(j.r_))
