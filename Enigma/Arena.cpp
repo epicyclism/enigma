@@ -90,7 +90,7 @@ template<typename J> void collect_results(J& j)
 	auto sz = std::distance(j.ctb_, j.cte_);
 	auto itp = std::begin(j.pos_);
 //	auto threshold = sz / 10 - 1;
-	auto threshold = 15; // 15 percent using new ees mechanism, which over-estimates
+	auto threshold = 17; // 15 percent using new ees mechanism, which over-estimates
 
 	auto rb = std::begin(j.r_);
 	while (rb != std::end(j.r_))
@@ -198,7 +198,7 @@ int main(int ac, char**av)
 			// search each wheel order in parallel
 			do
 			{
-				std::cout << j.mst_ << " " << vr_oall.size() << "\n";
+				std::cout << j.mst_ << " " << vr_oall.size() ;
 				machine3 m3 = MakeMachine3(j.mst_);
 				// fill the arena
 				fill_arena(m3.Wheels(), arena, 0);
@@ -217,6 +217,7 @@ int main(int ac, char**av)
 					});
 				// do the search for most likely
 				auto vr = collate_results_ioc(vjb);
+				std::cout << " - considering " << vr.size() << " possibles.\n";
 				std::for_each(std::execution::par, std::begin(vr), std::end(vr), [&ct](auto& r)
 					{
 						hillclimb2(std::begin(ct), std::end(ct), r.mst_, r.bg_);
