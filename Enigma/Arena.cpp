@@ -89,8 +89,8 @@ template<typename J> void collect_results(J& j)
 {
 	auto sz = std::distance(j.ctb_, j.cte_);
 	auto itp = std::begin(j.pos_);
-	auto threshold = sz / 10 - 1;
-//	auto threshold = 14; // 14 percent using new ees mechanism.
+//	auto threshold = sz / 10 - 1;
+	auto threshold = 15; // 15 percent using new ees mechanism, which over-estimates
 
 	auto rb = std::begin(j.r_);
 	while (rb != std::end(j.r_))
@@ -147,6 +147,15 @@ void collate_results_bg(std::vector<result_t> const& in, std::vector<result_t>& 
 	{
 		if (r.bg_ > 45000)
 //		if (r.bg_ > 42000)
+			out.emplace_back(r);
+	}
+}
+
+void collate_results_tg(std::vector<result_t> const& in, std::vector<result_t>& out)
+{
+	for (auto& r : in)
+	{
+		if (r.bg_ > 15000)
 			out.emplace_back(r);
 	}
 }
@@ -211,9 +220,10 @@ int main(int ac, char**av)
 				std::for_each(std::execution::par, std::begin(vr), std::end(vr), [&ct](auto& r)
 					{
 						hillclimb2(std::begin(ct), std::end(ct), r.mst_, r.bg_);
+						hillclimb3(std::begin(ct), std::end(ct), r.mst_, r.bg_);
 					});
 				auto n = vr_oall.size();
-				collate_results_bg(vr, vr_oall);
+				collate_results_tg(vr, vr_oall);
 				std::for_each(vr_oall.begin() + n, vr_oall.end(), [&ct](auto& r)
 					{
 						machine3 m3 = MakeMachine3(r.mst_);

@@ -9,7 +9,7 @@ template<typename IC, typename IA, typename R> void use_ees(IC ctb, IC cte, IA b
 {
 	// collect the likely candidate pairs
 	auto psm = match_ciphertext_psm(ctb, cte, base, bs);
-	psm.print(std::cout);
+//	psm.print(std::cout);
 	// prepare a machine
 	machine_settings_t mst(mst_j);
 	machine3 m3 = MakeMachine3(mst);
@@ -18,7 +18,7 @@ template<typename IC, typename IA, typename R> void use_ees(IC ctb, IC cte, IA b
 	vo.reserve(std::distance(ctb, cte));
 	// establish the baseline
 	decode(ctb, cte, m3, vo);
-	auto ioc = index_of_coincidence(std::begin(vo), std::end(vo));
+//	auto ioc = index_of_coincidence(std::begin(vo), std::end(vo));
 	for (auto& s : psm)
 	{
 		m3.Stecker(); // clears
@@ -26,14 +26,14 @@ template<typename IC, typename IA, typename R> void use_ees(IC ctb, IC cte, IA b
 		decode(ctb, cte, m3, vo);
 		s.ioc_ = index_of_coincidence(std::begin(vo), std::end(vo));
 	}
-	psm.print_ioc(std::cout);
+//	psm.print_ioc(std::cout);
 	// sort good->bad
 	std::sort(std::begin(psm), std::end(psm), [](auto const& l, auto const& r) { if (l.cnt_ == r.cnt_) return l.ioc_ > r.ioc_; else return l.cnt_ > r.cnt_; });
 	// remove all detrimental options
 //	psm.set_end(std::find_if(std::begin(psm), std::end(psm), [ioc](auto& v) { return v.ioc_ < ioc; }));
-	psm.print_ioc(std::cout);
+//	psm.print_ioc(std::cout);
 	psm.unique();
-	psm.print_ioc(std::cout);
+//	psm.print_ioc(std::cout);
 	// apply
 	m3.Stecker(); // clears
 	auto pr = psm.begin() + (psm.size() > 10 ? 10 : psm.size());
@@ -247,7 +247,7 @@ template<typename IC, typename R> void hillclimb_bg(IC ctb, IC cte, machine_sett
 	// establish the baseline
 	decode(ctb, cte, m3, vo);
 	auto scr = bigram_score(std::begin(vo), std::end(vo));
-	auto scrb = scr;
+//	auto scrb = scr;
 	bool improved = true;
 	while (improved)
 	{
@@ -266,7 +266,7 @@ template<typename IC, typename R> void hillclimb_bg(IC ctb, IC cte, machine_sett
 				auto scrn = bigram_score(std::begin(vo), std::end(vo));
 				if (scrn > scr)
 				{
-					std::cout << f << t << " " << scr << " -> " << scrn << '\n';
+//					std::cout << f << t << " " << scr << " -> " << scrn << '\n';
 					mx = f;
 					my = t;
 					scr = scrn;
@@ -278,7 +278,7 @@ template<typename IC, typename R> void hillclimb_bg(IC ctb, IC cte, machine_sett
 		if (improved)
 			m3.ApplyPlug(mx, my);
 	}
-	std::cout << "bg from " << scrb << " to " << scr << '\n';
+//	std::cout << "bg from " << scrb << " to " << scr << '\n';
 	r.emplace_back(m3.machine_settings(), scr);
 }
 
@@ -291,7 +291,7 @@ template<typename IC, typename R> void hillclimb_tg(IC ctb, IC cte, machine_sett
 	// establish the baseline
 	decode(ctb, cte, m3, vo);
 	auto scr = trigram_score(std::begin(vo), std::end(vo));
-	auto scrb = scr;
+//	auto scrb = scr;
 	bool improved = true;
 	while (improved)
 	{
@@ -301,7 +301,6 @@ template<typename IC, typename R> void hillclimb_tg(IC ctb, IC cte, machine_sett
 		for (int fi = 0; fi < alpha_max; ++fi)
 		{
 			modalpha f{ fi };
-//			for (int ti = fi + 1; ti < alpha_max; ++ti)
 			for (int ti = fi; ti < alpha_max; ++ti)
 			{
 				modalpha t{ ti };
@@ -311,7 +310,7 @@ template<typename IC, typename R> void hillclimb_tg(IC ctb, IC cte, machine_sett
 				auto scrn = trigram_score(std::begin(vo), std::end(vo));
 				if (scrn > scr)
 				{
-					std::cout << f << t << " " << scr << " -> " << scrn << '\n';
+//					std::cout << f << t << " " << scr << " -> " << scrn << '\n';
 					mx = f;
 					my = t;
 					scr = scrn;
@@ -323,7 +322,7 @@ template<typename IC, typename R> void hillclimb_tg(IC ctb, IC cte, machine_sett
 		if (improved)
 			m3.ApplyPlug(mx, my);
 	}
-	std::cout << "tg from " << scrb << " to " << scr << '\n';
+//	std::cout << "tg from " << scrb << " to " << scr << '\n';
 	r.emplace_back(m3.machine_settings(), scr);
 }
 
@@ -391,11 +390,9 @@ template<typename IC> void hillclimb2(IC ctb, IC cte, machine_settings_t& mst, u
 		for (int fi = 0; fi < alpha_max; ++fi)
 		{
 			modalpha f{ fi };
-			for (int ti = fi + 1; ti < alpha_max; ++ti)
+			for (int ti = fi; ti < alpha_max; ++ti)
 			{
 				modalpha t{ ti };
-				//				if (fi == from_printable('F') && ti == from_printable('L'))
-				//					std::cout << "Trying FL\n";
 				m3.PushStecker();
 				m3.ApplyPlug(f, t);
 				decode(ctb, cte, m3, vo);
@@ -437,7 +434,7 @@ template<typename IC> void hillclimb3(IC ctb, IC cte, machine_settings_t& mst, u
 		for (int fi = 0; fi < alpha_max; ++fi)
 		{
 			modalpha f{ fi };
-			for (int ti = fi + 1; ti < alpha_max; ++ti)
+			for (int ti = fi; ti < alpha_max; ++ti)
 			{
 				modalpha t{ ti };
 				m3.PushStecker();

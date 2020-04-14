@@ -78,8 +78,7 @@ template<typename I> void operate( I ctb, I cte, machine3 const& m3, modalpha bs
 	auto rb = std::begin(a.results_[row]);
 	int cnt = 0;
 	int cp = 0;
-	auto threshold = std::distance(ctb, cte) / 10;
-//	auto threshold = 12;
+	auto threshold = 15;
 	while (rb != std::end(a.results_[row]))
 	{
 		auto score = *rb;
@@ -95,13 +94,26 @@ template<typename I> void operate( I ctb, I cte, machine3 const& m3, modalpha bs
 		if (*(std::begin(a.pos_) + cp) == position(alpha::Q, alpha::A, alpha::Y))
 		{
 			auto off = std::distance(std::begin(a.results_[row]), rb);
+			auto start = std::chrono::steady_clock::now();
 			use_ees(ctb, cte, std::begin(a.arena_[row]) + off, *(std::begin(a.pos_) + off), bs, m3.machine_settings(), vr);
+			auto now = std::chrono::steady_clock::now();
+			std::cout << "use_ees time: " << std::chrono::duration<double, std::milli>(now - start).count() << "ms\n";
 			std::cout << "QAY score = " << score << '\n';
 			std::cout << vr.back().mst_ << '\n';
 			std::cout << "ioc = " << vr.back().ioc_ << '\n';
 		}
 #endif
-#if 0
+#if 1
+		if (*(std::begin(a.pos_) + cp) == position(alpha::D, alpha::E, alpha::F))
+		{
+			auto off = std::distance(std::begin(a.results_[row]), rb);
+			use_ees(ctb, cte, std::begin(a.arena_[row]) + off, *(std::begin(a.pos_) + off), bs, m3.machine_settings(), vr);
+			std::cout << "DEF score = " << score << '\n';
+			std::cout << vr.back().mst_ << '\n';
+			std::cout << "ioc = " << vr.back().ioc_ << '\n';
+		}
+#endif
+#if 1
 		if (*(std::begin(a.pos_) + cp) == position(alpha::U, alpha::E, alpha::D))
 		{
 			auto off = std::distance(std::begin(a.results_[row]), rb);
@@ -111,7 +123,7 @@ template<typename I> void operate( I ctb, I cte, machine3 const& m3, modalpha bs
 			std::cout << "ioc = " << vr.back().ioc_ << '\n';
 		}
 #endif
-#if 0
+#if 1
 		if (*(std::begin(a.pos_) + cp) == position(alpha::B, alpha::L, alpha::Q))
 		{
 			auto off = std::distance(std::begin(a.results_[row]), rb);
@@ -125,38 +137,15 @@ template<typename I> void operate( I ctb, I cte, machine3 const& m3, modalpha bs
 		++rb;
 	}
 	std::cout << "threshold = " << threshold << ", " << cnt << "(" << a.results_[row].size() << ") qualified.\n";
-#if 0
-	std::vector<result_ioc_t>          vr2;
-	for (auto r : vr)
-	{
-//		if (r.ioc_ > 0.05)
-		hillclimb_ioc(ctb, cte, r.mst_, vr2);
-	}
-	std::cout << vr2.size() << " survived hillclimb_ioc, max score = " << (*std::max_element(vr2.begin(), vr2.end(), [](auto& l, auto& r) { return l.ioc_ < r.ioc_; })).ioc_ << '\n';
-	for (auto r : vr2)
-	{
-//		if (r.scr_ > 42000)
-//		if (r.scr_ > 30000)
-//		if(r.mst_.pos_ == position(alpha::Q, alpha::A, alpha::Y))
-		{
-			machine3 m3 = MakeMachine3(r.mst_);
-			std::vector<modalpha> vo;
-			vo.reserve(std::distance(ctb, cte));
-			decode(ctb, cte, m3, vo);
-			// report
-			std::cout << r.mst_ << " = " << r.ioc_ << " - ";
-			for (auto c : vo)
-				std::cout << c;
-			std::cout << "\n";
-		}
-	}
-#endif
 #if 1
 	std::vector<result_scr_t>          vr3;
 	for (auto r : vr)
 	{
 //		if (r.ioc_ > 0.05)
+		auto start = std::chrono::steady_clock::now();
 		hillclimb_bg(ctb, cte, r.mst_, vr3);
+		auto now = std::chrono::steady_clock::now();
+		std::cout << "hillclimb_bg time: " << std::chrono::duration<double, std::milli>(now - start).count() << "ms\n";
 	}
 	std::cout << vr3.size() << " survived hillclimb_bg, max score = " << (*std::max_element(vr3.begin(), vr3.end(), [](auto& l, auto& r) { return l.scr_ < r.scr_; })).scr_ << '\n';
 	for (auto r : vr3)
@@ -181,7 +170,10 @@ template<typename I> void operate( I ctb, I cte, machine3 const& m3, modalpha bs
 	std::vector<result_scr_t>          vr4;
 	for (auto r : vr3)
 	{
+		auto start = std::chrono::steady_clock::now();
 		hillclimb_tg(ctb, cte, r.mst_, vr4);
+		auto now = std::chrono::steady_clock::now();
+		std::cout << "hillclimb_tg time: " << std::chrono::duration<double, std::milli>(now - start).count() << "ms\n";
 	}
 	std::cout << vr4.size() << " survived hillclimb_tg, max score = " << (*std::max_element(vr4.begin(), vr4.end(), [](auto& l, auto& r) { return l.scr_ < r.scr_; })).scr_ << '\n';
 	for (auto r : vr4)
