@@ -9,7 +9,7 @@ template<typename IC, typename IA, typename R> void use_ees(IC ctb, IC cte, IA b
 {
 	// collect the likely candidate pairs
 	auto psm = match_ciphertext_psm(ctb, cte, base, bs);
-//	psm.print(std::cout);
+	psm.print(std::cout);
 	// prepare a machine
 	machine_settings_t mst(mst_j);
 	machine3 m3 = MakeMachine3(mst);
@@ -26,12 +26,14 @@ template<typename IC, typename IA, typename R> void use_ees(IC ctb, IC cte, IA b
 		decode(ctb, cte, m3, vo);
 		s.ioc_ = index_of_coincidence(std::begin(vo), std::end(vo));
 	}
-//	psm.print_ioc(std::cout);
+	psm.print_ioc(std::cout);
 	// sort good->bad
-	std::sort(std::begin(psm), std::end(psm), [](auto const& l, auto const& r) { return l.ioc_ > r.ioc_; });
+	std::sort(std::begin(psm), std::end(psm), [](auto const& l, auto const& r) { if (l.cnt_ == r.cnt_) return l.ioc_ > r.ioc_; else return l.cnt_ > r.cnt_; });
 	// remove all detrimental options
-	psm.set_end(std::find_if(std::begin(psm), std::end(psm), [ioc](auto& v) { return v.ioc_ < ioc; }));
-//	psm.print_ioc(std::cout);
+//	psm.set_end(std::find_if(std::begin(psm), std::end(psm), [ioc](auto& v) { return v.ioc_ < ioc; }));
+	psm.print_ioc(std::cout);
+	psm.unique();
+	psm.print_ioc(std::cout);
 	// apply
 	auto pr = psm.begin() + 10;
 	do
@@ -137,7 +139,7 @@ template<typename IC, typename IA, typename R> void use_ees_forward(IC ctb, IC c
 	r.emplace_back(m3.machine_settings(), ioc);
 }
 
-template<typename IC> void hillclimb_test(IC ctb, IC cte, position const& pos, modalpha bs, machine_settings_t const& mst_j)
+template<typename IC> void hillclimb_test(IC ctb, IC cte, position const& pos, machine_settings_t const& mst_j)
 {
 	// prepare a machine
 	machine_settings_t mst(mst_j);
@@ -190,7 +192,52 @@ template<typename IC> void hillclimb_test(IC ctb, IC cte, position const& pos, m
 	}
 }
 
-template<typename IC, typename R> void hillclimb(IC ctb, IC cte, machine_settings_t mst, R& r)
+template<typename IC, typename R> void hillclimb_ioc(IC ctb, IC cte, machine_settings_t mst, R& r)
+{
+	// prepare a machine
+	machine3 m3 = MakeMachine3(mst);
+	std::vector<modalpha> vo;
+	vo.reserve(std::distance(ctb, cte));
+	// establish the baseline
+	decode(ctb, cte, m3, vo);
+	auto scr = index_of_coincidence(std::begin(vo), std::end(vo));
+	auto scrb = scr;
+	bool improved = true;
+	while (improved)
+	{
+		improved = false;
+		modalpha mx = 0;
+		modalpha my = 0;
+		for (int fi = 0; fi < alpha_max; ++fi)
+		{
+			modalpha f{ fi };
+//			for (int ti = fi + 1; ti < alpha_max; ++ti)
+			for (int ti = fi; ti < alpha_max; ++ti)
+			{
+				modalpha t{ ti };
+				m3.PushStecker();
+				m3.ApplyPlug(f, t);
+				decode(ctb, cte, m3, vo);
+				auto scrn = index_of_coincidence(std::begin(vo), std::end(vo));
+				if (scrn > scr)
+				{
+//					std::cout << f << t << " " << scr << " -> " << scrn << '\n';
+					mx = f;
+					my = t;
+					scr = scrn;
+					improved = true;
+				}
+				m3.PopStecker();
+			}
+		}
+		if (improved)
+			m3.ApplyPlug(mx, my);
+	}
+	std::cout << "bg from " << scrb << " to " << scr << '\n';
+	r.emplace_back(m3.machine_settings(), scr);
+}
+
+template<typename IC, typename R> void hillclimb_bg(IC ctb, IC cte, machine_settings_t mst, R& r)
 {
 	// prepare a machine
 	machine3 m3 = MakeMachine3(mst);

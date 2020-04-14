@@ -129,16 +129,15 @@ template<typename I> void operate( I ctb, I cte, machine3 const& m3, modalpha bs
 	for (auto r : vr)
 	{
 //		if (r.ioc_ > 0.05)
-		hillclimb(ctb, cte, r.mst_, vr2);
+		hillclimb_bg(ctb, cte, r.mst_, vr2);
 	}
-	std::cout << vr2.size() << " survived hillclimb1, max score = " << (*std::max_element(vr2.begin(), vr2.end(), [](auto& l, auto& r) { return l.scr_ < r.scr_; })).scr_ << '\n';
+	std::cout << vr2.size() << " survived hillclimb_bg, max score = " << (*std::max_element(vr2.begin(), vr2.end(), [](auto& l, auto& r) { return l.scr_ < r.scr_; })).scr_ << '\n';
 	std::vector<result_scr_t>          vr3;
 	for (auto r : vr2)
 	{
-//		if (r.ioc_ > 0.05)
 		hillclimb_tg(ctb, cte, r.mst_, vr3);
 	}
-	std::cout << vr3.size() << " survived hillclimb2, max score = " << (*std::max_element(vr2.begin(), vr2.end(), [](auto& l, auto& r) { return l.scr_ < r.scr_; })).scr_ << '\n';
+	std::cout << vr3.size() << " survived hillclimb_tg, max score = " << (*std::max_element(vr3.begin(), vr3.end(), [](auto& l, auto& r) { return l.scr_ < r.scr_; })).scr_ << '\n';
 
 	for (auto r : vr3)
 	{

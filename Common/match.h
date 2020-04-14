@@ -12,11 +12,8 @@ struct plug_stat_chk
 	modalpha f_;
 	modalpha t_;
 	bool     b_;
-	union
-	{
-		int      cnt_;
-		double   ioc_;
-	};
+	int      cnt_;
+	double   ioc_;
 };
 
 // assumed max message length
@@ -104,7 +101,8 @@ public:
 			{
 				pg.f_ = f;
 				pg.t_ = t;
-				pg.cnt_ = (direct_ * 7) / 25;
+				pg.cnt_ = total_;
+//				pg.cnt_ = (direct_ * 7) / 25;
 				direct_ = 0;
 				++end_;
 				break;
@@ -115,6 +113,22 @@ public:
 	unsigned direct() const
 	{
 		return direct_;
+	}
+	void unique()
+	{
+		unsigned unique_ = 0;
+		std::for_each(std::begin(psm_), std::begin(psm_) + end_,
+			[&unique_](auto& v)
+			{
+				if (modalpha_is_bit(v.f_, unique_) || modalpha_is_bit(v.t_, unique_))
+					v.cnt_ = 0;
+				else
+				{
+					unique_ = modalpha_set_bit(v.f_, unique_);
+					unique_ = modalpha_set_bit(v.t_, unique_);
+				}
+			});
+		set_end(std::remove_if(std::begin(psm_), std::begin(psm_) + end_, [](auto& v) { return v.cnt_ == 0; }));
 	}
 	template<typename O> void print(O& ostr)
 	{
@@ -131,7 +145,7 @@ public:
 		std::for_each(std::begin(psm_), std::begin(psm_) + end_, 
 			[&](auto const& v)
 			{
-				ostr << v.f_ << "<->" << v.t_ << " - " << v.ioc_ << "\n"; 
+				ostr << v.f_ << "<->" << v.t_ << " - " << v.cnt_ << " : " << v.ioc_ << "\n"; 
 			});
 		ostr << "Count  = " << total_ << "\n";
 	}
