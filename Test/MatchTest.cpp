@@ -125,20 +125,40 @@ template<typename I> void operate( I ctb, I cte, machine3 const& m3, modalpha bs
 		++rb;
 	}
 	std::cout << "threshold = " << threshold << ", " << cnt << "(" << a.results_[row].size() << ") qualified.\n";
-	std::vector<result_scr_t>          vr2;
+#if 0
+	std::vector<result_ioc_t>          vr2;
 	for (auto r : vr)
 	{
 //		if (r.ioc_ > 0.05)
-		hillclimb_bg(ctb, cte, r.mst_, vr2);
+		hillclimb_ioc(ctb, cte, r.mst_, vr2);
 	}
-	std::cout << vr2.size() << " survived hillclimb_bg, max score = " << (*std::max_element(vr2.begin(), vr2.end(), [](auto& l, auto& r) { return l.scr_ < r.scr_; })).scr_ << '\n';
-	std::vector<result_scr_t>          vr3;
+	std::cout << vr2.size() << " survived hillclimb_ioc, max score = " << (*std::max_element(vr2.begin(), vr2.end(), [](auto& l, auto& r) { return l.ioc_ < r.ioc_; })).ioc_ << '\n';
 	for (auto r : vr2)
 	{
-		hillclimb_tg(ctb, cte, r.mst_, vr3);
+//		if (r.scr_ > 42000)
+//		if (r.scr_ > 30000)
+//		if(r.mst_.pos_ == position(alpha::Q, alpha::A, alpha::Y))
+		{
+			machine3 m3 = MakeMachine3(r.mst_);
+			std::vector<modalpha> vo;
+			vo.reserve(std::distance(ctb, cte));
+			decode(ctb, cte, m3, vo);
+			// report
+			std::cout << r.mst_ << " = " << r.ioc_ << " - ";
+			for (auto c : vo)
+				std::cout << c;
+			std::cout << "\n";
+		}
 	}
-	std::cout << vr3.size() << " survived hillclimb_tg, max score = " << (*std::max_element(vr3.begin(), vr3.end(), [](auto& l, auto& r) { return l.scr_ < r.scr_; })).scr_ << '\n';
-
+#endif
+#if 1
+	std::vector<result_scr_t>          vr3;
+	for (auto r : vr)
+	{
+//		if (r.ioc_ > 0.05)
+		hillclimb_bg(ctb, cte, r.mst_, vr3);
+	}
+	std::cout << vr3.size() << " survived hillclimb_bg, max score = " << (*std::max_element(vr3.begin(), vr3.end(), [](auto& l, auto& r) { return l.scr_ < r.scr_; })).scr_ << '\n';
 	for (auto r : vr3)
 	{
 //		if (r.scr_ > 42000)
@@ -156,6 +176,32 @@ template<typename I> void operate( I ctb, I cte, machine3 const& m3, modalpha bs
 			std::cout << "\n";
 		}
 	}
+#endif
+#if 1
+	std::vector<result_scr_t>          vr4;
+	for (auto r : vr3)
+	{
+		hillclimb_tg(ctb, cte, r.mst_, vr4);
+	}
+	std::cout << vr4.size() << " survived hillclimb_tg, max score = " << (*std::max_element(vr4.begin(), vr4.end(), [](auto& l, auto& r) { return l.scr_ < r.scr_; })).scr_ << '\n';
+	for (auto r : vr4)
+	{
+//		if (r.scr_ > 42000)
+//		if (r.scr_ > 30000)
+//		if(r.mst_.pos_ == position(alpha::Q, alpha::A, alpha::Y))
+		{
+			machine3 m3 = MakeMachine3(r.mst_);
+			std::vector<modalpha> vo;
+			vo.reserve(std::distance(ctb, cte));
+			decode(ctb, cte, m3, vo);
+			// report
+			std::cout << r.mst_ << " = " << r.scr_ << " - ";
+			for (auto c : vo)
+				std::cout << c;
+			std::cout << "\n";
+		}
+	}
+#endif
 }
 
 int main()

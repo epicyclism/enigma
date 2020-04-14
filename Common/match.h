@@ -34,6 +34,7 @@ public:
 	auto end()   noexcept { return psm_.begin() + end_; }
 	auto begin() const noexcept  { return psm_.begin(); }
 	auto end()   const noexcept  { return psm_.begin() + end_; }
+	auto size()  const noexcept { return end_; }
 	template<typename I> void set_end(I e) noexcept
 	{
 		end_ = std::distance(psm_.begin(), e);
@@ -101,8 +102,33 @@ public:
 			{
 				pg.f_ = f;
 				pg.t_ = t;
+				pg.cnt_ = (direct_ * 7) / 25;
+				direct_ = 0;
+				++end_;
+				break;
+			}
+			++it;
+		}
+	}
+	void merge_direct_force(modalpha f, modalpha t)
+	{
+		if (f == t)
+		{
+			direct_ *= 5;
+			direct_ /= 25;
+			return;
+		}
+		if (f > t)
+			std::swap(f, t);
+		auto it = std::begin(psm_);
+		while (it != std::end(psm_))
+		{
+			auto& pg = *it;
+			if (pg.f_ == alpha::SZ)
+			{
+				pg.f_ = f;
+				pg.t_ = t;
 				pg.cnt_ = total_;
-//				pg.cnt_ = (direct_ * 7) / 25;
 				direct_ = 0;
 				++end_;
 				break;
@@ -186,7 +212,7 @@ template<typename IC, typename IA> plug_set_msg match_ciphertext_psm(IC ctb, IC 
 		psm.set( c, *base);
 		++base;
 	});
-	psm.merge_direct(bs, alpha::E);
+	psm.merge_direct_force(bs, alpha::E); // force ensures that the bs->E pair gets priority, whatever the evidence. It's our core assumption...
 	// sort highest cnt first
 	std::sort(std::begin(psm), std::end(psm), [](auto const& l, auto const& r) { return l.cnt_ > r.cnt_; });
 	// remove all cnt = '1' entries
@@ -195,15 +221,15 @@ template<typename IC, typename IA> plug_set_msg match_ciphertext_psm(IC ctb, IC 
 
 	return psm ;
 }
-
+#if 0
 template<typename IC, typename IA>
 unsigned match_worker(IC ctb, IC cte, IA base, modalpha bs)
 {
 	auto psm = match_ciphertext_psm(ctb, cte, base, bs);
-
-	return std::accumulate(psm.begin(), psm.begin() + 10, 0, [](auto& l, auto& r) { return l + r.cnt_; }) * 100 / std::distance(ctb, cte);
+	auto end = psm.size() > 10 ? 10 : psm.size();
+	return std::accumulate(psm.begin(), psm.begin() + end, 0, [](auto& l, auto& r) { return l + r.cnt_; }) * 100 / std::distance(ctb, cte);
 }
-
+#endif
 template<typename I, size_t W> void match_search(I cb, I ce, std::array<modalpha, W> const& row, std::array<unsigned, W>& counts, modalpha bs)
 {
 	auto itb = std::begin(row);
@@ -212,8 +238,8 @@ template<typename I, size_t W> void match_search(I cb, I ce, std::array<modalpha
 
 	while (itb != ite)
 	{
-//		*ito += match_ciphertext(cb, ce, itb, bs);
-		*ito = match_worker(cb, ce, itb, bs);
+		*ito += match_ciphertext(cb, ce, itb, bs);
+//		*ito = match_worker(cb, ce, itb, bs);
 		++ito;
 		++itb;
 	}

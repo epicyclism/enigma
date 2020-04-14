@@ -22,7 +22,7 @@ struct trigram_table
 
 	[[nodiscard]] const unsigned wt(modalpha a, modalpha b, modalpha c) const noexcept
 	{
-		unsigned off = a.Val() * stride_ + b.Val() * stride_ + c.Val();
+		unsigned off = a.Val() * stride_ * stride_ + b.Val() * stride_ + c.Val();
 		return tab_[off];
 	}
 	trigram_table() = delete;
@@ -36,7 +36,7 @@ constexpr trigram_table make_trigram_table(tg_def const* b, tg_def const* e)
 //	epicyclism::cfor_each(std::begin(wking), std::end(wking), [](auto& v) { v = 0; });
 	epicyclism::cfor_each(b, e, [&wking](auto const& tg)
 		{
-			wking[from_printable_flex(tg.a_) * stride_ + from_printable_flex(tg.b_) * stride_ + from_printable_flex(tg.c_)] = tg.score_;
+			wking[from_printable_flex(tg.a_) * stride_ * stride_ + from_printable_flex(tg.b_) * stride_ + from_printable_flex(tg.c_)] = tg.score_;
 		});
 	return trigram_table{ wking };
 }
