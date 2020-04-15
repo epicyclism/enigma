@@ -53,10 +53,10 @@ public:
 	constexpr mod_t& operator+=(const mod_t& rhs) noexcept
 	{
 		val_ += rhs.val_;
-#if 1
+#if 0
 		val_ %= M;
 #else
-		if (val_ > M)
+		if (val_ > M - 1)
 			val_ -= M;
 #endif
 		return *this;

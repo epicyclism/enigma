@@ -16,7 +16,7 @@
 #include "arena.h"
 #include "jobs.h"
 
-constexpr  char version[] = "v0.05";
+constexpr  char version[] = "v0.06";
 
 std::vector<modalpha> read_ciphertext()
 {
@@ -39,16 +39,28 @@ void Help()
 {
 	std::cerr << "arena " << version << " : Enigma settings hunt.\n\n";
 	std::cerr << "For example,\n\n";
-	std::cerr << "./arena BC 12345 [n]\n";
+	std::cerr << "./arena BC 12345 [t [b [e]]]\n";
 	std::cerr << "Reads ciphertext from stdin then searches all wheel orders formed from reflectors BC and\n";
 	std::cerr << "wheels 12345 and attempts to find wheels, ring and plug settings that produce a decrypt.\n";
-	std::cerr << "The optional trailing 'n' determines where in the order to start, so that sessions can\n";
-	std::cerr << "(effectively) be interrupted and restarted.\n\n";
+	std::cerr << "The optional trailing 't' is a value to use as the first pass threshold. Default is 17.\n";
+	std::cerr << "The further optional trailing 'b' and 'e' values determine where in the order to\n";
+	std::cerr << "start, and, if present where to end so that sessions can be interrupted,\n";
+	std::cerr << "restarted or shared across systems.\n\n";
 }
 
-using arena_t = arena_base<26*26*26 + 512>;
-
+// assume worst case 256 char message at ZZZ.
+// adjust this if you have a really long one...
+//
+using arena_t = arena_base<26 * 26 * 26 + 256>;
+// this can be singular since parallelism is within an arena rather than over multiple arenas.
+//
 arena_t arena;
+
+// thresholds
+constexpr unsigned ees_threshold_default = 17; // greater than this
+constexpr double   ioc_threshold         = 0.5;
+constexpr unsigned bg_threshold          = 48000; // bigram - not used at present, we always do both
+constexpr unsigned tg_threshold          = 15000; // trigram
 
 template<typename J, typename... ARGS> auto make_job_list_t(std::string_view reflector, std::string_view wheels, ARGS... args) -> std::vector<J>
 {
@@ -71,37 +83,35 @@ struct result_t
 {
 	machine_settings_t mst_;
 	double   ioc_;
-	unsigned bg_;
+	unsigned btg_;
 
-	explicit result_t(machine_settings_t const& mst, unsigned scr) : mst_(mst), bg_(scr)
+	explicit result_t(machine_settings_t const& mst, unsigned scr) : mst_(mst), btg_(scr)
 	{
 		ioc_ = 0.0;
 	}
 	explicit result_t(machine_settings_t const& mst, double ioc) : mst_(mst), ioc_(ioc)
 	{
-		bg_ = 0;
+		btg_ = 0;
 	}
 };
 
 // these are sort of shared and could be common...
 //
-template<typename J> void collect_results(J& j)
+template<typename J> void collect_results(J& j, unsigned ees_thld)
 {
 	auto sz = std::distance(j.ctb_, j.cte_);
 	auto itp = std::begin(j.pos_);
-//	auto threshold = sz / 10 - 1;
-	auto threshold = 17; // 15 percent using new ees mechanism, which over-estimates
 
 	auto rb = std::begin(j.r_);
 	while (rb != std::end(j.r_))
 	{
 		auto score = *rb;
-		if (score > threshold) // decode!
+		if (score > ees_thld) // decode!
 		{
 			auto off = std::distance(std::begin(j.r_), rb);
 			use_ees(j.ctb_, j.cte_, std::begin(j.line_) + off, *(itp + off), j.bs_, j.mst_, j.vr_);
 			// ick
-			j.vr_.back().bg_ = score;
+			j.vr_.back().btg_ = score;
 		}
 		++rb;
 	}
@@ -114,8 +124,7 @@ template<typename J> std::vector<result_t> collate_results_ioc(std::vector<J> co
 	{
 		for (auto const& r : j.vr_)
 		{
-//			if (r.ioc_ > 0.055)
-			if (r.ioc_ > 0.05)
+			if (r.ioc_ > ioc_threshold)
 				vr.emplace_back(r);
 		}
 	}
@@ -145,8 +154,7 @@ void collate_results_bg(std::vector<result_t> const& in, std::vector<result_t>& 
 {
 	for (auto& r : in)
 	{
-		if (r.bg_ > 45000)
-//		if (r.bg_ > 42000)
+		if (r.btg_ > bg_threshold)
 			out.emplace_back(r);
 	}
 }
@@ -155,12 +163,12 @@ void collate_results_tg(std::vector<result_t> const& in, std::vector<result_t>& 
 {
 	for (auto& r : in)
 	{
-		if (r.bg_ > 15000)
+		if (r.btg_ > tg_threshold)
 			out.emplace_back(r);
 	}
 }
 
-int main(int ac, char**av)
+int main(int ac, char** av)
 {
 #if 1
 	if (ac < 3)
@@ -168,28 +176,42 @@ int main(int ac, char**av)
 		Help();
 		return 0;
 	}
-	int joboffset = 0;
+	unsigned ees_threshold = ees_threshold_default;
+	int jobbegin = 0;
+	int jobend = -1;
 	if (ac > 3)
-		joboffset = ::atoi(av[3]);
+		ees_threshold = ::atoi(av[3]);
+	if (ac > 4)
+		jobbegin = ::atoi(av[4]);
+	if (ac > 5)
+		jobend = ::atoi(av[5]);
+
+	if (jobend != -1 && jobend <= jobbegin)
+	{
+		std::cout << "Nonsensical values for job begin and/or end\n";
+		return -1;
+	}
 #endif
 	// this is where we collect the overall results!
 	std::vector<result_t> vr_oall;
 	try
 	{
-		std::cout << "\nReady\n";
+		std::cout << "Threshold = " << ees_threshold << ", job range from " << jobbegin << " to " << jobend << ".\n\n";
+		std::cout << "\nReady to read ciphertext\n";
 		// capture the ciphertext
 		auto ct = read_ciphertext();
 		// B251 bcn UED "AO BV DS EX FT HZ IQ JW KU PR"
-//		auto ct = make_alpha_array("UPONTXBBWFYAQNFLZTBHLBWXSOZUDCDYIZNRRHPPBNSV");
 		std::cout << "Ciphertext is - ";
 		for (auto c : ct)
 			std::cout << c;
 		std::cout << "\nInitialising search\n";
 		using job_wheels_t = job_wheels<decltype(ct.cbegin())> ;
-		std::vector<job_wheels_t> vjbw = make_job_list<job_wheels_t>(av[1], av[2], joboffset, -1, std::begin(ct), std::end(ct));
-//		std::vector<job_wheels_t> vjbw = make_job_list_t<job_wheels_t>("B", "123", std::begin(ct), std::end(ct));
-//		std::vector<job_wheels_t> vjbw = make_job_list_t<job_wheels_t>("B", "251", std::begin(ct), std::end(ct));
-
+		std::vector<job_wheels_t> vjbw = make_job_list<job_wheels_t>(av[1], av[2], jobbegin, jobend, std::begin(ct), std::end(ct));
+		if (vjbw.empty())
+		{
+			std::cout << "No matching wheel and reflector arrangements found!\n";
+			return -1;
+		}
 		std::cout << "Searching " << vjbw.size() << " wheel and reflector arrangements.\n";
 
 		// work through the wheel orders linearly
@@ -211,17 +233,17 @@ int main(int ac, char**av)
 						match_search(aj.ctb_, aj.cte_, aj.line_, aj.r_, aj.bs_);
 					});
 				// do the search for more likely
-				std::for_each(std::execution::par, std::begin(vjb), std::end(vjb), [](auto& aj)
+				std::for_each(std::execution::par, std::begin(vjb), std::end(vjb), [ees_threshold](auto& aj)
 					{
-						collect_results(aj);
+						collect_results(aj, ees_threshold);
 					});
 				// do the search for most likely
 				auto vr = collate_results_ioc(vjb);
 				std::cout << " - considering " << vr.size() << " possibles.\n";
 				std::for_each(std::execution::par, std::begin(vr), std::end(vr), [&ct](auto& r)
 					{
-						hillclimb2(std::begin(ct), std::end(ct), r.mst_, r.bg_);
-						hillclimb3(std::begin(ct), std::end(ct), r.mst_, r.bg_);
+						hillclimb2(std::begin(ct), std::end(ct), r.mst_, r.btg_);
+						hillclimb3(std::begin(ct), std::end(ct), r.mst_, r.btg_);
 					});
 				auto n = vr_oall.size();
 				collate_results_tg(vr, vr_oall);
@@ -232,7 +254,7 @@ int main(int ac, char**av)
 						vo.reserve(ct.size());
 						decode(std::begin(ct), std::end(ct), m3, vo);
 						// report
-						std::cout << r.mst_ << " { " << r.ioc_ << ", " << r.bg_ << " } : ";
+						std::cout << r.mst_ << " { " << r.ioc_ << ", " << r.btg_ << " } : ";
 						for (auto c : vo)
 							std::cout << c;
 						std::cout << "\n";
@@ -248,7 +270,7 @@ int main(int ac, char**av)
 			vo.reserve(ct.size());
 			decode(std::begin(ct), std::end(ct), m3, vo);
 			// report
-			std::cout << r.mst_ << " { " << r.ioc_ << ", " << r.bg_ << " } : ";
+			std::cout << r.mst_ << " { " << r.ioc_ << ", " << r.btg_ << " } : ";
 			for (auto c : vo)
 				std::cout << c;
 			std::cout << "\n";

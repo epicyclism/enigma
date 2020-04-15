@@ -215,16 +215,16 @@ int main()
 	//modalpha erow = alpha::P;
 
 	// B251 bcn UED "AO BV DS EX FT HZ IQ JW KU PR"
-	auto ct1 = make_alpha_array("UPONTXBBWFYAQNFLZTBHLBWXSOZUDCDYIZNRRHPPBNSV");
-	machine3 m3 = MakeMachine3("B251");
-	Ring(m3, "bcn");
-	modalpha erow = alpha::X;
+	//auto ct1 = make_alpha_array("UPONTXBBWFYAQNFLZTBHLBWXSOZUDCDYIZNRRHPPBNSV");
+	//machine3 m3 = MakeMachine3("B251");
+	//Ring(m3, "bcn");
+	//modalpha erow = alpha::X;
 	
 	// B213 zwd AGI "IU JO RW MV EZ BL PX"
-	//auto ct1 = make_alpha_array("QKRQWUQTZKFXZOMJFOYRHYZWVBXYSIWMMVWBLEBDMWUWBTVHMRFLKSDCCEXIYPAHRMPZIOVBBRVLNHZUPOSYEIPWJTUGYOSLAOXRHKVCHQOSVDTRBPDJEUKSBBXHTYGVHGFICACVGUVOQFAQWBKXZJSQJFZPEVJRO");
-	//machine3 m3 = MakeMachine3("B213");
-	//Ring(m3, "zwd");
-	//modalpha erow = alpha::Z;
+	auto ct1 = make_alpha_array("QKRQWUQTZKFXZOMJFOYRHYZWVBXYSIWMMVWBLEBDMWUWBTVHMRFLKSDCCEXIYPAHRMPZIOVBBRVLNHZUPOSYEIPWJTUGYOSLAOXRHKVCHQOSVDTRBPDJEUKSBBXHTYGVHGFICACVGUVOQFAQWBKXZJSQJFZPEVJRO");
+	machine3 m3 = MakeMachine3("B213");
+	Ring(m3, "zwd");
+	modalpha erow = alpha::Z;
 
 	m3.Setting(alpha::A, alpha::A, alpha::A);
 

@@ -44,9 +44,11 @@ void Help()
 	std::cerr << "restarted or shared across systems.\n\n";
 }
 
-using arena_t = arena_base<26 * 26 * 26 + 512>;
+// assume worst case 256 char message at ZZZ.
+// adjust this if you have a really long one...
+//
+using arena_t = arena_base<26 * 26 * 26 + 256>;
 // this can be singular since parallelism is within an arena rather than over multiple arenas.
-// OTOH this means no more than 26 threads get used in this pass by this executable.
 //
 arena_t arena;
 
@@ -170,10 +172,12 @@ int main(int ac, char** av)
 		std::cout << "Finished\n";
 		// report
 		unsigned off = 0;
+		unsigned sum = 0;
 		for (auto p : collect_)
 		{
-			std::cout << off << ' ' << p << '\n';
+			std::cout << std::setw(2) << off << std::setw(10) << p << std::setw(10) << sum << '\n';
 			++off;
+			sum += p;
 		}
 	}
 	catch (std::exception& ex)
