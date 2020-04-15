@@ -6,6 +6,7 @@
 #include <execution>
 #include <algorithm>
 #include <numeric>
+#include <chrono>
 #include "wheelset.h"
 #include "machine.h"
 #include "position.h"
@@ -58,7 +59,7 @@ arena_t arena;
 
 // thresholds
 constexpr unsigned ees_threshold_default = 17; // greater than this
-constexpr double   ioc_threshold         = 0.5;
+constexpr double   ioc_threshold         = 0.055;
 constexpr unsigned bg_threshold          = 48000; // bigram - not used at present, we always do both
 constexpr unsigned tg_threshold          = 15000; // trigram
 
@@ -217,6 +218,7 @@ int main(int ac, char** av)
 		// work through the wheel orders linearly
 		for (auto & j : vjbw)
 		{
+			auto start = std::chrono::steady_clock::now();
 			// search each wheel order in parallel
 			do
 			{
@@ -260,6 +262,8 @@ int main(int ac, char** av)
 						std::cout << "\n";
 					});
 			} while (AdvanceRingAll(j.mst_));
+			auto now = std::chrono::steady_clock::now();
+			std::cout << "Wheel order search time: " << std::chrono::duration<double>(now - start).count() << "s\n";
 		}
 		std::cout << "Finished\n";
 		// report
