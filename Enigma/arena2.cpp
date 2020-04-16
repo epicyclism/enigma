@@ -37,11 +37,12 @@ void Help()
 	std::cerr << "For example,\n\n";
 	std::cerr << "./arena2 BC 12345 [b] [e]\n";
 	std::cerr << "Reads ciphertext from stdin then searches all wheel orders formed from\n";
-	std::cerr << "reflectors BC and wheels 12345 and attempts to find wheels, ring and plug\n";
-	std::cerr << "settings that produce a decrypt.\n";
+	std::cerr << "reflectors BC and wheels 12345 and attempts to find interesting information\n";
+	std::cerr << "about the possibilities.\n";
 	std::cerr << "The optional trailing 'b' and 'e' values determine where in the order to\n";
 	std::cerr << "start, and, if present where to end so that sessions can be interrupted,\n";
-	std::cerr << "restarted or shared across systems.\n\n";
+	std::cerr << "restarted or shared across systems.\n";
+	std::cerr << "Reports progress to cerr, statistics to cout. Try gnuplot.\n\n";
 }
 
 // assume worst case 256 char message at ZZZ.
@@ -96,9 +97,23 @@ struct a2_result_t_todo
 	}
 };
 
-template<typename AJ> void collect_results(AJ const& aj, std::array<unsigned, 100>& out)
+template<typename A> void print_collection(A& a)
 {
-
+	// find end
+	auto er = std::find_if(std::rbegin(a), std::rend(a), [](auto v) { return v != 0; });
+	if (er == std::rend(a))
+		return; // nothing to print
+	auto e = std::begin(a) + std::size(a) - std::distance(std::rbegin(a), er);
+	unsigned cnt = 0;
+	unsigned sum = 0;
+	std::for_each(std::begin(a), e, [&cnt, &sum](auto val)
+		{
+			std::cout << std::setw(2) << cnt << std::setw(10) << val << std::setw(10) << sum << '\n';
+			++cnt;
+			sum += val;
+		}
+	);
+	std::cout << "\n\n";
 }
 
 int main(int ac, char** av)
@@ -117,32 +132,43 @@ int main(int ac, char** av)
 
 	try
 	{
-		std::cout << "\nReady\n";
+		std::cerr << "\nReady\n";
 		// capture the ciphertext
 		auto ct = read_ciphertext();
 		// B251 bcn UED "AO BV DS EX FT HZ IQ JW KU PR"
 //		auto ct = make_alpha_array("UPONTXBBWFYAQNFLZTBHLBWXSOZUDCDYIZNRRHPPBNSV");
-		std::cout << "Ciphertext is - ";
+		std::cerr << "Ciphertext is - ";
 		for (auto c : ct)
 			std::cout << c;
-		std::cout << "\nInitialising search\n";
+		std::cerr << "\nInitialising search\n";
 		using job_wheels_t = job_wheels<decltype(ct.cbegin())>;
 		std::vector<job_wheels_t> vjbw = make_job_list<job_wheels_t>(av[1], av[2], jobbegin, jobend, std::begin(ct), std::end(ct));
 		//		std::vector<job_wheels_t> vjbw = make_job_list_t<job_wheels_t>("B", "123", std::begin(ct), std::end(ct));
 		//		std::vector<job_wheels_t> vjbw = make_job_list_t<job_wheels_t>("B", "251", std::begin(ct), std::end(ct));
 
-		std::cout << "Searching " << vjbw.size() << " wheel and reflector arrangements.\n";
-
-		std::array<unsigned, 100> collect_;
+		std::cerr << "Searching " << vjbw.size() << " wheel and reflector arrangements.\n";
+#if 0
+		{
+			unsigned cnt = 0;
+			for (auto const& j : vjbw)
+			{
+				std::cerr << std::setw(3) << cnt << " " << j.mst_ << '\n';
+					++cnt;
+			}
+		}
+#endif
+		std::array<unsigned long long, 100> collect_;
 		collect_.fill(0);
+		std::array<unsigned, 100> wheel_;
 
 		// work through the wheel orders linearly
 		for (auto& j : vjbw)
 		{
+			wheel_.fill(0);
 			// search each wheel order in parallel
 			do
 			{
-				std::cout << j.mst_ << "\n";
+				std::cerr << j.mst_ << "\n";
 				machine3 m3 = MakeMachine3(j.mst_);
 				// fill the arena
 				fill_arena(m3.Wheels(), arena, 0);
@@ -164,21 +190,31 @@ int main(int ac, char** av)
 				// gather the stats
 				std::for_each(std::begin(vjb), std::end(vjb), [&](auto& aj)
 					{
-						std::transform(aj.vr_.begin(), aj.vr_.end(), collect_.begin(), collect_.begin(), std::plus());
+						std::transform(aj.vr_.begin(), aj.vr_.end(), wheel_.begin(), wheel_.begin(), std::plus());
 					});
 
 			} while (AdvanceRingAll(j.mst_));
+			// report wheel
+			std::cout << "# " << j.mst_.ref_ << j.mst_.w3_ << j.mst_.w2_ << j.mst_.w1_ << '\n';
+			print_collection(wheel_);
+			// accumulate totals
+			std::transform(collect_.begin(), collect_.end(), wheel_.begin(), collect_.begin(), std::plus());
 		}
-		std::cout << "Finished\n";
+		std::cerr << "Finished\n";
 		// report
-		unsigned off = 0;
-		unsigned sum = 0;
+		// average
+		std::transform(collect_.begin(), collect_.end(), collect_.begin(), [&vjbw](auto v) { return v / vjbw.size(); });
+		// label
+		std::cout << "# " << av[1] << av[2] << '\n';
+		print_collection(collect_);
+#if 0
 		for (auto p : collect_)
 		{
 			std::cout << std::setw(2) << off << std::setw(10) << p << std::setw(10) << sum << '\n';
 			++off;
 			sum += p;
 		}
+#endif
 	}
 	catch (std::exception& ex)
 	{
