@@ -29,8 +29,6 @@ template<typename IC, typename IA, typename R> void use_ees(IC ctb, IC cte, IA b
 //	psm.print_ioc(std::cout);
 	// sort good->bad
 	std::sort(std::begin(psm), std::end(psm), [](auto const& l, auto const& r) { if (l.cnt_ == r.cnt_) return l.ioc_ > r.ioc_; else return l.cnt_ > r.cnt_; });
-	// remove all detrimental options
-//	psm.set_end(std::find_if(std::begin(psm), std::end(psm), [ioc](auto& v) { return v.ioc_ < ioc; }));
 //	psm.print_ioc(std::cout);
 	psm.unique();
 //	psm.print_ioc(std::cout);

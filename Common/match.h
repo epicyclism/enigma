@@ -200,7 +200,9 @@ template<typename IC, typename IA> int match_ciphertext(IC ctb, IC cte, IA base,
 	std::sort(std::begin(psm), std::end(psm), [](auto const& l, auto const& r) { return l.cnt_ > r.cnt_; });
 	// remove all cnt = '1' entries
 	psm.set_end(std::find_if(std::begin(psm), std::end(psm), [](auto& v) { return v.cnt_ == 1; }));
-	return std::accumulate(psm.begin(), psm.begin() + 10, 0, [](auto& l, auto& r) { return l + r.cnt_; }) * 100 / std::distance(ctb, cte);
+	psm.unique();
+	auto pr = psm.begin() + (psm.size() > 10 ? 10 : psm.size());
+	return std::accumulate(psm.begin(), pr, 0, [](auto& l, auto& r) { return l + r.cnt_; }) * 100 / std::distance(ctb, cte);
 }
 
 template<typename IC, typename IA> plug_set_msg match_ciphertext_psm(IC ctb, IC cte, IA base, modalpha bs)
@@ -221,15 +223,7 @@ template<typename IC, typename IA> plug_set_msg match_ciphertext_psm(IC ctb, IC 
 
 	return psm ;
 }
-#if 0
-template<typename IC, typename IA>
-unsigned match_worker(IC ctb, IC cte, IA base, modalpha bs)
-{
-	auto psm = match_ciphertext_psm(ctb, cte, base, bs);
-	auto end = psm.size() > 10 ? 10 : psm.size();
-	return std::accumulate(psm.begin(), psm.begin() + end, 0, [](auto& l, auto& r) { return l + r.cnt_; }) * 100 / std::distance(ctb, cte);
-}
-#endif
+
 template<typename I, size_t W> void match_search(I cb, I ce, std::array<modalpha, W> const& row, std::array<unsigned, W>& counts, modalpha bs)
 {
 	auto itb = std::begin(row);
@@ -239,7 +233,6 @@ template<typename I, size_t W> void match_search(I cb, I ce, std::array<modalpha
 	while (itb != ite)
 	{
 		*ito += match_ciphertext(cb, ce, itb, bs);
-//		*ito = match_worker(cb, ce, itb, bs);
 		++ito;
 		++itb;
 	}

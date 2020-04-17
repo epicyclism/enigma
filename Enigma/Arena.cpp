@@ -17,7 +17,7 @@
 #include "arena.h"
 #include "jobs.h"
 
-constexpr  char version[] = "v0.06";
+constexpr  char version[] = "v0.07";
 
 std::vector<modalpha> read_ciphertext()
 {
@@ -197,6 +197,7 @@ int main(int ac, char** av)
 	std::vector<result_t> vr_oall;
 	try
 	{
+		std::cout << "arena version " << version << '\n';
 		std::cout << "Threshold = " << ees_threshold << ", job range from " << jobbegin << " to " << jobend << ".\n\n";
 		std::cout << "\nReady to read ciphertext\n";
 		// capture the ciphertext
