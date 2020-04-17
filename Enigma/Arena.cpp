@@ -61,7 +61,7 @@ arena_t arena;
 constexpr unsigned ees_threshold_default = 17; // greater than this
 constexpr double   ioc_threshold         = 0.055;
 constexpr unsigned bg_threshold          = 48000; // bigram - not used at present, we always do both
-constexpr unsigned tg_threshold          = 15000; // trigram
+constexpr unsigned tg_threshold          = 12500; // trigram
 
 template<typename J, typename... ARGS> auto make_job_list_t(std::string_view reflector, std::string_view wheels, ARGS... args) -> std::vector<J>
 {
