@@ -160,13 +160,17 @@ void collate_results_bg(std::vector<result_t> const& in, std::vector<result_t>& 
 	}
 }
 
-void collate_results_tg(std::vector<result_t> const& in, std::vector<result_t>& out)
+unsigned collate_results_tg(std::vector<result_t> const& in, std::vector<result_t>& out)
 {
+	unsigned tg_max = 0;
 	for (auto& r : in)
 	{
+		if (r.btg_ > tg_max)
+			tg_max = r.btg_;
 		if (r.btg_ > tg_threshold)
 			out.emplace_back(r);
 	}
+	return tg_max;
 }
 
 int main(int ac, char** av)
@@ -242,14 +246,15 @@ int main(int ac, char** av)
 					});
 				// do the search for most likely
 				auto vr = collate_results_ioc(vjb);
-				std::cout << " - considering " << vr.size() << " possibles.\n";
+				std::cout << " - considering " << vr.size() << " possibles.";
 				std::for_each(std::execution::par, std::begin(vr), std::end(vr), [&ct](auto& r)
 					{
 						hillclimb2(std::begin(ct), std::end(ct), r.mst_, r.btg_);
 						hillclimb3(std::begin(ct), std::end(ct), r.mst_, r.btg_);
 					});
 				auto n = vr_oall.size();
-				collate_results_tg(vr, vr_oall);
+				auto mx = collate_results_tg(vr, vr_oall);
+				std::cout << " Max tg score = " << mx << ".\n";
 				std::for_each(vr_oall.begin() + n, vr_oall.end(), [&ct](auto& r)
 					{
 						machine3 m3 = MakeMachine3(r.mst_);
