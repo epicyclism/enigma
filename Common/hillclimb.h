@@ -36,7 +36,7 @@ template<typename IC, typename IA, typename R> void use_ees(IC ctb, IC cte, IA b
 	std::sort(std::begin(psm), std::end(psm), [](auto const& l, auto const& r) { if (l.cnt_ == r.cnt_) return l.ioc_ > r.ioc_; else return l.cnt_ > r.cnt_; });
 //	psm.print_ioc(std::cout);
 	psm.unique();
-	psm.print_ioc(std::cout);
+//	psm.print_ioc(std::cout);
 	// apply
 	m3.Stecker(); // clears
 	auto pr = psm.begin() + (psm.size() > 10 ? 10 : psm.size());

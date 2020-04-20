@@ -193,7 +193,7 @@ int main(int ac, char** av)
 						std::transform(aj.vr_.begin(), aj.vr_.end(), wheel_.begin(), wheel_.begin(), std::plus());
 					});
 
-			} while (AdvanceRingAll(j.mst_));
+			} while (AdvanceRing(j.mst_));
 			// report wheel
 			std::cout << "# " << j.mst_.ref_ << j.mst_.w3_ << j.mst_.w2_ << j.mst_.w1_ << '\n';
 			print_collection(wheel_);

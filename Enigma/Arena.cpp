@@ -267,7 +267,7 @@ int main(int ac, char** av)
 							std::cout << c;
 						std::cout << "\n";
 					});
-			} while (AdvanceRingAll(j.mst_));
+			} while (AdvanceRing(j.mst_));
 			auto now = std::chrono::steady_clock::now();
 			std::cout << "Wheel order search time: " << std::chrono::duration<double>(now - start).count() << "s\n";
 		}
