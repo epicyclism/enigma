@@ -21,17 +21,22 @@ template<typename IC, typename IA, typename R> void use_ees(IC ctb, IC cte, IA b
 //	auto ioc = index_of_coincidence(std::begin(vo), std::end(vo));
 	for (auto& s : psm)
 	{
-		m3.Stecker(); // clears
-		m3.ApplyPlug(s.f_, s.t_);
-		decode(ctb, cte, m3, vo);
-		s.ioc_ = index_of_coincidence(std::begin(vo), std::end(vo));
+		if (s.cnt_ < 3)
+			s.ioc_ = 0;
+		else
+		{
+			m3.Stecker(); // clears
+			m3.ApplyPlug(s.f_, s.t_);
+			decode(ctb, cte, m3, vo);
+			s.ioc_ = index_of_coincidence(std::begin(vo), std::end(vo));
+		}
 	}
 //	psm.print_ioc(std::cout);
 	// sort good->bad
 	std::sort(std::begin(psm), std::end(psm), [](auto const& l, auto const& r) { if (l.cnt_ == r.cnt_) return l.ioc_ > r.ioc_; else return l.cnt_ > r.cnt_; });
 //	psm.print_ioc(std::cout);
 	psm.unique();
-//	psm.print_ioc(std::cout);
+	psm.print_ioc(std::cout);
 	// apply
 	m3.Stecker(); // clears
 	auto pr = psm.begin() + (psm.size() > 10 ? 10 : psm.size());

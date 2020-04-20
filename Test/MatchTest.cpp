@@ -103,6 +103,19 @@ template<typename I> void operate( I ctb, I cte, machine3 const& m3, modalpha bs
 			std::cout << "ioc = " << vr.back().ioc_ << '\n';
 		}
 #endif
+#if 1 
+		if (*(std::begin(a.pos_) + cp) == position(alpha::Q, alpha::U, alpha::Y))
+		{
+			auto off = std::distance(std::begin(a.results_[row]), rb);
+			auto start = std::chrono::steady_clock::now();
+			use_ees(ctb, cte, std::begin(a.arena_[row]) + off, *(std::begin(a.pos_) + off), bs, m3.machine_settings(), vr);
+			auto now = std::chrono::steady_clock::now();
+			std::cout << "use_ees time: " << std::chrono::duration<double, std::milli>(now - start).count() << "ms\n";
+			std::cout << "QUY score = " << score << '\n';
+			std::cout << vr.back().mst_ << '\n';
+			std::cout << "ioc = " << vr.back().ioc_ << '\n';
+		}
+#endif
 #if 1
 		if (*(std::begin(a.pos_) + cp) == position(alpha::D, alpha::E, alpha::F))
 		{
@@ -113,7 +126,7 @@ template<typename I> void operate( I ctb, I cte, machine3 const& m3, modalpha bs
 			std::cout << "ioc = " << vr.back().ioc_ << '\n';
 		}
 #endif
-#if 1
+#if 0
 		if (*(std::begin(a.pos_) + cp) == position(alpha::U, alpha::E, alpha::D))
 		{
 			auto off = std::distance(std::begin(a.results_[row]), rb);
@@ -123,7 +136,7 @@ template<typename I> void operate( I ctb, I cte, machine3 const& m3, modalpha bs
 			std::cout << "ioc = " << vr.back().ioc_ << '\n';
 		}
 #endif
-#if 1
+#if 0
 		if (*(std::begin(a.pos_) + cp) == position(alpha::B, alpha::L, alpha::Q))
 		{
 			auto off = std::distance(std::begin(a.results_[row]), rb);
@@ -133,7 +146,7 @@ template<typename I> void operate( I ctb, I cte, machine3 const& m3, modalpha bs
 			std::cout << "ioc = " << vr.back().ioc_ << '\n';
 		}
 #endif
-#if 1
+#if 0
 		if (*(std::begin(a.pos_) + cp) == position(alpha::A, alpha::G, alpha::I))
 		{
 			auto off = std::distance(std::begin(a.results_[row]), rb);
@@ -212,6 +225,7 @@ int main()
 	auto ct1 = make_alpha_array("QKXETVPZQOHSXMBIZPHTCTRMAUZYSTJIMDUYOZBFRTZOUHBGOROUVRQEJRDRJHZPZIBQQHKMMJZCIIRCUOLXLCIOQKHRLIGGFJFTLLGDRARDZQUQKLTKXXXYKRUVFULBQLAYRZVJFULCGQJXFJURMURSELYFVFOKUHYUHSYLOMEFYAIIP");
 	machine3 m3 = MakeMachine3("B425");
 	Ring(m3, "agm");
+//	Ring(m3, "aam");
 	modalpha erow = alpha::P;
 
 	// B251 bcn UED "AO BV DS EX FT HZ IQ JW KU PR"

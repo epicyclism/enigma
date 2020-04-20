@@ -146,6 +146,9 @@ public:
 		std::for_each(std::begin(psm_), std::begin(psm_) + end_,
 			[&unique_](auto& v)
 			{
+				if (v.cnt_ < 3)
+					v.cnt_ = 0;
+				else
 				if (modalpha_is_bit(v.f_, unique_) || modalpha_is_bit(v.t_, unique_))
 					v.cnt_ = 0;
 				else
@@ -194,12 +197,9 @@ template<typename IC, typename IA> int match_ciphertext(IC ctb, IC cte, IA base,
 	{
 		psm.merge_direct(bs, alpha::E);
 	}
-	// work out the 10 best...
-//	return nbest(psm.begin(), psm.end()) ;
 	// sort highest cnt first
 	std::sort(std::begin(psm), std::end(psm), [](auto const& l, auto const& r) { return l.cnt_ > r.cnt_; });
-	// remove all cnt = '1' entries
-	psm.set_end(std::find_if(std::begin(psm), std::end(psm), [](auto& v) { return v.cnt_ == 1; }));
+	// remove all cnt < 3 and make others unique
 	psm.unique();
 	auto pr = psm.begin() + (psm.size() > 10 ? 10 : psm.size());
 	return std::accumulate(psm.begin(), pr, 0, [](auto& l, auto& r) { return l + r.cnt_; }) * 100 / std::distance(ctb, cte);
@@ -215,11 +215,6 @@ template<typename IC, typename IA> plug_set_msg match_ciphertext_psm(IC ctb, IC 
 		++base;
 	});
 	psm.merge_direct_force(bs, alpha::E); // force ensures that the bs->E pair gets priority, whatever the evidence. It's our core assumption...
-	// sort highest cnt first
-	std::sort(std::begin(psm), std::end(psm), [](auto const& l, auto const& r) { return l.cnt_ > r.cnt_; });
-	// remove all cnt = '1' entries
-	psm.set_end(std::find_if(std::begin(psm), std::end(psm), [](auto& v) { return v.cnt_ == 1; }));
-//	psm.print(std::cout);
 
 	return psm ;
 }
@@ -232,7 +227,7 @@ template<typename I, size_t W> void match_search(I cb, I ce, std::array<modalpha
 
 	while (itb != ite)
 	{
-		*ito += match_ciphertext(cb, ce, itb, bs);
+		*ito = match_ciphertext(cb, ce, itb, bs);
 		++ito;
 		++itb;
 	}
