@@ -147,6 +147,10 @@ public:
 		}
 		s_.Set(f, t);
 	}
+	[[nodiscard]] unsigned SteckerCount() const noexcept
+	{
+		return s_.Count();
+	}
 	[[nodiscard]] modalpha Eval(modalpha m) noexcept
 	{
 		return s_.Eval(m);

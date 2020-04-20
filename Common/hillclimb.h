@@ -223,7 +223,7 @@ template<typename IC, typename R> void hillclimb_ioc(IC ctb, IC cte, machine_set
 				m3.ApplyPlug(f, t);
 				decode(ctb, cte, m3, vo);
 				auto scrn = index_of_coincidence(std::begin(vo), std::end(vo));
-				if (scrn > scr)
+				if (scrn > scr && m3.SteckerCount() < 11)
 				{
 //					std::cout << f << t << " " << scr << " -> " << scrn << '\n';
 					mx = f;
@@ -267,7 +267,7 @@ template<typename IC, typename R> void hillclimb_bg(IC ctb, IC cte, machine_sett
 				m3.ApplyPlug(f, t);
 				decode(ctb, cte, m3, vo);
 				auto scrn = bigram_score(std::begin(vo), std::end(vo));
-				if (scrn > scr)
+				if (scrn > scr && m3.SteckerCount() < 11)
 				{
 //					std::cout << f << t << " " << scr << " -> " << scrn << '\n';
 					mx = f;
@@ -311,7 +311,7 @@ template<typename IC, typename R> void hillclimb_tg(IC ctb, IC cte, machine_sett
 				m3.ApplyPlug(f, t);
 				decode(ctb, cte, m3, vo);
 				auto scrn = trigram_score(std::begin(vo), std::end(vo));
-				if (scrn > scr)
+				if (scrn > scr && m3.SteckerCount() < 11)
 				{
 //					std::cout << f << t << " " << scr << " -> " << scrn << '\n';
 					mx = f;
@@ -355,7 +355,7 @@ template<typename IC, typename F, typename R> void hillclimb(IC ctb, IC cte, mac
 				m3.ApplyPlug(f, t);
 				decode(ctb, cte, m3, vo);
 				auto scrn = fn(std::begin(vo), std::end(vo));
-				if (scrn > scr)
+				if (scrn > scr && m3.SteckerCount() < 11)
 				{
 					std::cout << f << t << " " << scr << " -> " << scrn << '\n';
 					mx = f;
@@ -400,7 +400,7 @@ template<typename IC> void hillclimb2(IC ctb, IC cte, machine_settings_t& mst, u
 				m3.ApplyPlug(f, t);
 				decode(ctb, cte, m3, vo);
 				auto scrn = bigram_score(std::begin(vo), std::end(vo));
-				if (scrn > scr)
+				if (scrn > scr && m3.SteckerCount() < 11)
 				{
 					mx = f;
 					my = t;
@@ -444,7 +444,7 @@ template<typename IC> void hillclimb3(IC ctb, IC cte, machine_settings_t& mst, u
 				m3.ApplyPlug(f, t);
 				decode(ctb, cte, m3, vo);
 				auto scrn = trigram_score(std::begin(vo), std::end(vo));
-				if (scrn > scr)
+				if (scrn > scr && m3.SteckerCount() < 11)
 				{
 					mx = f;
 					my = t;

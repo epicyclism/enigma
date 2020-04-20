@@ -210,7 +210,7 @@ template<typename I> void operate( I ctb, I cte, machine3 const& m3, modalpha bs
 			vo.reserve(std::distance(ctb, cte));
 			decode(ctb, cte, m3, vo);
 			// report
-			std::cout << r.mst_ << " = " << r.scr_ << " - ";
+			std::cout << r.mst_ << " = " << r.scr_ << " - "  << r.mst_.stecker_.Count() << " : ";
 			for (auto c : vo)
 				std::cout << c;
 			std::cout << "\n";
