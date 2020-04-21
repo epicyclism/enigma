@@ -17,7 +17,8 @@ template<size_t W> struct arena_base
 	// remember the position for each column
 	using position_t = std::array<position, W>;
 	static const size_t Width = W;
-	
+
+	size_t active_width_;
 	// position of each column
 	position_t pos_;
 	// array of lines.
@@ -36,6 +37,28 @@ template<typename A> void fill_arena(wheels3& w, A& a, size_t off)
 {
 	// for each wheel state we have to go down all 26 arrays
 	for (auto i = off; i < A::Width; ++i)
+	{
+		a.pos_[i] = w.Position();
+		w.Step();
+		auto col = w.Evaluate(alphabet);
+		auto itc = std::begin(col);
+		for (auto ita = std::begin(a.arena_); ita != std::end(a.arena_); ++ita, ++itc)
+		{
+			(*ita)[i] = *itc;
+		}
+	}
+	a.active_width_ = A::Width - off;
+}
+
+// fills the arena for width steps, so that the cycle length of the particular machine plus
+// the length of the ciphertext can be adjusted.
+// With double step wheels cycle 6, 7, 8, length notably shorter, min 26*13*13 = 4394, max 26*26*26 = 17576. Roughly.
+//
+template<typename A> void fill_arena_width(wheels3& w, A& a, size_t width)
+{
+	a.active_width_ = std::min(A::Width, width);
+	// for each wheel state we have to go down all 26 arrays
+	for (auto i = 0; i < a.active_width_; ++i)
 	{
 		a.pos_[i] = w.Position();
 		w.Step();

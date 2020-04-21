@@ -74,11 +74,11 @@ template<typename I> void operate( I ctb, I cte, machine3 const& m3, modalpha bs
 	std::vector<result_ioc_t>          vr;
 	a.results_[0].fill(0);
 	auto row = static_cast<size_t>(bs);
-	match_search(ctb, cte, a.arena_[row], a.results_[row], bs);
+	match_search(ctb, cte, a.arena_[row], a.active_width_, a.results_[row], bs);
 	auto rb = std::begin(a.results_[row]);
 	int cnt = 0;
 	int cp = 0;
-	auto threshold = 16;
+	auto threshold = 9U;
 	while (rb != std::end(a.results_[row]))
 	{
 		auto score = *rb;

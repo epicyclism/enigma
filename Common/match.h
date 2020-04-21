@@ -12,7 +12,7 @@ struct plug_stat_chk
 	modalpha f_;
 	modalpha t_;
 	bool     b_;
-	int      cnt_;
+	unsigned cnt_;
 	double   ioc_;
 };
 
@@ -184,7 +184,7 @@ public:
 // the caller can then judge whether to record or discard
 // bs is the 'letter' attached to the input stream
 //
-template<typename IC, typename IA> int match_ciphertext(IC ctb, IC cte, IA base, modalpha bs)
+template<typename IC, typename IA> unsigned match_ciphertext(IC ctb, IC cte, IA base, modalpha bs)
 {
 	plug_set_msg psm;
 	// collect stecker possibles
@@ -202,7 +202,7 @@ template<typename IC, typename IA> int match_ciphertext(IC ctb, IC cte, IA base,
 	// remove all cnt < 3 and make others unique
 	psm.unique();
 	auto pr = psm.begin() + (psm.size() > 10 ? 10 : psm.size());
-	return std::accumulate(psm.begin(), pr, 0, [](auto& l, auto& r) { return l + r.cnt_; }) * 100 / std::distance(ctb, cte);
+	return static_cast<unsigned>(std::accumulate(psm.begin(), pr, 0, [](auto& l, auto& r) { return l + r.cnt_; }) * 100 / std::distance(ctb, cte));
 }
 
 template<typename IC, typename IA> plug_set_msg match_ciphertext_psm(IC ctb, IC cte, IA base, modalpha bs)
@@ -219,10 +219,10 @@ template<typename IC, typename IA> plug_set_msg match_ciphertext_psm(IC ctb, IC 
 	return psm ;
 }
 
-template<typename I, size_t W> void match_search(I cb, I ce, std::array<modalpha, W> const& row, std::array<unsigned, W>& counts, modalpha bs)
+template<typename I, size_t W> void match_search(I cb, I ce, std::array<modalpha, W> const& row, size_t len, std::array<unsigned, W>& counts, modalpha bs)
 {
 	auto itb = std::begin(row);
-	auto ite = std::end(row) - std::distance(cb, ce);
+	auto ite = itb + len - std::distance(cb, ce);
 	auto ito = std::begin(counts);
 
 	while (itb != ite)

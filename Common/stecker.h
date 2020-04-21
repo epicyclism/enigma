@@ -36,7 +36,7 @@ public:
 	{
 		return !(board_[from.Val()] == 0 && board_[to.Val()] == 0);
 	}
-	[[nodiscard]] unsigned Count() const noexcept
+	[[nodiscard]] auto Count() const noexcept
 	{
 		return std::count_if(board_.begin(), board_.end(), [](auto& v) { return v != 0; }) / 2;
 	}

@@ -9,7 +9,7 @@ class wheels3
 {
 private:
 	// reflector
-	wiring const&	ref_;
+	wiring const& ref_;
 	// left to right
 	wheel			w3_;
 	wheel			w2_;
@@ -20,7 +20,7 @@ private:
 	//
 public:
 	// initialisation is reflector, left to right, as loaded into the actual machine
-	constexpr wheels3( wiring const& ref, rotor const& w3, rotor const& w2, rotor const& w1  ) : ref_{ref}, w3_{w3}, w2_{w2}, w1_{w1}
+	constexpr wheels3(wiring const& ref, rotor const& w3, rotor const& w2, rotor const& w1) : ref_{ ref }, w3_{ w3 }, w2_{ w2 }, w1_{ w1 }
 	{}
 
 	// note these are also left to right
@@ -79,12 +79,12 @@ public:
 	constexpr modalpha Evaluate(modalpha in) const
 	{
 		return w1_.LR(
-				w2_.LR(
-				 w3_.LR(
-				  ref_.evalRef(
-				 w3_.RL(
-				w2_.RL(
-			   w1_.RL(in)))))));
+			w2_.LR(
+				w3_.LR(
+					ref_.evalRef(
+						w3_.RL(
+							w2_.RL(
+								w1_.RL(in)))))));
 	}
 	template<size_t N> constexpr std::array<modalpha, N> Evaluate(std::array<modalpha, N> const& in)
 	{
@@ -97,12 +97,23 @@ public:
 	{
 		ostr << in;
 		return w1_.LR(
-				w2_.LR(
-				 w3_.LR(
-				  ref_.evalRef(
-				 w3_.RL(
-				w2_.RL(
-			   w1_.RL(in, ostr), ostr), ostr), ostr), ostr), ostr), ostr);
+			w2_.LR(
+				w3_.LR(
+					ref_.evalRef(
+						w3_.RL(
+							w2_.RL(
+								w1_.RL(in, ostr), ostr), ostr), ostr), ostr), ostr), ostr);
+	}
+	// tHis gives an overestimate as we're not compensating for the 'double step' inherent in the
+	// mechanism.
+	constexpr size_t CycleLen() const
+	{
+		return
+			// always 26 for the right wheel
+			26 *
+			(w1_.rotor_.dual_ ? 13 : 26) *
+			(w2_.rotor_.dual_ ? 13 : 26);
+		// wheel three plays no part in the length.
 	}
 	template <typename O> void PrintPosition(O& ostr) const
 	{

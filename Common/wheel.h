@@ -56,7 +56,10 @@ struct wheel
 	{
 		base_ = b;
 		pos_ = b - ring_ ;
-		roll_ = rotor_.to_ - b;
+		if (rotor_.dual_)
+			roll_ = (b > rotor_.to_ - alpha_max / 2) ? rotor_.to_ - b : rotor_.to_ - alpha_max / 2 - b;
+		else
+			roll_ = rotor_.to_ - b;
 	}
 	constexpr modalpha Base() const
 	{

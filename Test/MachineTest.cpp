@@ -25,7 +25,7 @@ void Test2()
 	machine3 m3 = MakeMachine3("B125");
 	Ring(m3, "fvn");
 	Setting(m3, "XWB");
-	Stecker(m3, "PO ML IU KJ NH YT GB VF RE DC" );
+	Stecker(m3, "PO ML IU KJ NH YT GB VF RE DC");
 
 	auto ciphertext = make_alpha_array("QBLTWLDAHHYEOEFPTWYBLENDPMKOXLDFAMUDWIJDXRJZ");
 
@@ -37,7 +37,7 @@ void Test2()
 
 void Test3()
 {
-	auto ciphertext1 = make_alpha_array("EDPUD NRGYS ZRCXN UYTPO MRMBO FKTBZ REZKM LXLVE FGUEY SIOZV EQMIK UBPMM YLKLT TDEIS MDICA GYKUA CTCDO MOHWX MUUIA UBSTS LRNBZ SZWNR FXWFY SSXJZ VIJHI DISHP RKLKA YUPAD TXQSP INQMA TLPIF SVKDA SCTAC DPBOP VHJK" );
+	auto ciphertext1 = make_alpha_array("EDPUD NRGYS ZRCXN UYTPO MRMBO FKTBZ REZKM LXLVE FGUEY SIOZV EQMIK UBPMM YLKLT TDEIS MDICA GYKUA CTCDO MOHWX MUUIA UBSTS LRNBZ SZWNR FXWFY SSXJZ VIJHI DISHP RKLKA YUPAD TXQSP INQMA TLPIF SVKDA SCTAC DPBOP VHJK");
 
 	machine3 m3 = MakeMachine3("B245");
 	Ring(m3, "bul");
@@ -63,7 +63,7 @@ void Test3()
 
 void Test4()
 {
-	auto ciphertext1 = make_alpha_array("SFBWD NJUSE GQOBH KRTAR EEZMW KPPRB XOHDR OEQGB BGTQV PGVKB VVGBI MHUSZ YDAJQ IROAX SSSNR EHYGG RPISE ZBOVM QIEMM ZCYSG QDGRE RVBIL EKXYQ IRGIR QNRDN VRXCY YTNJR" );
+	auto ciphertext1 = make_alpha_array("SFBWD NJUSE GQOBH KRTAR EEZMW KPPRB XOHDR OEQGB BGTQV PGVKB VVGBI MHUSZ YDAJQ IROAX SSSNR EHYGG RPISE ZBOVM QIEMM ZCYSG QDGRE RVBIL EKXYQ IRGIR QNRDN VRXCY YTNJR");
 
 	machine3 m3 = MakeMachine3("B245");
 	Ring(m3, "bul");
@@ -76,7 +76,7 @@ void Test4()
 	for (auto c : key)
 		std::cout << c;
 	std::cout << "\n";
-	
+
 	// set the key
 	m3.Setting(key[0], key[1], key[2]);
 
@@ -87,12 +87,54 @@ void Test4()
 	std::cout << "\n";
 }
 
+// single turnover
+//
+void TestCycleLengthLong()
+{
+	machine3 m3 = MakeMachine3("B123");
+	Ring(m3, "aaa");
+	Setting(m3, "AAA");
+	auto cl = m3.CycleLength();
+	while (cl)
+	{
+		m3.Wheels().Step();
+		--cl;
+	}
+	// expect position to have gone beyond AAA due to double steps
+	if (m3.Position() == position(alpha::B, alpha::B, alpha::A))
+		std::cout << "TestCycleLengthLong pass\n";
+	else
+		std::cout << "TestCycleLengthLong expected AAA got " << m3.Position() << '\n';
+}
+
+// dual turnover
+//
+void TestCycleLengthShort()
+{
+	machine3 m3 = MakeMachine3("B876");
+	Ring(m3, "aaa");
+	Setting(m3, "AAA");
+	auto cl = m3.CycleLength();
+	while (cl)
+	{
+		m3.Wheels().Step();
+		--cl;
+	}
+	// expect position to have gone beyond AAA due to double steps
+	if (m3.Position() == position(alpha::A, alpha::Z, alpha::A))
+		std::cout << "TestCycleLengthShort pass\n";
+	else
+		std::cout << "TestCycleLengthShort expected AAA got " << m3.Position() << '\n';
+}
+
 int main()
 {
 	Test1();
 	Test2();
 	Test3();
 	Test4();
+	TestCycleLengthLong();
+	TestCycleLengthShort();
 
 	return 0;
 }

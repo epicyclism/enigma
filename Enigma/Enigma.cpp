@@ -15,7 +15,7 @@ constexpr  char version[] = "v0.08";
 
 template<typename I> unsigned count_ees(I ptb, I pte)
 {
-	return std::count_if(ptb, pte, [](auto c) {return c == alpha::E; });
+	return static_cast<unsigned>(std::count_if(ptb, pte, [](auto c) {return c == alpha::E; }));
 }
 
 void Help()

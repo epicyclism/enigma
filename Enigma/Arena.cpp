@@ -17,7 +17,7 @@
 #include "arena.h"
 #include "jobs.h"
 
-constexpr  char version[] = "v0.07";
+constexpr  char version[] = "v0.08";
 
 std::vector<modalpha> read_ciphertext()
 {
@@ -219,25 +219,26 @@ int main(int ac, char** av)
 			return -1;
 		}
 		std::cout << "Searching " << vjbw.size() << " wheel and reflector arrangements.\n";
+		auto start = std::chrono::steady_clock::now();
 
 		// work through the wheel orders linearly
 		for (auto & j : vjbw)
 		{
-			auto start = std::chrono::steady_clock::now();
+			auto start_wo = std::chrono::steady_clock::now();
 			// search each wheel order in parallel
 			do
 			{
 				std::cout << j.mst_ << " " << vr_oall.size() ;
 				machine3 m3 = MakeMachine3(j.mst_);
 				// fill the arena
-				fill_arena(m3.Wheels(), arena, 0);
+				fill_arena_width(m3.Wheels(), arena, m3.CycleLength() + ct.size());
 				// job list
 				using job_arena_t = job_arena<arena_t, result_t, decltype(ct.cbegin())>;
 				auto vjb = make_job_list_arena<job_arena_t>(j.mst_, arena, j.ctb_, j.cte_);
 				// do the search for quite likely
 				std::for_each(std::execution::par, std::begin(vjb), std::end(vjb), [](auto& aj)
 					{
-						match_search(aj.ctb_, aj.cte_, aj.line_, aj.r_, aj.bs_);
+						match_search(aj.ctb_, aj.cte_, aj.line_, arena.active_width_, aj.r_, aj.bs_);
 					});
 				// do the search for more likely
 				std::for_each(std::execution::par, std::begin(vjb), std::end(vjb), [ees_threshold](auto& aj)
@@ -269,9 +270,10 @@ int main(int ac, char** av)
 					});
 			} while (AdvanceRing(j.mst_));
 			auto now = std::chrono::steady_clock::now();
-			std::cout << "Wheel order search time: " << std::chrono::duration<double>(now - start).count() << "s\n";
+			std::cout << "Wheel order search time: " << std::chrono::duration<double>(now - start_wo).count() << "s\n";
 		}
-		std::cout << "Finished\n";
+		auto now = std::chrono::steady_clock::now();
+		std::cout << "Finished, search time: " << std::chrono::duration<double>(now - start).count() << "s\n";
 		// report
 		for (auto r : vr_oall)
 		{

@@ -112,6 +112,10 @@ public:
 	{
 		w_.Position(p);
 	}
+	[[nodiscard]] size_t CycleLength() const noexcept 
+	{
+		return w_.CycleLen();
+	}
 	// get machine settings so can recreate as wanted.
 	machine_settings_t machine_settings() const
 	{
@@ -147,7 +151,7 @@ public:
 		}
 		s_.Set(f, t);
 	}
-	[[nodiscard]] unsigned SteckerCount() const noexcept
+	[[nodiscard]] auto SteckerCount() const noexcept
 	{
 		return s_.Count();
 	}

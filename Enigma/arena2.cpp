@@ -12,7 +12,7 @@
 #include "arena.h"
 #include "jobs.h"
 
-constexpr  char version[] = "v0.02";
+constexpr  char version[] = "v0.03";
 
 std::vector<modalpha> read_ciphertext()
 {
@@ -157,7 +157,7 @@ int main(int ac, char** av)
 			}
 		}
 #endif
-		std::array<unsigned long long, 100> collect_;
+		std::array<unsigned, 100> collect_;
 		collect_.fill(0);
 		std::array<unsigned, 100> wheel_;
 
@@ -171,14 +171,14 @@ int main(int ac, char** av)
 				std::cerr << j.mst_ << "\n";
 				machine3 m3 = MakeMachine3(j.mst_);
 				// fill the arena
-				fill_arena(m3.Wheels(), arena, 0);
+				fill_arena_width(m3.Wheels(), arena, m3.CycleLength() + ct.size());
 				// job list
 				using job_arena_t = job_arena2<arena_t, std::array<unsigned, 100>, decltype(ct.cbegin())>;
 				auto vjb = make_job_list_arena<job_arena_t>(j.mst_, arena, j.ctb_, j.cte_);
 				// do the search for quite likely
 				std::for_each(std::execution::par, std::begin(vjb), std::end(vjb), [](auto& aj)
 					{
-						match_search(aj.ctb_, aj.cte_, aj.line_, aj.r_, aj.bs_);
+						match_search(aj.ctb_, aj.cte_, aj.line_, arena.active_width_, aj.r_, aj.bs_);
 						aj.vr_.fill(0);
 						for (auto p : aj.r_)
 							++aj.vr_[p];
@@ -203,7 +203,7 @@ int main(int ac, char** av)
 		std::cerr << "Finished\n";
 		// report
 		// average
-		std::transform(collect_.begin(), collect_.end(), collect_.begin(), [&vjbw](auto v) { return v / vjbw.size(); });
+		std::transform(collect_.begin(), collect_.end(), collect_.begin(), [&vjbw](auto v) { return v / static_cast<unsigned>(vjbw.size()); });
 		// label
 		std::cout << "# " << av[1] << av[2] << '\n';
 		print_collection(collect_);

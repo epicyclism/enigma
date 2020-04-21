@@ -52,7 +52,7 @@ template<size_t W> void report_results(std::array<unsigned, W> const& cnts)
 			mx = cnt;
 		++hist[cnt];
 	}
-	for(int n = 0; n < mx + 1; ++n)
+	for(unsigned n = 0; n < mx + 1; ++n)
 		std::cout << n << ' ' << hist[n] << '\n';
 }
 
