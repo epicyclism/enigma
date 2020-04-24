@@ -21,7 +21,7 @@ template<typename IC, typename IA, typename R> void use_ees(IC ctb, IC cte, IA b
 //	auto ioc = index_of_coincidence(std::begin(vo), std::end(vo));
 	for (auto& s : psm)
 	{
-		if (s.cnt_ < 3)
+		if (s.cnt_ < psm.sig_lim())
 			s.ioc_ = 0;
 		else
 		{
@@ -383,7 +383,7 @@ template<typename IC> void hillclimb2(IC ctb, IC cte, machine_settings_t& mst, u
 	vo.reserve(std::distance(ctb, cte));
 	// establish the baseline
 	decode(ctb, cte, m3, vo);
-	auto scr = bigram_score(std::begin(vo), std::end(vo));
+	auto scr = bigram_score_1941(std::begin(vo), std::end(vo));
 	bool improved = true;
 	while (improved)
 	{
@@ -399,7 +399,7 @@ template<typename IC> void hillclimb2(IC ctb, IC cte, machine_settings_t& mst, u
 				m3.PushStecker();
 				m3.ApplyPlug(f, t);
 				decode(ctb, cte, m3, vo);
-				auto scrn = bigram_score(std::begin(vo), std::end(vo));
+				auto scrn = bigram_score_1941(std::begin(vo), std::end(vo));
 				if (scrn > scr && m3.SteckerCount() < 11)
 				{
 					mx = f;
@@ -427,7 +427,7 @@ template<typename IC> void hillclimb3(IC ctb, IC cte, machine_settings_t& mst, u
 	vo.reserve(std::distance(ctb, cte));
 	// establish the baseline
 	decode(ctb, cte, m3, vo);
-	auto scr = trigram_score(std::begin(vo), std::end(vo));
+	auto scr = trigram_score_1941(std::begin(vo), std::end(vo));
 	bool improved = true;
 	while (improved)
 	{
@@ -443,7 +443,7 @@ template<typename IC> void hillclimb3(IC ctb, IC cte, machine_settings_t& mst, u
 				m3.PushStecker();
 				m3.ApplyPlug(f, t);
 				decode(ctb, cte, m3, vo);
-				auto scrn = trigram_score(std::begin(vo), std::end(vo));
+				auto scrn = trigram_score_1941(std::begin(vo), std::end(vo));
 				if (scrn > scr && m3.SteckerCount() < 11)
 				{
 					mx = f;

@@ -32,22 +32,23 @@ struct bigram_table
 
 // bigram
 //
-constexpr bigram_table make_bigram_table(bg_def const* b, bg_def const* e)
+constexpr bigram_table make_bigram_table(bg_def const* b, bg_def const* e, int scale = 1)
 {
 	std::array<unsigned, stride_ * alpha_max> wking{};
 	for (auto& v : wking)
 		v = 0;
 //	epicyclism::cfor_each(std::begin(wking), std::end(wking), [](auto& v) { v = 0; });
-	epicyclism::cfor_each(b, e, [&wking](auto const& bg)
+	epicyclism::cfor_each(b, e, [&wking, scale](auto const& bg)
 		{
-			wking[from_printable_flex(bg.a_) * stride_ + from_printable_flex(bg.b_)] = bg.score_;
+			wking[from_printable_flex(bg.a_) * stride_ + from_printable_flex(bg.b_)] = bg.score_ * scale;
 		});
 	return bigram_table{ wking };
 }
 
 // the end result used for scoring.
 //
-constexpr bigram_table gen_bg = make_bigram_table(std::begin(gen_bg_def), std::end(gen_bg_def));
+constexpr bigram_table bg_gen  = make_bigram_table(std::begin(gen_bg_def), std::end(gen_bg_def));
+constexpr bigram_table bg_1941 = make_bigram_table(std::begin(bg_def_1941), std::end(bg_def_1941), 100);
 
 // score with the given bigram table.
 //
@@ -68,9 +69,19 @@ template<typename I> unsigned bigram_score(I b, I e, bigram_table const& bt)
 	return score / (static_cast<unsigned>(len) - 1);
 }
 
-// convenience function.
+// convenience functions.
 //
+template<typename I> unsigned bigram_score_gen(I b, I e)
+{
+	return bigram_score(b, e, bg_gen) ;
+}
+
+template<typename I> unsigned bigram_score_1941(I b, I e)
+{
+	return bigram_score(b, e, bg_1941) ;
+}
+
 template<typename I> unsigned bigram_score(I b, I e)
 {
-	return bigram_score(b, e, gen_bg) ;
+	return bigram_score(b, e, bg_1941) ;
 }

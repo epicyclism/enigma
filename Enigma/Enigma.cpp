@@ -114,8 +114,10 @@ int main(int ac, char**av)
 			auto cnt_e = count_ees(std::begin(vo), std::end(vo));
 			std::cout << "e count = " << cnt_e << " (" << double(cnt_e) * 100 / vo.size() << "%)\n";
 			std::cout << "ioc     = " << index_of_coincidence(std::begin(vo), std::end(vo)) << "\n";
-			std::cout << "bigram  = " << bigram_score(std::begin(vo), std::end(vo)) << "\n";
-			std::cout << "trigram = " << trigram_score(std::begin(vo), std::end(vo)) << "\n";
+			std::cout << "bigram gen   = " << bigram_score_gen(std::begin(vo), std::end(vo)) << "\n";
+			std::cout << "bigram 1941  = " << bigram_score_1941(std::begin(vo), std::end(vo)) << "\n";
+			std::cout << "trigram gen  = " << trigram_score_gen(std::begin(vo), std::end(vo)) << "\n";
+			std::cout << "trigram 1941 = " << trigram_score_1941(std::begin(vo), std::end(vo)) << "\n";
 		}
 	}
 	catch (std::exception& ex)

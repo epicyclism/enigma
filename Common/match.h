@@ -25,6 +25,7 @@ private:
 	ptrdiff_t end_;
 	unsigned direct_;
 	unsigned total_;
+	unsigned sig_lim_; // number of matches considered significant, related to the ciphertext size for now.
 public:
 	plug_set_msg()
 	{
@@ -143,10 +144,11 @@ public:
 	void unique()
 	{
 		unsigned unique_ = 0;
+		sig_lim_ = total_ / 70 + 1;
 		std::for_each(std::begin(psm_), std::begin(psm_) + end_,
-			[&unique_](auto& v)
+			[&](auto& v)
 			{
-				if (v.cnt_ < 3)
+				if (v.cnt_ < sig_lim_)
 					v.cnt_ = 0;
 				else
 				if (modalpha_is_bit(v.f_, unique_) || modalpha_is_bit(v.t_, unique_))
@@ -158,6 +160,10 @@ public:
 				}
 			});
 		set_end(std::remove_if(std::begin(psm_), std::begin(psm_) + end_, [](auto& v) { return v.cnt_ == 0; }));
+	}
+	[[nodiscard]] unsigned sig_lim() const noexcept
+	{
+		return sig_lim_;
 	}
 	template<typename O> void print(O& ostr)
 	{
@@ -199,10 +205,11 @@ template<typename IC, typename IA> unsigned match_ciphertext(IC ctb, IC cte, IA 
 	}
 	// sort highest cnt first
 	std::sort(std::begin(psm), std::end(psm), [](auto const& l, auto const& r) { return l.cnt_ > r.cnt_; });
-	// remove all cnt < 3 and make others unique
+	// remove all cnt < ? and make others unique
 	psm.unique();
 	auto pr = psm.begin() + (psm.size() > 10 ? 10 : psm.size());
-	return static_cast<unsigned>(std::accumulate(psm.begin(), pr, 0, [](auto& l, auto& r) { return l + r.cnt_; }) * 100 / std::distance(ctb, cte));
+	auto ctl = std::distance(ctb, cte);
+	return static_cast<unsigned>((std::accumulate(psm.begin(), pr, 0, [](auto& l, auto& r) { return l + r.cnt_; }) * 100 + ctl/2) / ctl );
 }
 
 template<typename IC, typename IA> plug_set_msg match_ciphertext_psm(IC ctb, IC cte, IA base, modalpha bs)

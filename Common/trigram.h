@@ -28,15 +28,15 @@ struct trigram_table
 	trigram_table() = delete;
 };
 
-constexpr trigram_table make_trigram_table(tg_def const* b, tg_def const* e)
+constexpr trigram_table make_trigram_table(tg_def const* b, tg_def const* e, int scale = 1)
 {
 	std::array<unsigned, stride_ * stride_ * alpha_max> wking{};
 	for (auto& v : wking)
 		v = 0;
 //	epicyclism::cfor_each(std::begin(wking), std::end(wking), [](auto& v) { v = 0; });
-	epicyclism::cfor_each(b, e, [&wking](auto const& tg)
+	epicyclism::cfor_each(b, e, [&wking, scale](auto const& tg)
 		{
-			wking[from_printable_flex(tg.a_) * stride_ * stride_ + from_printable_flex(tg.b_) * stride_ + from_printable_flex(tg.c_)] = tg.score_;
+			wking[from_printable_flex(tg.a_) * stride_ * stride_ + from_printable_flex(tg.b_) * stride_ + from_printable_flex(tg.c_)] = tg.score_ * scale;
 		});
 	return trigram_table{ wking };
 }
@@ -44,7 +44,8 @@ constexpr trigram_table make_trigram_table(tg_def const* b, tg_def const* e)
 // the end result used for scoring.
 //
 #include "trigram_data.h"
-constexpr trigram_table gen_tg = make_trigram_table(std::begin(gen_tg_def), std::end(gen_tg_def));
+constexpr trigram_table tg_gen = make_trigram_table(std::begin(gen_tg_def), std::end(gen_tg_def));
+constexpr trigram_table tg_1941 = make_trigram_table(std::begin(tg_def_1941), std::end(tg_def_1941), 100);
 
 // score with the given trigram table.
 //
@@ -66,9 +67,19 @@ template<typename I> unsigned trigram_score(I b, I e, trigram_table const& tt)
 	return score / (static_cast<unsigned>(len) - 2);
 }
 
-// convenience function.
+// convenience functions.
 //
+template<typename I> unsigned trigram_score_gen(I b, I e)
+{
+	return trigram_score(b, e, tg_gen);
+}
+
+template<typename I> unsigned trigram_score_1941(I b, I e)
+{
+	return trigram_score(b, e, tg_1941);
+}
+
 template<typename I> unsigned trigram_score(I b, I e)
 {
-	return trigram_score(b, e, gen_tg);
+	return trigram_score(b, e, tg_1941);
 }
