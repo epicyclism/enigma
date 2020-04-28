@@ -74,12 +74,36 @@ template<typename I> unsigned trigram_score_gen(I b, I e)
 	return trigram_score(b, e, tg_gen);
 }
 
+struct trigram_score_gen_op
+{
+	template<typename I> unsigned operator()(I b, I e)
+	{
+		return trigram_score(b, e, tg_gen);
+	}
+};
+
 template<typename I> unsigned trigram_score_1941(I b, I e)
 {
 	return trigram_score(b, e, tg_1941);
 }
 
+struct trigram_score_1941_op
+{
+	template<typename I> unsigned operator()(I b, I e)
+	{
+		return trigram_score(b, e, tg_1941);
+	}
+};
+
 template<typename I> unsigned trigram_score(I b, I e)
 {
 	return trigram_score(b, e, tg_1941);
 }
+
+struct trigram_score_op
+{
+	template<typename I> unsigned operator()(I b, I e)
+	{
+		return trigram_score(b, e, tg_gen);
+	}
+};

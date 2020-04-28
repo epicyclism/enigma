@@ -144,11 +144,10 @@ public:
 	void unique()
 	{
 		unsigned unique_ = 0;
-		sig_lim_ = total_ / 70 + 1;
 		std::for_each(std::begin(psm_), std::begin(psm_) + end_,
 			[&](auto& v)
 			{
-				if (v.cnt_ < sig_lim_)
+				if (v.cnt_ < 2)
 					v.cnt_ = 0;
 				else
 				if (modalpha_is_bit(v.f_, unique_) || modalpha_is_bit(v.t_, unique_))
@@ -160,10 +159,6 @@ public:
 				}
 			});
 		set_end(std::remove_if(std::begin(psm_), std::begin(psm_) + end_, [](auto& v) { return v.cnt_ == 0; }));
-	}
-	[[nodiscard]] unsigned sig_lim() const noexcept
-	{
-		return sig_lim_;
 	}
 	template<typename O> void print(O& ostr)
 	{

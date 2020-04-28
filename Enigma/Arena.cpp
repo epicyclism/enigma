@@ -250,8 +250,13 @@ int main(int ac, char** av)
 				std::cout << " - considering " << vr.size() << " possibles.";
 				std::for_each(std::execution::par, std::begin(vr), std::end(vr), [&ct](auto& r)
 					{
+#if 0
 						hillclimb2(std::begin(ct), std::end(ct), r.mst_, r.btg_);
 						hillclimb3(std::begin(ct), std::end(ct), r.mst_, r.btg_);
+#else
+						hillclimb_base(std::begin(ct), std::end(ct), bigram_score_op(), r.mst_);
+						r.btg_ = hillclimb_base(std::begin(ct), std::end(ct), trigram_score_op(), r.mst_);
+#endif
 					});
 				auto n = vr_oall.size();
 				auto mx = collate_results_tg(vr, vr_oall);

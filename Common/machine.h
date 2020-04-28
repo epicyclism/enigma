@@ -65,11 +65,9 @@ public:
 		x = w_.Evaluate(x, ostr);
 		return s_.Eval(x, ostr);
 	}
-	template<typename I> std::vector<modalpha> Transform(I b, I e) noexcept
+	template<typename I, typename O> void Transform(I b, I e, O o) noexcept
 	{
-		std::vector<modalpha> r;
-		r.reserve(std::distance(b, e));
-		std::transform(b, e, std::back_inserter(r), [&](auto in)
+		std::transform(b, e, o, [&](auto in)
 		{
 			if (in == modalpha(alpha::SZ))
 				return modalpha(alpha::SZ);
@@ -78,9 +76,15 @@ public:
 			v = w_.Evaluate(v);
 			return s_.Eval(v);
 		});
+	}
+	template<typename I> std::vector<modalpha> Transform(I b, I e) noexcept
+	{
+		std::vector<modalpha> r;
+		r.reserve(std::distance(b, e));
+		Transform(b, e, std::back_inserter(r));
 		return r;
 	}
-	template<typename I, typename O> std::vector<modalpha> Transform(I b, I e, O& ostr)
+	template<typename I, typename OSTR> std::vector<modalpha> Transform(I b, I e, OSTR& ostr)
 	{
 		std::vector<modalpha> r;
 		std::transform(b, e, std::back_inserter(r), [&](auto in)
@@ -97,7 +101,7 @@ public:
 		});
 		return r;
 	}
-	template<typename O> void ReportSettings(O& ostr)
+	template<typename OSTR> void ReportSettings(OSTR& ostr)
 	{
 		w_.Report(ostr);
 		ostr << " ";

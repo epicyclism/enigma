@@ -10,8 +10,6 @@
 #include "const_helpers.h"
 #include "machine.h"
 #include "arena.h"
-#include "ioc.h"
-#include "bigram.h"
 #include "match.h"
 #include "hillclimb.h"
 
@@ -116,7 +114,7 @@ template<typename I> void operate( I ctb, I cte, machine3 const& m3, modalpha bs
 			std::cout << "ioc = " << vr.back().ioc_ << '\n';
 		}
 #endif
-#if 0
+#if 1
 		if (*(std::begin(a.pos_) + cp) == position(alpha::G, alpha::A, alpha::B))
 		{
 			auto off = std::distance(std::begin(a.results_[row]), rb);
@@ -148,7 +146,7 @@ template<typename I> void operate( I ctb, I cte, machine3 const& m3, modalpha bs
 			std::cout << "ioc = " << vr.back().ioc_ << '\n';
 		}
 #endif
-#if 0
+#if 1
 		if (*(std::begin(a.pos_) + cp) == position(alpha::U, alpha::E, alpha::D))
 		{
 			auto off = std::distance(std::begin(a.results_[row]), rb);
@@ -188,7 +186,9 @@ template<typename I> void operate( I ctb, I cte, machine3 const& m3, modalpha bs
 	{
 //		if (r.ioc_ > 0.05)
 		auto start = std::chrono::steady_clock::now();
-		hillclimb_bg(ctb, cte, r.mst_, vr3);
+//		auto ns = hillclimb_base(ctb, cte, bigram_score_1941_op(), r.mst_);
+		auto ns = hillclimb_permuted(ctb, cte, bigram_score_1941_op(), r.mst_);
+		vr3.emplace_back( r.mst_, ns );
 		auto now = std::chrono::steady_clock::now();
 		std::cout << "hillclimb_bg time: " << std::chrono::duration<double, std::milli>(now - start).count() << "ms\n";
 	}
@@ -216,7 +216,9 @@ template<typename I> void operate( I ctb, I cte, machine3 const& m3, modalpha bs
 	for (auto r : vr3)
 	{
 		auto start = std::chrono::steady_clock::now();
-		hillclimb_tg(ctb, cte, r.mst_, vr4);
+//		auto ns = hillclimb_base(ctb, cte, trigram_score_1941_op(), r.mst_);
+		auto ns = hillclimb_permuted(ctb, cte, trigram_score_1941_op(), r.mst_);
+		vr4.emplace_back(r.mst_, ns);
 		auto now = std::chrono::steady_clock::now();
 		std::cout << "hillclimb_tg time: " << std::chrono::duration<double, std::milli>(now - start).count() << "ms\n";
 	}
@@ -263,10 +265,10 @@ int main()
 	//modalpha erow = alpha::P;
 
 	// B251 bcn UED "AO BV DS EX FT HZ IQ JW KU PR"
-	//auto ct1 = make_alpha_array("UPONTXBBWFYAQNFLZTBHLBWXSOZUDCDYIZNRRHPPBNSV");
-	//machine3 m3 = MakeMachine3("B251");
-	//Ring(m3, "bcn");
-	//modalpha erow = alpha::X;
+	auto ct1 = make_alpha_array("UPONTXBBWFYAQNFLZTBHLBWXSOZUDCDYIZNRRHPPBNSV");
+	machine3 m3 = MakeMachine3("B251");
+	Ring(m3, "bcn");
+	modalpha erow = alpha::X;
 	
 	// B213 zwd AGI "IU JO RW MV EZ BL PX"
 	//auto ct1 = make_alpha_array("QKRQWUQTZKFXZOMJFOYRHYZWVBXYSIWMMVWBLEBDMWUWBTVHMRFLKSDCCEXIYPAHRMPZIOVBBRVLNHZUPOSYEIPWJTUGYOSLAOXRHKVCHQOSVDTRBPDJEUKSBBXHTYGVHGFICACVGUVOQFAQWBKXZJSQJFZPEVJRO");
@@ -286,10 +288,10 @@ int main()
 	// B152 aat UGL "BG CM DY EX FO HT IL KV NW PS"
 	// B152 abt UHL "BG CM DY EX FO HT IL KV NW PS"
 	// B152 nht HNL "BG CM DY EX FO HT IL KV NW PS"
-	auto ct1 = make_alpha_array("TGPIUEYDKHIBWOYJQGSSQYJXZSIRJUJGCISXWXAFSURPPCPAUXJRQTXKTCHAPWUDILAMBFBCMGRZAQYWKHRQBEVSNBZYBEOPLYZXRTNKWMCLOSQIGPVSUHFPPSOK");
-	machine3 m3 = MakeMachine3("B152");
-	Ring(m3, "abt");
-	modalpha erow = alpha::X;
+	//auto ct1 = make_alpha_array("TGPIUEYDKHIBWOYJQGSSQYJXZSIRJUJGCISXWXAFSURPPCPAUXJRQTXKTCHAPWUDILAMBFBCMGRZAQYWKHRQBEVSNBZYBEOPLYZXRTNKWMCLOSQIGPVSUHFPPSOK");
+	//machine3 m3 = MakeMachine3("B152");
+	//Ring(m3, "abt");
+	//modalpha erow = alpha::X;
 	
 	m3.Setting(alpha::A, alpha::A, alpha::A);
 

@@ -81,7 +81,31 @@ template<typename I> unsigned bigram_score_1941(I b, I e)
 	return bigram_score(b, e, bg_1941) ;
 }
 
+struct bigram_score_1941_op
+{
+	template<typename I> unsigned operator()(I b, I e)
+	{
+		return bigram_score(b, e, bg_1941);
+	}
+};
+
+struct bigram_score_gen_op
+{
+	template<typename I> unsigned operator()(I b, I e)
+	{
+		return bigram_score(b, e, bg_gen);
+	}
+};
+
 template<typename I> unsigned bigram_score(I b, I e)
 {
 	return bigram_score(b, e, bg_1941) ;
 }
+
+struct bigram_score_op
+{
+	template<typename I> unsigned operator()(I b, I e)
+	{
+		return bigram_score(b, e, bg_gen);
+	}
+};

@@ -30,3 +30,11 @@ template<typename I> double index_of_coincidence(I b, I e)
 		return double(n * (n - 1)) / nn;
 	});
 }
+
+struct index_of_coincidence_op
+{
+	template<typename I> double operator()(I b, I e)
+	{
+		return index_of_coincidence(b, e);
+	}
+};

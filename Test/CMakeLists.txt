@@ -11,12 +11,14 @@ add_executable (RotorTest "RotorTest.cpp" )
 add_executable (WheelSetTest "WheelSetTest.cpp" )
 add_executable (MachineTest "MachineTest.cpp" )
 add_executable (MatchTest "MatchTest.cpp" )
+add_executable (score "Score.cpp"  )
 
 target_link_libraries(MachineTest Common )
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 	target_link_libraries(MatchTest Common ${TBB_IMPORTED_TARGETS})
 else()
 	target_link_libraries(MatchTest Common)
+	target_link_libraries(score Common)
 endif()
 
 #if ( CMAKE_CXX_COMPILER_ID MATCHES "Clang|AppleClang|GNU" )
@@ -30,4 +32,4 @@ endif()
 #endif()
 
 # TODO: Add tests and install targets if needed.
-install(TARGETS ModAlphaTest WiringTest RotorTest MachineTest MatchTest DESTINATION $(PROJECT_SOURCE_DIR)/bin)
+install(TARGETS ModAlphaTest WiringTest RotorTest MachineTest MatchTest score DESTINATION $(PROJECT_SOURCE_DIR)/bin)
