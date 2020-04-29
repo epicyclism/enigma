@@ -104,6 +104,6 @@ struct trigram_score_op
 {
 	template<typename I> unsigned operator()(I b, I e)
 	{
-		return trigram_score(b, e, tg_gen);
+		return trigram_score(b, e, tg_1941);
 	}
 };

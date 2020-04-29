@@ -1,0 +1,34 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/paul/enigma/Enigma/letter_count.cpp
+iostream
+-
+array
+-
+string_view
+-
+modalpha.h
+/home/paul/enigma/Enigma/modalpha.h
+
+Common/modalpha.h
+limits
+-
+type_traits
+-
+ostream
+-
+array
+-
+modular.h
+Common/modular.h
+
+Common/modular.h
+limits
+-
+

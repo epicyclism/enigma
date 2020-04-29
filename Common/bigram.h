@@ -106,6 +106,6 @@ struct bigram_score_op
 {
 	template<typename I> unsigned operator()(I b, I e)
 	{
-		return bigram_score(b, e, bg_gen);
+		return bigram_score(b, e, bg_1941);
 	}
 };

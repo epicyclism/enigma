@@ -1,0 +1,1 @@
+/usr/bin/c++  -O3 -DNDEBUG   CMakeFiles/score.dir/Score.cpp.o  -o score ../Common/libCommon.a 

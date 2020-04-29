@@ -1,0 +1,11 @@
+#define __TBB_VERSION_STRINGS(N) \
+#N": BUILD_HOST		tristan (x86_64)" ENDL \
+#N": BUILD_OS		Ubuntu 19.10" ENDL \
+#N": BUILD_KERNEL	Linux 5.3.0-46-generic #38-Ubuntu SMP Fri Mar 27 17:37:05 UTC 2020" ENDL \
+#N": BUILD_GCC		g++ (Ubuntu 9.2.1-9ubuntu2) 9.2.1 20191008" ENDL \
+#N": BUILD_LIBC	2.30" ENDL \
+#N": BUILD_LD		" ENDL \
+#N": BUILD_TARGET	intel64 on cc9.2.1_libc2.30_kernel5.3.0" ENDL \
+#N": BUILD_COMMAND	g++ -O2 -g -DDO_ITT_NOTIFY -DUSE_PTHREAD -pthread -m64 -mrtm -fPIC -flifetime-dse=1 -D__TBB_BUILD=1 -Wall -Wextra -Wno-parentheses -Wno-sized-deallocation -DTBB_SUPPRESS_DEPRECATED_MESSAGES=1 -D__TBB_CPF_BUILD=1 -std=c++17 -I/home/paul/tbb/./src -I/home/paul/tbb/./src/rml/include -I/home/paul/tbb/./include -I." ENDL \
+
+#define __TBB_DATETIME "Wed 08 Apr 2020 12:15:08 PM UTC"
