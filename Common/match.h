@@ -207,6 +207,31 @@ template<typename IC, typename IA> unsigned match_ciphertext(IC ctb, IC cte, IA 
 	return static_cast<unsigned>((std::accumulate(psm.begin(), pr, 0, [](auto& l, auto& r) { return l + r.cnt_; }) * 100 + ctl/2) / ctl );
 }
 
+template<typename IC, typename IA> unsigned match_ciphertext_exp(IC ctb, IC cte, IA base, modalpha bs)
+{
+	plug_set_msg psm;
+	// collect stecker possibles
+	std::for_each(ctb, cte, [&base, &psm](auto const c)
+		{
+			psm.set(c, *base);
+			++base;
+		});
+	if (bs != alpha::E)
+	{
+		psm.merge_direct(bs, alpha::E);
+	}
+	// sort highest cnt first
+	std::sort(std::begin(psm), std::end(psm), [](auto const& l, auto const& r) { return l.cnt_ > r.cnt_; });
+	// remove all cnt < 2 and make others unique
+	psm.unique();
+	//psm.print(std::cout);
+	auto pr = psm.begin() + (psm.size() > 10 ? 10 : psm.size());
+	auto ctl = std::distance(ctb, cte);
+	double dbit = 10.0 / (0.14 * ctl);
+	return static_cast<unsigned>(std::accumulate(psm.begin(), pr, 0.0, [dbit](auto& l, auto& r) { return l + dbit * r.cnt_ * r.cnt_; }));
+}
+
+
 template<typename IC, typename IA> plug_set_msg match_ciphertext_psm(IC ctb, IC cte, IA base, modalpha bs)
 {
 	plug_set_msg psm;
@@ -230,6 +255,20 @@ template<typename I, size_t W> void match_search(I cb, I ce, std::array<modalpha
 	while (itb != ite)
 	{
 		*ito = match_ciphertext(cb, ce, itb, bs);
+		++ito;
+		++itb;
+	}
+}
+
+template<typename I, size_t W> void match_search_exp(I cb, I ce, std::array<modalpha, W> const& row, size_t len, std::array<unsigned, W>& counts, modalpha bs)
+{
+	auto itb = std::begin(row);
+	auto ite = itb + len - std::distance(cb, ce);
+	auto ito = std::begin(counts);
+
+	while (itb != ite)
+	{
+		*ito = match_ciphertext_exp(cb, ce, itb, bs);
 		++ito;
 		++itb;
 	}

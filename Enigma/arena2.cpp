@@ -12,7 +12,7 @@
 #include "arena.h"
 #include "jobs.h"
 
-constexpr  char version[] = "v0.03";
+constexpr  char version[] = "v0.04";
 
 std::vector<modalpha> read_ciphertext()
 {
@@ -178,7 +178,7 @@ int main(int ac, char** av)
 				// do the search for quite likely
 				std::for_each(std::execution::par, std::begin(vjb), std::end(vjb), [](auto& aj)
 					{
-						match_search(aj.ctb_, aj.cte_, aj.line_, arena.active_width_, aj.r_, aj.bs_);
+						match_search_exp(aj.ctb_, aj.cte_, aj.line_, arena.active_width_, aj.r_, aj.bs_);
 						aj.vr_.fill(0);
 						for (auto p : aj.r_)
 							++aj.vr_[p];

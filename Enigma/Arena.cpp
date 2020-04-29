@@ -17,7 +17,7 @@
 #include "arena.h"
 #include "jobs.h"
 
-constexpr  char version[] = "v0.08";
+constexpr  char version[] = "v0.09";
 
 std::vector<modalpha> read_ciphertext()
 {
@@ -238,7 +238,7 @@ int main(int ac, char** av)
 				// do the search for quite likely
 				std::for_each(std::execution::par, std::begin(vjb), std::end(vjb), [](auto& aj)
 					{
-						match_search(aj.ctb_, aj.cte_, aj.line_, arena.active_width_, aj.r_, aj.bs_);
+						match_search_exp(aj.ctb_, aj.cte_, aj.line_, arena.active_width_, aj.r_, aj.bs_);
 					});
 				// do the search for more likely
 				std::for_each(std::execution::par, std::begin(vjb), std::end(vjb), [ees_threshold](auto& aj)
