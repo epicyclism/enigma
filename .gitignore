@@ -27,6 +27,8 @@ bld/
 [Oo]bj/
 [Ll]og/
 [Oo]ut/
+# where I'm building on Linux...
+[Bb]uild/
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/
