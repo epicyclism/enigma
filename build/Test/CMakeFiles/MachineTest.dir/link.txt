@@ -1,1 +1,0 @@
-/usr/bin/c++  -O3 -DNDEBUG   CMakeFiles/MachineTest.dir/MachineTest.cpp.o  -o MachineTest ../Common/libCommon.a 

@@ -1,1 +1,0 @@
-/usr/bin/c++  -O3 -DNDEBUG   CMakeFiles/WiringTest.dir/WiringTest.cpp.o  -o WiringTest 

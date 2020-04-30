@@ -1,1 +1,0 @@
-/usr/bin/c++  -O3 -DNDEBUG   CMakeFiles/Linear.dir/Linear.cpp.o  -o Linear -Wl,-rpath,/home/paul/enigma/build/tbb_cmake_build/tbb_cmake_build_subdir_release ../Common/libCommon.a ../tbb_cmake_build/tbb_cmake_build_subdir_release/libtbb_preview.so.2 

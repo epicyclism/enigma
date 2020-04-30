@@ -1,1 +1,0 @@
-/usr/bin/c++  -O3 -DNDEBUG   CMakeFiles/ModAlphaTest.dir/ModAlphaTest.cpp.o  -o ModAlphaTest 

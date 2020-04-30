@@ -1,1 +1,0 @@
-/usr/bin/c++  -O3 -DNDEBUG   CMakeFiles/Arena2.dir/arena2.cpp.o  -o Arena2 -Wl,-rpath,/home/paul/enigma/build/tbb_cmake_build/tbb_cmake_build_subdir_release ../Common/libCommon.a ../tbb_cmake_build/tbb_cmake_build_subdir_release/libtbb_preview.so.2 

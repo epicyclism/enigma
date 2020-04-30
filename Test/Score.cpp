@@ -149,7 +149,7 @@ int main(int ac, char** av)
 		for (auto c : ct)
 			std::cout << c;
 		std::cout << '\n';
-		if( ac > 3)
+		if( ac > 4)
 			do_solo(m3, from_printable(av[4][0]), ct);
 		else
 			do_slice(m3, ct);

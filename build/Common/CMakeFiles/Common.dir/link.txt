@@ -1,2 +1,0 @@
-/usr/bin/ar qc libCommon.a  CMakeFiles/Common.dir/machine.cpp.o
-/usr/bin/ranlib libCommon.a
