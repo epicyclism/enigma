@@ -67,12 +67,28 @@ void reportall(arena_t const& a)
 	std::cout << "\n";
 }
 
+template<typename I, typename C> void print_all(I ctb, I cte, C const& c)
+{
+	for (auto r : c)
+	{
+		machine3 m3 = MakeMachine3(r.mst_);
+		std::vector<modalpha> vo;
+		vo.reserve(std::distance(ctb, cte));
+		decode(ctb, cte, m3, vo);
+		// report
+		std::cout << r.mst_ << " = " << get_score(r) << " - ";
+		for (auto c : vo)
+			std::cout << c;
+		std::cout << "\n";
+	}
+}
+
 template<typename I> void operate( I ctb, I cte, machine3 const& m3, modalpha bs, arena_t& a)
 {
 	std::vector<result_ioc_t>          vr;
 	a.results_[0].fill(0);
 	auto row = static_cast<size_t>(bs);
-	match_search(ctb, cte, a.arena_[row], a.active_width_, a.results_[row], bs);
+	match_search_exp(ctb, cte, a.arena_[row], a.active_width_, a.results_[row], bs);
 	auto rb = std::begin(a.results_[row]);
 	int cnt = 0;
 	int cp = 0;
@@ -119,7 +135,14 @@ template<typename I> void operate( I ctb, I cte, machine3 const& m3, modalpha bs
 		{
 			auto off = std::distance(std::begin(a.results_[row]), rb);
 			std::cout << "cp = " << cp << ", off = " << off << '\n';
+#if 1
 			use_ees(ctb, cte, std::begin(a.arena_[row]) + off, *(std::begin(a.pos_) + off), bs, m3.machine_settings(), vr);
+#else
+			machine3 m3a = MakeMachine3(m3.machine_settings());
+			m3a.Position(*(std::begin(a.pos_) + off));
+			m3a.ApplyPlug(alpha::E, bs);
+			vr.emplace_back(m3a.machine_settings(), 0.5);
+#endif
 			std::cout << "GAB score = " << score << '\n';
 			std::cout << vr.back().mst_ << '\n';
 			std::cout << "ioc = " << vr.back().ioc_ << '\n';
@@ -136,21 +159,35 @@ template<typename I> void operate( I ctb, I cte, machine3 const& m3, modalpha bs
 			std::cout << "ioc = " << vr.back().ioc_ << '\n';
 		}
 #endif
-#if 1
+#if 0
 		if (*(std::begin(a.pos_) + cp) == position(alpha::U, alpha::H, alpha::L))
 		{
 			auto off = std::distance(std::begin(a.results_[row]), rb);
+#if 1
 			use_ees(ctb, cte, std::begin(a.arena_[row]) + off, *(std::begin(a.pos_) + off), bs, m3.machine_settings(), vr);
+#else
+			machine3 m3a = MakeMachine3(m3.machine_settings());
+			m3a.Position(*(std::begin(a.pos_) + off));
+			m3a.ApplyPlug(alpha::E, bs);
+			vr.emplace_back(m3a.machine_settings(), 0.5);
+#endif
 			std::cout << "UHL score = " << score << '\n';
 			std::cout << vr.back().mst_ << '\n';
 			std::cout << "ioc = " << vr.back().ioc_ << '\n';
 		}
 #endif
-#if 1
+#if 0
 		if (*(std::begin(a.pos_) + cp) == position(alpha::U, alpha::E, alpha::D))
 		{
 			auto off = std::distance(std::begin(a.results_[row]), rb);
+#if 0
 			use_ees(ctb, cte, std::begin(a.arena_[row]) + off, *(std::begin(a.pos_) + off), bs, m3.machine_settings(), vr);
+#else
+			machine3 m3a = MakeMachine3(m3.machine_settings());
+			m3a.Position(*(std::begin(a.pos_) + off));
+			m3a.ApplyPlug(alpha::E, bs);
+			vr.emplace_back(m3a.machine_settings(), 0.5);
+#endif
 			std::cout << "UED score = " << score << '\n';
 			std::cout << vr.back().mst_ << '\n';
 			std::cout << "ioc = " << vr.back().ioc_ << '\n';
@@ -179,67 +216,48 @@ template<typename I> void operate( I ctb, I cte, machine3 const& m3, modalpha bs
 		++cp;
 		++rb;
 	}
-	std::cout << "threshold = " << threshold << ", " << cnt << "(" << a.results_[row].size() << ") qualified.\n";
 #if 1
-	std::vector<result_scr_t>          vr3;
+	print_all(ctb, cte, vr);
+#if 1
+	std::vector<result_ioc_t>          vr2;
 	for (auto r : vr)
 	{
-//		if (r.ioc_ > 0.05)
 		auto start = std::chrono::steady_clock::now();
-//		auto ns = hillclimb_base(ctb, cte, bigram_score_1941_op(), r.mst_);
-		auto ns = hillclimb_permuted(ctb, cte, bigram_score_1941_op(), r.mst_);
+		auto ns = hillclimb_base(ctb, cte, index_of_coincidence_op(), r.mst_);
+//		auto ns = hillclimb_permuted(ctb, cte, index_of_coincidence_op(), r.mst_);
+		vr2.emplace_back( r.mst_, ns );
+		auto now = std::chrono::steady_clock::now();
+		std::cout << "hillclimb_ioc time: " << std::chrono::duration<double, std::milli>(now - start).count() << "ms\n";
+	}
+	std::cout << vr2.size() << " survived hillclimb_ioc, max score = " << get_score((*std::max_element(vr2.begin(), vr2.end(), [](auto& l, auto& r) { return get_score(l) < get_score(r); }))) << '\n';
+	print_all(ctb, cte, vr2);
+#endif
+	std::vector<result_scr_t>          vr3;
+	for (auto r : vr2)
+	{
+		auto start = std::chrono::steady_clock::now();
+		auto ns = hillclimb_base(ctb, cte, bigram_score_gen_op(), r.mst_);
+//		auto ns = hillclimb_permuted(ctb, cte, bigram_score_1941_op(), r.mst_);
 		vr3.emplace_back( r.mst_, ns );
 		auto now = std::chrono::steady_clock::now();
 		std::cout << "hillclimb_bg time: " << std::chrono::duration<double, std::milli>(now - start).count() << "ms\n";
 	}
 	std::cout << vr3.size() << " survived hillclimb_bg, max score = " << (*std::max_element(vr3.begin(), vr3.end(), [](auto& l, auto& r) { return l.scr_ < r.scr_; })).scr_ << '\n';
-	for (auto r : vr3)
-	{
-//		if (r.scr_ > 42000)
-//		if (r.scr_ > 30000)
-//		if(r.mst_.pos_ == position(alpha::Q, alpha::A, alpha::Y))
-		{
-			machine3 m3 = MakeMachine3(r.mst_);
-			std::vector<modalpha> vo;
-			vo.reserve(std::distance(ctb, cte));
-			decode(ctb, cte, m3, vo);
-			// report
-			std::cout << r.mst_ << " = " << r.scr_ << " - ";
-			for (auto c : vo)
-				std::cout << c;
-			std::cout << "\n";
-		}
-	}
+	print_all(ctb, cte, vr3);
 #endif
 #if 1
 	std::vector<result_scr_t>          vr4;
 	for (auto r : vr3)
 	{
 		auto start = std::chrono::steady_clock::now();
-//		auto ns = hillclimb_base(ctb, cte, trigram_score_1941_op(), r.mst_);
-		auto ns = hillclimb_permuted(ctb, cte, trigram_score_1941_op(), r.mst_);
+		auto ns = hillclimb_base(ctb, cte, trigram_score_gen_op(), r.mst_);
+//		auto ns = hillclimb_permuted(ctb, cte, trigram_score_1941_op(), r.mst_);
 		vr4.emplace_back(r.mst_, ns);
 		auto now = std::chrono::steady_clock::now();
 		std::cout << "hillclimb_tg time: " << std::chrono::duration<double, std::milli>(now - start).count() << "ms\n";
 	}
 	std::cout << vr4.size() << " survived hillclimb_tg, max score = " << (*std::max_element(vr4.begin(), vr4.end(), [](auto& l, auto& r) { return l.scr_ < r.scr_; })).scr_ << '\n';
-	for (auto r : vr4)
-	{
-//		if (r.scr_ > 42000)
-//		if (r.scr_ > 30000)
-//		if(r.mst_.pos_ == position(alpha::Q, alpha::A, alpha::Y))
-		{
-			machine3 m3 = MakeMachine3(r.mst_);
-			std::vector<modalpha> vo;
-			vo.reserve(std::distance(ctb, cte));
-			decode(ctb, cte, m3, vo);
-			// report
-			std::cout << r.mst_ << " = " << r.scr_ << " - "  << r.mst_.stecker_.Count() << " : ";
-			for (auto c : vo)
-				std::cout << c;
-			std::cout << "\n";
-		}
-	}
+	print_all(ctb, cte, vr4);
 #endif
 }
 
@@ -265,10 +283,10 @@ int main()
 	//modalpha erow = alpha::P;
 
 	// B251 bcn UED "AO BV DS EX FT HZ IQ JW KU PR"
-	auto ct1 = make_alpha_array("UPONTXBBWFYAQNFLZTBHLBWXSOZUDCDYIZNRRHPPBNSV");
-	machine3 m3 = MakeMachine3("B251");
-	Ring(m3, "bcn");
-	modalpha erow = alpha::X;
+	//auto ct1 = make_alpha_array("UPONTXBBWFYAQNFLZTBHLBWXSOZUDCDYIZNRRHPPBNSV");
+	//machine3 m3 = MakeMachine3("B251");
+	//Ring(m3, "bcn");
+	//modalpha erow = alpha::X;
 	
 	// B213 zwd AGI "IU JO RW MV EZ BL PX"
 	//auto ct1 = make_alpha_array("QKRQWUQTZKFXZOMJFOYRHYZWVBXYSIWMMVWBLEBDMWUWBTVHMRFLKSDCCEXIYPAHRMPZIOVBBRVLNHZUPOSYEIPWJTUGYOSLAOXRHKVCHQOSVDTRBPDJEUKSBBXHTYGVHGFICACVGUVOQFAQWBKXZJSQJFZPEVJRO");
@@ -279,10 +297,10 @@ int main()
 	//  Banbury 1
 	// B152 nht TGB "BG CM DY EX FO HT IL KV NW PS"
 	// B152 abt GAB "BG CM DY EX FO HT IL KV NW PS"
-	//auto ct1 = make_alpha_array("DNGXQPZKKPPJSKNRTGJOTRYNFSEVEBWQAAJHTVYRWAGPRIEOPNLPSMOXQNKVYDPWCOXRRCYPAFNFSAYTEGWGUYXGHHDZHWTXWQMELJSURHMOYOLBTD");
-	//machine3 m3 = MakeMachine3("B152");
-	//Ring(m3, "abt");
-	//modalpha erow = alpha::X;
+	auto ct1 = make_alpha_array("DNGXQPZKKPPJSKNRTGJOTRYNFSEVEBWQAAJHTVYRWAGPRIEOPNLPSMOXQNKVYDPWCOXRRCYPAFNFSAYTEGWGUYXGHHDZHWTXWQMELJSURHMOYOLBTD");
+	machine3 m3 = MakeMachine3("B152");
+	Ring(m3, "abt");
+	modalpha erow = alpha::X;
 
 	// ??? Banbury 2
 	// B152 aat UGL "BG CM DY EX FO HT IL KV NW PS"

@@ -207,14 +207,6 @@ int main(int ac, char** av)
 		// label
 		std::cout << "# " << av[1] << av[2] << '\n';
 		print_collection(collect_);
-#if 0
-		for (auto p : collect_)
-		{
-			std::cout << std::setw(2) << off << std::setw(10) << p << std::setw(10) << sum << '\n';
-			++off;
-			sum += p;
-		}
-#endif
 	}
 	catch (std::exception& ex)
 	{

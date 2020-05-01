@@ -31,9 +31,11 @@ template<typename IC, typename IA, typename R> void use_ees(IC ctb, IC cte, IA b
 			s.ioc_ = index_of_coincidence(std::begin(vo), std::end(vo));
 		}
 	}
+//	std::cout << "base ioc = " << ioc << '\n';
 //	psm.print_ioc(std::cout);
 	// sort good->bad
-	std::sort(std::begin(psm), std::end(psm), [](auto const& l, auto const& r) { if (l.cnt_ == r.cnt_) return l.ioc_ > r.ioc_; else return l.cnt_ > r.cnt_; });
+//	std::sort(std::begin(psm), std::end(psm), [](auto const& l, auto const& r) { if (l.cnt_ == r.cnt_) return l.ioc_ > r.ioc_; else return l.cnt_ > r.cnt_; });
+	std::sort(std::begin(psm), std::end(psm), [](auto const& l, auto const& r) { return l.ioc_ > r.ioc_; });
 //	psm.print_ioc(std::cout);
 	psm.unique();
 //	psm.print_ioc(std::cout);
@@ -61,7 +63,7 @@ template<typename IC, typename IA, typename R> void use_ees(IC ctb, IC cte, IA b
 	r.emplace_back(m3.machine_settings(), iocn);
 }
 
-template<typename IC, typename F, size_t max_stecker = 10 > unsigned hillclimb_base(IC ctb, IC cte, F eval_fn, machine_settings_t& mst)
+template<typename IC, typename F, size_t max_stecker = 10 > auto hillclimb_base(IC ctb, IC cte, F eval_fn, machine_settings_t& mst)
 {
 	// prepare a machine
 	machine3 m3 = MakeMachine3(mst);
@@ -103,7 +105,7 @@ template<typename IC, typename F, size_t max_stecker = 10 > unsigned hillclimb_b
 	return scr;
 }
 
-template<typename IC, typename F, size_t max_stecker = 10 > unsigned hillclimb_permuted(IC ctb, IC cte, F eval_fn, machine_settings_t& mst)
+template<typename IC, typename F, size_t max_stecker = 10 > auto hillclimb_permuted(IC ctb, IC cte, F eval_fn, machine_settings_t& mst)
 {
 	// prepare a machine
 	machine3 m3 = MakeMachine3(mst);
@@ -118,6 +120,7 @@ template<typename IC, typename F, size_t max_stecker = 10 > unsigned hillclimb_p
 	bool improved = true;
 	while (improved)
 	{
+//		std::cout << "Base = " << scr << '\n';
 		improved = false;
 		modalpha mx = 0;
 		modalpha my = 0;
@@ -133,6 +136,7 @@ template<typename IC, typename F, size_t max_stecker = 10 > unsigned hillclimb_p
 				auto scrn = eval_fn(std::begin(vo), std::end(vo));
 				if (scrn > scr && m3.SteckerCount() < max_stecker + 1)
 				{
+//					std::cout << "Step " << f << " - " << t << " get " << scrn << '\n';
 					mx = f;
 					my = t;
 					scr = scrn;
@@ -143,6 +147,7 @@ template<typename IC, typename F, size_t max_stecker = 10 > unsigned hillclimb_p
 		}
 		if (improved)
 		{
+//			std::cout << "Apply " << mx << " - " << my << " get " << scr << '\n';
 			m3.ApplyPlug(mx, my);
 			std::next_permutation(std::begin(tst), std::end(tst));
 		}

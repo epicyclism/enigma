@@ -21,17 +21,18 @@ template<typename IC, typename IA> double test_score(IC ctb, IC cte, IA base, mo
 		});
 	if (bs != alpha::E)
 	{
-		psm.merge_direct(bs, alpha::E);
+		psm.merge_direct_exp(bs, alpha::E);
 	}
 	// sort highest cnt first
 	std::sort(std::begin(psm), std::end(psm), [](auto const& l, auto const& r) { return l.cnt_ > r.cnt_; });
 	// remove all cnt < 2 and make others unique
 	psm.unique();
-	//psm.print(std::cout);
+	psm.print(std::cout);
 	auto pr = psm.begin() + (psm.size() > 10 ? 10 : psm.size());
 	auto ctl = std::distance(ctb, cte);
-	double dbit = 10.0 / (0.14 * ctl); 
-	return std::accumulate(psm.begin(), pr, 0.0, [dbit](auto& l, auto& r) { return l + dbit * r.cnt_* r.cnt_ ; }) ;
+	double dbit = 10.0 / (0.14 * ctl);
+	double direct = psm.direct() * dbit;
+	return std::accumulate(psm.begin(), pr, direct, [dbit](auto& l, auto& r) { return l + dbit * r.cnt_* r.cnt_ ; }) ;
 }
 
 template<typename IC, typename IA> unsigned test_score2(IC ctb, IC cte, IA base, modalpha bs)
@@ -76,9 +77,10 @@ template<typename CT> void do_solo(machine3& m3, modalpha bs, CT const& ct)
 	typename std::remove_cv<CT>::type et(ct.size(), bs);
 	// generate encrypted (plugged) 'E's
 	m3.Transform(et.begin(), et.end(), et.begin());
-//	std::cout << "\nEncrypted 'E's are -\n";
-//	for (auto c : et)
-//		std::cout << c;
+	std::cout << "\nEncrypted 'E's are -\n";
+	for (auto c : et)
+		std::cout << c;
+	std::cout << '\n';
 //	// match and score
 	auto scr1 = match_ciphertext(ct.begin(), ct.end(), et.begin(), bs);
 	auto scr2 = test_score(ct.begin(), ct.end(), et.begin(), bs);

@@ -111,6 +111,35 @@ public:
 			++it;
 		}
 	}
+	void merge_direct_exp(modalpha f, modalpha t)
+	{
+		if (f == t)
+			return;
+		if (f > t)
+			std::swap(f, t);
+		auto it = std::begin(psm_);
+		while (it != std::end(psm_))
+		{
+			auto& pg = *it;
+			if (pg.f_ == f && pg.t_ == t)
+			{
+				pg.cnt_ += direct_;
+				direct_ = 0;
+				break;
+			}
+			else
+			if (pg.f_ == alpha::SZ)
+			{
+				pg.f_ = f;
+				pg.t_ = t;
+				pg.cnt_ = direct_ ;
+				direct_ = 0;
+				++end_;
+				break;
+			}
+			++it;
+		}
+	}
 	void merge_direct_force(modalpha f, modalpha t)
 	{
 		if (f == t)
@@ -175,7 +204,8 @@ public:
 		std::for_each(std::begin(psm_), std::begin(psm_) + end_, 
 			[&](auto const& v)
 			{
-				ostr << v.f_ << "<->" << v.t_ << " - " << v.cnt_ << " : " << v.ioc_ << "\n"; 
+				if(v.cnt_)
+					ostr << v.f_ << "<->" << v.t_ << " - " << v.cnt_ << " : " << v.ioc_ << "\n"; 
 			});
 		ostr << "Count  = " << total_ << "\n";
 	}
@@ -218,7 +248,7 @@ template<typename IC, typename IA> unsigned match_ciphertext_exp(IC ctb, IC cte,
 		});
 	if (bs != alpha::E)
 	{
-		psm.merge_direct(bs, alpha::E);
+		psm.merge_direct_exp(bs, alpha::E);
 	}
 	// sort highest cnt first
 	std::sort(std::begin(psm), std::end(psm), [](auto const& l, auto const& r) { return l.cnt_ > r.cnt_; });
@@ -241,7 +271,8 @@ template<typename IC, typename IA> plug_set_msg match_ciphertext_psm(IC ctb, IC 
 		psm.set( c, *base);
 		++base;
 	});
-	psm.merge_direct_force(bs, alpha::E); // force ensures that the bs->E pair gets priority, whatever the evidence. It's our core assumption...
+//	psm.merge_direct_force(bs, alpha::E); // force ensures that the bs->E pair gets priority, whatever the evidence. It's our core assumption...
+	psm.merge_direct_exp(bs, alpha::E); // force ensures that the bs->E pair gets priority, whatever the evidence. It's our core assumption...
 
 	return psm ;
 }

@@ -95,3 +95,11 @@ struct result_scr_t
 	explicit result_scr_t(machine_settings_t const& mst, unsigned scr) : mst_(mst), scr_(scr)
 	{}
 };
+
+template<typename R> auto get_score(R const& r)
+{
+	if constexpr (std::is_same_v<R, result_ioc_t>)
+		return r.ioc_;
+	else
+		return r.scr_;
+}
