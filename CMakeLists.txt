@@ -12,8 +12,6 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 	include(${TBB_ROOT}/cmake/TBBBuild.cmake)
 	tbb_build(TBB_ROOT ${TBB_ROOT} CONFIG_DIR TBB_DIR MAKE_ARGS tbb_cpf=1)
 	find_package(TBB REQUIRED tbb_preview)
-	message(STATUS "x TBB_ROOT = ${TBB_ROOT}")
-	message(STATUS "x TBB_IMPORTED_TARGETS = ${TBB_IMPORTED_TARGETS}")
 endif()
 
 # Include sub-projects.
