@@ -12,6 +12,7 @@ add_executable (WheelSetTest "WheelSetTest.cpp" )
 add_executable (MachineTest "MachineTest.cpp" )
 add_executable (MatchTest "MatchTest.cpp" )
 add_executable (score "Score.cpp"  )
+add_executable (textgen "textgen.cpp"  )
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 	include(${TBB_ROOT}/cmake/TBBBuild.cmake)

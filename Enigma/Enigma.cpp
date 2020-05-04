@@ -73,15 +73,15 @@ int main(int ac, char**av)
 		Ring(m3, av[2]);
 		Setting(m3, av[3]);
 		Stecker(m3, av[4]);
-		std::cout << "enigma " << version << " configured : ";
+		std::cerr << "enigma " << version << " configured : ";
 		m3.ReportSettings(std::cout);
 		auto mst = m3.machine_settings();
 		std::cout << "\n";
 		if (debug)
-			std::cout << "'debug' enabled\n";
+			std::cerr << "'debug' enabled\n";
 		if (stats)
-			std::cout << "'stats' enabled\n";
-		std::cout << "\nReady\n\n";
+			std::cerr << "'stats' enabled\n";
+		std::cerr << "\nReady\n\n";
 		std::vector<modalpha> vi;
 		std::vector<modalpha> vo;
 		while (std::cin)
@@ -106,18 +106,18 @@ int main(int ac, char**av)
 				}
 			}
 		}
-		std::cout << "\nFinished\n";
+		std::cerr << "\nFinished\n";
 		if (stats)
 		{
-			std::cout << "Statistics!\n";
-			std::cout << "message length = " << vo.size() << "\n";
+			std::cerr << "Statistics!\n";
+			std::cerr << "message length = " << vo.size() << "\n";
 			auto cnt_e = count_ees(std::begin(vo), std::end(vo));
-			std::cout << "e count = " << cnt_e << " (" << double(cnt_e) * 100 / vo.size() << "%)\n";
-			std::cout << "ioc     = " << index_of_coincidence(std::begin(vo), std::end(vo)) << "\n";
-			std::cout << "bigram gen   = " << bigram_score_gen(std::begin(vo), std::end(vo)) << "\n";
-			std::cout << "bigram 1941  = " << bigram_score_1941(std::begin(vo), std::end(vo)) << "\n";
-			std::cout << "trigram gen  = " << trigram_score_gen(std::begin(vo), std::end(vo)) << "\n";
-			std::cout << "trigram 1941 = " << trigram_score_1941(std::begin(vo), std::end(vo)) << "\n";
+			std::cerr << "e count = " << cnt_e << " (" << double(cnt_e) * 100 / vo.size() << "%)\n";
+			std::cerr << "ioc     = " << index_of_coincidence(std::begin(vo), std::end(vo)) << "\n";
+			std::cerr << "bigram gen   = " << bigram_score_gen(std::begin(vo), std::end(vo)) << "\n";
+			std::cerr << "bigram 1941  = " << bigram_score_1941(std::begin(vo), std::end(vo)) << "\n";
+			std::cerr << "trigram gen  = " << trigram_score_gen(std::begin(vo), std::end(vo)) << "\n";
+			std::cerr << "trigram 1941 = " << trigram_score_1941(std::begin(vo), std::end(vo)) << "\n";
 		}
 	}
 	catch (std::exception& ex)

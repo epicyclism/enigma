@@ -130,7 +130,7 @@ template<typename I> void operate( I ctb, I cte, machine3 const& m3, modalpha bs
 			std::cout << "ioc = " << vr.back().ioc_ << '\n';
 		}
 #endif
-#if 1
+#if 0
 		if (*(std::begin(a.pos_) + cp) == position(alpha::G, alpha::A, alpha::B))
 		{
 			auto off = std::distance(std::begin(a.results_[row]), rb);
@@ -159,15 +159,17 @@ template<typename I> void operate( I ctb, I cte, machine3 const& m3, modalpha bs
 			std::cout << "ioc = " << vr.back().ioc_ << '\n';
 		}
 #endif
-#if 0
+#if 1
 		if (*(std::begin(a.pos_) + cp) == position(alpha::U, alpha::H, alpha::L))
 		{
 			auto off = std::distance(std::begin(a.results_[row]), rb);
-#if 1
+#if 0
 			use_ees(ctb, cte, std::begin(a.arena_[row]) + off, *(std::begin(a.pos_) + off), bs, m3.machine_settings(), vr);
 #else
 			machine3 m3a = MakeMachine3(m3.machine_settings());
 			m3a.Position(*(std::begin(a.pos_) + off));
+			m3a.ApplyPlug(alpha::H, alpha::T);
+			m3a.ApplyPlug(alpha::C, alpha::M);
 			m3a.ApplyPlug(alpha::E, bs);
 			vr.emplace_back(m3a.machine_settings(), 0.5);
 #endif
@@ -218,7 +220,7 @@ template<typename I> void operate( I ctb, I cte, machine3 const& m3, modalpha bs
 	}
 #if 1
 	print_all(ctb, cte, vr);
-#if 1
+#if 0
 	std::vector<result_ioc_t>          vr2;
 	for (auto r : vr)
 	{
@@ -233,7 +235,7 @@ template<typename I> void operate( I ctb, I cte, machine3 const& m3, modalpha bs
 	print_all(ctb, cte, vr2);
 #endif
 	std::vector<result_scr_t>          vr3;
-	for (auto r : vr2)
+	for (auto r : vr)
 	{
 		auto start = std::chrono::steady_clock::now();
 		auto ns = hillclimb_base(ctb, cte, bigram_score_gen_op(), r.mst_);
@@ -297,19 +299,19 @@ int main()
 	//  Banbury 1
 	// B152 nht TGB "BG CM DY EX FO HT IL KV NW PS"
 	// B152 abt GAB "BG CM DY EX FO HT IL KV NW PS"
-	auto ct1 = make_alpha_array("DNGXQPZKKPPJSKNRTGJOTRYNFSEVEBWQAAJHTVYRWAGPRIEOPNLPSMOXQNKVYDPWCOXRRCYPAFNFSAYTEGWGUYXGHHDZHWTXWQMELJSURHMOYOLBTD");
-	machine3 m3 = MakeMachine3("B152");
-	Ring(m3, "abt");
-	modalpha erow = alpha::X;
+	//auto ct1 = make_alpha_array("DNGXQPZKKPPJSKNRTGJOTRYNFSEVEBWQAAJHTVYRWAGPRIEOPNLPSMOXQNKVYDPWCOXRRCYPAFNFSAYTEGWGUYXGHHDZHWTXWQMELJSURHMOYOLBTD");
+	//machine3 m3 = MakeMachine3("B152");
+	//Ring(m3, "abt");
+	//modalpha erow = alpha::X;
 
 	// ??? Banbury 2
 	// B152 aat UGL "BG CM DY EX FO HT IL KV NW PS"
 	// B152 abt UHL "BG CM DY EX FO HT IL KV NW PS"
 	// B152 nht HNL "BG CM DY EX FO HT IL KV NW PS"
-	//auto ct1 = make_alpha_array("TGPIUEYDKHIBWOYJQGSSQYJXZSIRJUJGCISXWXAFSURPPCPAUXJRQTXKTCHAPWUDILAMBFBCMGRZAQYWKHRQBEVSNBZYBEOPLYZXRTNKWMCLOSQIGPVSUHFPPSOK");
-	//machine3 m3 = MakeMachine3("B152");
-	//Ring(m3, "abt");
-	//modalpha erow = alpha::X;
+	auto ct1 = make_alpha_array("TGPIUEYDKHIBWOYJQGSSQYJXZSIRJUJGCISXWXAFSURPPCPAUXJRQTXKTCHAPWUDILAMBFBCMGRZAQYWKHRQBEVSNBZYBEOPLYZXRTNKWMCLOSQIGPVSUHFPPSOK");
+	machine3 m3 = MakeMachine3("B152");
+	Ring(m3, "abt");
+	modalpha erow = alpha::X;
 	
 	m3.Setting(alpha::A, alpha::A, alpha::A);
 

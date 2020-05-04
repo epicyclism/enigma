@@ -12,7 +12,7 @@
 #include "arena.h"
 #include "jobs.h"
 
-constexpr  char version[] = "v0.04";
+constexpr  char version[] = "v0.05";
 
 std::vector<modalpha> read_ciphertext()
 {
@@ -75,7 +75,7 @@ template<typename A, typename R, typename CI> struct job_arena2
 //
 struct stats_results_t
 {
-	std::array<unsigned, 100> percent_;
+	std::array<unsigned, 1000> percent_;
 	template<typename R> stats_results_t(R const& r)
 	{
 		percent_.fill(0);
@@ -139,7 +139,7 @@ int main(int ac, char** av)
 //		auto ct = make_alpha_array("UPONTXBBWFYAQNFLZTBHLBWXSOZUDCDYIZNRRHPPBNSV");
 		std::cerr << "Ciphertext is - ";
 		for (auto c : ct)
-			std::cout << c;
+			std::cerr << c;
 		std::cerr << "\nInitialising search\n";
 		using job_wheels_t = job_wheels<decltype(ct.cbegin())>;
 		std::vector<job_wheels_t> vjbw = make_job_list<job_wheels_t>(av[1], av[2], jobbegin, jobend, std::begin(ct), std::end(ct));
@@ -157,9 +157,9 @@ int main(int ac, char** av)
 			}
 		}
 #endif
-		std::array<unsigned, 100> collect_;
+		std::array<unsigned, 1000> collect_;
 		collect_.fill(0);
-		std::array<unsigned, 100> wheel_;
+		std::array<unsigned, 1000> wheel_;
 
 		// work through the wheel orders linearly
 		for (auto& j : vjbw)
@@ -173,7 +173,7 @@ int main(int ac, char** av)
 				// fill the arena
 				fill_arena_width(m3.Wheels(), arena, m3.CycleLength() + ct.size());
 				// job list
-				using job_arena_t = job_arena2<arena_t, std::array<unsigned, 100>, decltype(ct.cbegin())>;
+				using job_arena_t = job_arena2<arena_t, std::array<unsigned, 1000>, decltype(ct.cbegin())>;
 				auto vjb = make_job_list_arena<job_arena_t>(j.mst_, arena, j.ctb_, j.cte_);
 				// do the search for quite likely
 				std::for_each(std::execution::par, std::begin(vjb), std::end(vjb), [](auto& aj)
