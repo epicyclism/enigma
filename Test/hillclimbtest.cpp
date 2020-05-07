@@ -56,7 +56,7 @@ auto hillclimb_bg(machine_settings_t mst, std::vector<modalpha> const& ct)
 auto hillclimb_tg(machine_settings_t mst, std::vector<modalpha> const& ct)
 {
 	auto start = std::chrono::steady_clock::now();
-	auto ns = hillclimb_base(ct.begin(), ct.end(), trigram_score_xxx_op(), mst);
+	auto ns = hillclimb_base(ct.begin(), ct.end(), trigram_score_1941_op(), mst);
 	auto now = std::chrono::steady_clock::now();
 	std::cout << "hillclimb_tg time: " << std::chrono::duration<double, std::milli>(now - start).count() << "ms\n";
 	machine3 m3 = MakeMachine3(mst);
