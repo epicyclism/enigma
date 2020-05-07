@@ -49,7 +49,7 @@ constexpr bigram_table make_bigram_table(bg_def const* b, bg_def const* e, int s
 //
 constexpr bigram_table bg_gen  = make_bigram_table(std::begin(gen_bg_def), std::end(gen_bg_def));
 constexpr bigram_table bg_1941 = make_bigram_table(std::begin(bg_def_1941), std::end(bg_def_1941), 100);
-constexpr bigram_table bg_xxx  = make_bigram_table(std::begin(gen_bg_def), std::end(gen_bg_def));
+constexpr bigram_table bg_xxx  = make_bigram_table(std::begin(bg_def_xxx), std::end(bg_def_xxx));
 
 // score with the given bigram table.
 //
