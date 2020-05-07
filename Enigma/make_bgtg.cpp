@@ -101,7 +101,7 @@ std::vector<char> process_string(std::string const& str)
 			vo.push_back(c);
 		else
 		{
-			switch (unsigned char(c))
+			switch (static_cast<unsigned char>(c))
 			{
 			case ' ':
 				vo.push_back('X');
