@@ -4,6 +4,7 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include <algorithm>
 
 constexpr char version[]{ "0.01" };
 
@@ -156,6 +157,12 @@ std::vector<char> process_string(std::string const& str)
 
 	return vo;
 }
+
+void print_vec(std::vector<char> const& v, std::ostream& ostr)
+{
+	std::copy(v.begin(), v.end(), std::ostream_iterator<char>(ostr));
+}
+
 void process_file(char const* fn, bg_table_t& bgt, tg_table_t& tgt) noexcept
 {
 	std::ifstream inf(fn);
@@ -173,7 +180,7 @@ void process_file(char const* fn, bg_table_t& bgt, tg_table_t& tgt) noexcept
 		auto sp = ln.find(' ');
 		lnp = ln.substr(sp);
 		vo = process_string(lnp);
-		if(valid_estring(vo))
+		if (valid_estring(vo))
 		{
 			// tabulate
 			if (vo.size() > 1)
@@ -199,7 +206,11 @@ void process_file(char const* fn, bg_table_t& bgt, tg_table_t& tgt) noexcept
 			}
 		}
 		else
-			std::cerr << "Input <" << ln << "> processed to <" << lnp << "> and is not valid.\n";
+		{
+			std::cerr << "Input <" << ln << "> processed to <";
+			print_vec(vo, std::cerr);
+			std::cerr << "> and is not valid.\n";
+		}
 	}
 }
 
