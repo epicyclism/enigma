@@ -342,6 +342,21 @@ template<typename IC, typename O> void decode(IC ctb, IC cte, machine3& m3, O& o
 	m3.Position(pos);
 }
 
+// as above but assumes output buffer is iteratable
+//
+template<typename IC, typename IO> void decode_tx(IC ctb, IC cte, IO ot, machine3& m3)
+{
+	position pos = m3.Position();
+	while (ctb != cte)
+	{
+		*ot = m3.Transform(*ctb);
+		++ot;
+		++ctb;
+	}
+	// reset machine
+	m3.Position(pos);
+}
+
 // won't constexpr right now. damn it.
 //
 // when called with a string the trailing null is included in N.

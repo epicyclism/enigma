@@ -1,5 +1,7 @@
 #pragma once
 
+#include <numeric>
+
 #include "modalpha.h"
 #include "ioc.h"
 #include "bigram.h"
@@ -154,4 +156,82 @@ template<typename IC, typename F, size_t max_stecker = 10 > auto hillclimb_permu
 	}
 	mst = m3.machine_settings();
 	return scr;
+}
+
+// try partitioning the text and separating the climb.
+//
+constexpr int PTS = 3;
+using scrs_t = std::array<unsigned, PTS>;
+
+#if 0
+inline  bool operator< (scrs_t const& l, scrs_t const& r)
+{
+	return std::transform_reduce(l.begin(), l.end(), r.begin(), 0, std::plus<>(), [](auto le, auto re) { return le < re ? 1 : 0; });
+}
+#else
+inline  bool operator< (scrs_t const& l, scrs_t const& r)
+{
+	return *std::max_element(l.begin(), l.end()) < *std::max_element(r.begin(), r.end());
+}
+#endif
+
+inline std::ostream& operator<<(std::ostream& o, scrs_t const& s)
+{
+	o << "{" << s[0] << ", " << s[1] << ", " << s[2] << "}";
+
+	return o;
+}
+
+template<typename IC, typename F, size_t max_stecker = 10 > scrs_t hillclimb_3(IC ctb, IC cte, F eval_fn, machine_settings_t& mst)
+{
+	// prepare a machine
+	machine3 m3 = MakeMachine3(mst);
+	std::vector<modalpha> vo;
+	vo.resize(std::distance(ctb, cte));
+	// establish the baseline
+	decode_tx(ctb, cte, vo.begin(), m3);
+
+	std::array<std::vector<modalpha>::const_iterator, PTS + 1> pts;
+	pts[0] = vo.begin();
+	// fill the middle with the middle
+	// PTS is number of partitions, so '3', we want begin, begin+size/3, begin+s*size/3, end
+	for (int n = 1; n < PTS; ++n)
+		pts[n] = vo.begin() + vo.size() * n / PTS;
+	pts[PTS] = vo.end();
+	// score!
+	scrs_t scrs;
+	std::transform(pts.begin(), pts.end() - 1, pts.begin() + 1, scrs.begin(), [&](auto b, auto e) { return eval_fn(b, e); });
+
+	bool improved = true;
+	while (improved)
+	{
+		improved = false;
+		modalpha mx = 0;
+		modalpha my = 0;
+		for (int fi = 0; fi < alpha_max; ++fi)
+		{
+			modalpha f{ fi };
+			for (int ti = fi; ti < alpha_max; ++ti)
+			{
+				modalpha t{ ti };
+				m3.PushStecker();
+				m3.ApplyPlug(f, t);
+				decode_tx(ctb, cte, vo.begin(), m3);
+				scrs_t scrsn;
+				std::transform(pts.begin(), pts.end() - 1, pts.begin() + 1, scrsn.begin(), [&](auto b, auto e) { return eval_fn(b, e); });
+				if (scrs < scrsn && m3.SteckerCount() < max_stecker + 1)
+				{
+					mx = f;
+					my = t;
+					scrs = scrsn;
+					improved = true;
+				}
+				m3.PopStecker();
+			}
+		}
+		if (improved)
+			m3.ApplyPlug(mx, my);
+	}
+	mst = m3.machine_settings();
+	return scrs;
 }

@@ -13,6 +13,7 @@ add_executable (MachineTest "MachineTest.cpp" )
 add_executable (MatchTest "MatchTest.cpp" )
 add_executable (score "Score.cpp"  )
 add_executable (textgen "textgen.cpp"  )
+add_executable (hillclimbtest "hillclimbtest.cpp"  )
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 	include(${TBB_ROOT}/cmake/TBBBuild.cmake)
@@ -23,6 +24,7 @@ endif()
 
 target_link_libraries(MachineTest Common )
 target_link_libraries(score Common)
+target_link_libraries(hillclimbtest Common)
 
 #if ( CMAKE_CXX_COMPILER_ID MATCHES "Clang|AppleClang|GNU" )
 #    target_compile_options( Enigma PRIVATE -Wall -Wextra -Wunreachable-code -Wpedantic -fexceptions)
