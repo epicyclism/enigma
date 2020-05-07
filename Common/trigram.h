@@ -46,6 +46,7 @@ constexpr trigram_table make_trigram_table(tg_def const* b, tg_def const* e, int
 #include "trigram_data.h"
 constexpr trigram_table tg_gen = make_trigram_table(std::begin(gen_tg_def), std::end(gen_tg_def));
 constexpr trigram_table tg_1941 = make_trigram_table(std::begin(tg_def_1941), std::end(tg_def_1941), 100);
+constexpr trigram_table tg_xxx = make_trigram_table(std::begin(tg_def_xxx), std::end(tg_def_xxx));
 
 // score with the given trigram table.
 //
@@ -95,15 +96,28 @@ struct trigram_score_1941_op
 	}
 };
 
+template<typename I> unsigned trigram_score_xxx(I b, I e)
+{
+	return trigram_score(b, e, tg_xxx);
+}
+
+struct trigram_score_xxx_op
+{
+	template<typename I> unsigned operator()(I b, I e)
+	{
+		return trigram_score(b, e, tg_xxx);
+	}
+};
+
 template<typename I> unsigned trigram_score(I b, I e)
 {
-	return trigram_score(b, e, tg_1941);
+	return trigram_score(b, e, tg_xxx);
 }
 
 struct trigram_score_op
 {
 	template<typename I> unsigned operator()(I b, I e)
 	{
-		return trigram_score(b, e, tg_1941);
+		return trigram_score(b, e, tg_xxx);
 	}
 };

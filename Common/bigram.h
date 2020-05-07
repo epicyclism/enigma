@@ -49,6 +49,7 @@ constexpr bigram_table make_bigram_table(bg_def const* b, bg_def const* e, int s
 //
 constexpr bigram_table bg_gen  = make_bigram_table(std::begin(gen_bg_def), std::end(gen_bg_def));
 constexpr bigram_table bg_1941 = make_bigram_table(std::begin(bg_def_1941), std::end(bg_def_1941), 100);
+constexpr bigram_table bg_xxx  = make_bigram_table(std::begin(gen_bg_def), std::end(gen_bg_def));
 
 // score with the given bigram table.
 //
@@ -76,6 +77,14 @@ template<typename I> unsigned bigram_score_gen(I b, I e)
 	return bigram_score(b, e, bg_gen) ;
 }
 
+struct bigram_score_gen_op
+{
+	template<typename I> unsigned operator()(I b, I e)
+	{
+		return bigram_score(b, e, bg_gen);
+	}
+};
+
 template<typename I> unsigned bigram_score_1941(I b, I e)
 {
 	return bigram_score(b, e, bg_1941) ;
@@ -89,23 +98,28 @@ struct bigram_score_1941_op
 	}
 };
 
-struct bigram_score_gen_op
+template<typename I> unsigned bigram_score_xxx(I b, I e)
+{
+	return bigram_score(b, e, bg_xxx) ;
+}
+
+struct bigram_score_xxx_op
 {
 	template<typename I> unsigned operator()(I b, I e)
 	{
-		return bigram_score(b, e, bg_gen);
+		return bigram_score(b, e, bg_xxx);
 	}
 };
 
 template<typename I> unsigned bigram_score(I b, I e)
 {
-	return bigram_score(b, e, bg_1941) ;
+	return bigram_score(b, e, bg_xxx) ;
 }
 
 struct bigram_score_op
 {
 	template<typename I> unsigned operator()(I b, I e)
 	{
-		return bigram_score(b, e, bg_1941);
+		return bigram_score(b, e, bg_xxx);
 	}
 };

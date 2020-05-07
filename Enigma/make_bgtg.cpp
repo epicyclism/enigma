@@ -21,7 +21,7 @@ void help()
 	std::cerr << "Results to stdout.\n\n";
 }
 
-constexpr int stride_   = 32;
+constexpr int stride_ = 32;
 constexpr int alpha_max = 26;
 
 // make these variadic templates for a laugh.
@@ -99,61 +99,194 @@ std::vector<char> process_string(std::string const& str)
 		if (c >= 'a' && c <= 'z')
 			vo.push_back(c - 'a' + 'A');
 		else
-		if (c >= 'A' && c <= 'Z')
-			vo.push_back(c);
-		else
-		{
-			switch (static_cast<unsigned char>(c))
+			if (c >= 'A' && c <= 'Z')
+				vo.push_back(c);
+			else
 			{
-			case ' ':
-				vo.push_back('X');
-				break;
-			case '.':
-				vo.push_back('X');
-				vo.push_back('X');
-				break;
-			// deal with the utf-8
-			case 0xc3:
-				state = 1;
-				break;
-			case 0x9f:
-				if (state == 1)
+				switch (static_cast<unsigned char>(c))
 				{
-					vo.push_back('S');
-					vo.push_back('S');
-				}
-				state = 0;
-				break;
-			case 0xa4:
-				if (state == 1)
-				{
-					vo.push_back('A');
+				case ' ':
+					vo.push_back('X');
+					break;
+				case '.':
+					vo.push_back('X');
+					vo.push_back('X');
+					break;
+				case ',':
+					vo.push_back('Y');
+					break;
+				case '?':
+					vo.push_back('U');
+					vo.push_back('D');
+					break;
+				case '*':
+				case '\'':
+				case '"':
+				case '$':
+				case ':':
+				case '\t':
+					break;
+				case '1':
 					vo.push_back('E');
-				}
-				state = 0;
-				break;
-			case 0xb6:
-				if (state == 1)
-				{
-					vo.push_back('O');
+					vo.push_back('I');
+					vo.push_back('N');
+					vo.push_back('S');
+					break;
+				case '2':
+					vo.push_back('Z');
+					vo.push_back('W');
 					vo.push_back('E');
-				}
-				state = 0;
-				break;
-			case 0xbc:
-				if (state == 1)
-				{
+					vo.push_back('I');
+					break;
+				case '3':
+					vo.push_back('D');
+					vo.push_back('R');
+					vo.push_back('E');
+					vo.push_back('I');
+					break;
+				case '4':
+					vo.push_back('V');
+					vo.push_back('I');
+					vo.push_back('E');
+					vo.push_back('R');
+					break;
+				case '5':
+					vo.push_back('F');
 					vo.push_back('U');
 					vo.push_back('E');
+					vo.push_back('N');
+					vo.push_back('F');
+					break;
+				case '6':
+					vo.push_back('S');
+					vo.push_back('E');
+					vo.push_back('Q');
+					vo.push_back('S');
+					break;
+				case '7':
+					vo.push_back('S');
+					vo.push_back('I');
+					vo.push_back('E');
+					vo.push_back('B');
+					vo.push_back('E');
+					vo.push_back('N');
+					break;
+				case '8':
+					vo.push_back('A');
+					vo.push_back('Q');
+					vo.push_back('T');
+					break;
+				case '9':
+					vo.push_back('N');
+					vo.push_back('E');
+					vo.push_back('U');
+					vo.push_back('N');
+					break;
+				case '0':
+					vo.push_back('N');
+					vo.push_back('U');
+					vo.push_back('L');
+					vo.push_back('L');
+					break;
+				case '-':
+				case '/':
+					vo.push_back('S');
+					vo.push_back('T');
+					vo.push_back('R');
+					vo.push_back('I');
+					vo.push_back('Q');
+					break;
+					// deal with the utf-8
+				case 0xc2:
+					state = 1;
+					break;
+				case 0xc3:
+					state = 1;
+					break;
+				case 0xc5:
+					state = 1;
+					break;
+				case 0xc8:
+					state = 1;
+					break;
+				case 0xcf:
+					state = 1;
+					break;
+				case 0xe2:
+					state = 2;
+					break;
+				case 0x84:
+					if (state == 1)
+					{
+						vo.push_back('A');
+						vo.push_back('E');
+					}
+					state = 1;
+					break;
+				case 0x93:
+					if (state == 1)
+					{
+						vo.push_back('O');
+						vo.push_back('E');
+					}
+					state = 1;
+					break;
+				case 0x96:
+					if (state == 1)
+					{
+						vo.push_back('O');
+						vo.push_back('E');
+					}
+					state = 1;
+					break;
+				case 0x9c:
+					if (state == 1)
+					{
+						vo.push_back('U');
+						vo.push_back('E');
+					}
+					state = 1;
+					break;
+				case 0x9f:
+					if (state == 1)
+					{
+						vo.push_back('S');
+						vo.push_back('S');
+					}
+					state = 0;
+					break;
+				case 0xa4:
+					if (state == 1)
+					{
+						vo.push_back('A');
+						vo.push_back('E');
+					}
+					state = 0;
+					break;
+				case 0xb6:
+					if (state == 1)
+					{
+						vo.push_back('O');
+						vo.push_back('E');
+					}
+					state = 0;
+					break;
+				case 0xbc:
+					if (state == 1)
+					{
+						vo.push_back('U');
+						vo.push_back('E');
+					}
+					state = 0;
+					break;
+				default:
+					if (state == 0)
+						vo.push_back(c);
+					else
+						--state;
+					break;
 				}
-				state = 0;
-				break;
-			default:
-				vo.push_back(c);
-				state = 0;
-				break;
 			}
-		}
 	}
 
 	return vo;
@@ -236,7 +369,7 @@ void write_table(tg_table_t const& tab)
 			for (int c = 0; c < alpha_max; ++c)
 			{
 				auto wt = tab.wt(a, b, c);
-				if(wt)
+				if (wt)
 					std::cout << "{ '" << char(a + 'A') << "', '" << char(b + 'A') << "', '" << char(c + 'A') << "', " << wt << " },\n";
 			}
 	std::cout << "};\n";
@@ -246,7 +379,11 @@ int main(int ac, char** av)
 {
 	std::ios::sync_with_stdio(false);
 	std::cerr << "make_bgtg v" << version << "\n";
-	if (ac == 1 || av[1][0] == '-' || av[1][0] == '/')
+	if (ac == 1 || av[1][0] == '-'
+#if defined(WIN32)
+		|| av[1][0] == '/'
+#endif
+		)
 	{
 		help();
 		return -1;

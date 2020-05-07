@@ -17,7 +17,7 @@
 #include "arena.h"
 #include "jobs.h"
 
-constexpr  char version[] = "v0.10";
+constexpr  char version[] = "v0.11";
 
 std::vector<modalpha> read_ciphertext()
 {
