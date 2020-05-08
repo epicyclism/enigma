@@ -115,11 +115,11 @@ int main(int ac, char**av)
 			std::cerr << "e count = " << cnt_e << " (" << double(cnt_e) * 100 / vo.size() << "%)\n";
 			std::cerr << "ioc     = " << index_of_coincidence(std::begin(vo), std::end(vo)) << "\n";
 			std::cerr << "bigram gen   = " << bigram_score_gen(std::begin(vo), std::end(vo)) << "\n";
+			std::cerr << "bigram cur   = " << bigram_score_cur(std::begin(vo), std::end(vo)) << "\n";
 			std::cerr << "bigram 1941  = " << bigram_score_1941(std::begin(vo), std::end(vo)) << "\n";
-			std::cerr << "bigram xxx   = " << bigram_score_xxx(std::begin(vo), std::end(vo)) << "\n";
 			std::cerr << "trigram gen  = " << trigram_score_gen(std::begin(vo), std::end(vo)) << "\n";
+			std::cerr << "trigram cur  = " << trigram_score_cur(std::begin(vo), std::end(vo)) << "\n";
 			std::cerr << "trigram 1941 = " << trigram_score_1941(std::begin(vo), std::end(vo)) << "\n";
-			std::cerr << "trigram xxx  = " << trigram_score_xxx(std::begin(vo), std::end(vo)) << "\n";
 		}
 	}
 	catch (std::exception& ex)

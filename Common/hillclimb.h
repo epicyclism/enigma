@@ -107,6 +107,52 @@ template<typename IC, typename F, size_t max_stecker = 10 > auto hillclimb_base(
 	return scr;
 }
 
+template<typename IC, typename F, size_t max_stecker = 10 > auto hillclimb_base_loud(IC ctb, IC cte, F eval_fn, machine_settings_t& mst)
+{
+	// prepare a machine
+	machine3 m3 = MakeMachine3(mst);
+	std::vector<modalpha> vo;
+	vo.reserve(std::distance(ctb, cte));
+	// establish the baseline
+	decode(ctb, cte, m3, vo);
+	auto scr = eval_fn(std::begin(vo), std::end(vo));
+	bool improved = true;
+	while (improved)
+	{
+		improved = false;
+		modalpha mx = 0;
+		modalpha my = 0;
+		for (int fi = 0; fi < alpha_max; ++fi)
+		{
+			modalpha f{ fi };
+			for (int ti = fi; ti < alpha_max; ++ti)
+			{
+				modalpha t{ ti };
+				m3.PushStecker();
+				m3.ApplyPlug(f, t);
+				decode(ctb, cte, m3, vo);
+				auto scrn = eval_fn(std::begin(vo), std::end(vo));
+				if (scrn > scr && m3.SteckerCount() < max_stecker + 1)
+				{
+					std::cout << f << " <-> " << t << ", " << scr << " -> " << scrn << '\n';
+					mx = f;
+					my = t;
+					scr = scrn;
+					improved = true;
+				}
+				m3.PopStecker();
+			}
+		}
+		if (improved)
+		{
+			std::cout << "Keep " << mx << " <-> " << my << '\n';
+			m3.ApplyPlug(mx, my);
+		}
+	}
+	mst = m3.machine_settings();
+	return scr;
+}
+
 template<typename IC, typename F, size_t max_stecker = 10 > auto hillclimb_permuted(IC ctb, IC cte, F eval_fn, machine_settings_t& mst)
 {
 	// prepare a machine
@@ -117,7 +163,8 @@ template<typename IC, typename F, size_t max_stecker = 10 > auto hillclimb_permu
 	decode(ctb, cte, m3, vo);
 	auto scr = eval_fn(std::begin(vo), std::end(vo));
 	// the order we're going to examine with
-	std::array<modalpha, alpha_max> tst { alpha::A, alpha::B, alpha::C, alpha::D, alpha::E, alpha::F, alpha::G, alpha::H, alpha::I, alpha::J, alpha::K, alpha::L, alpha::M, alpha::N, alpha::O, alpha::P, alpha::Q, alpha::R, alpha::S, alpha::T, alpha::U, alpha::V, alpha::W, alpha::X, alpha::Y, alpha::Z };
+//	std::array<modalpha, alpha_max> tst { alpha::A, alpha::B, alpha::C, alpha::D, alpha::E, alpha::F, alpha::G, alpha::H, alpha::I, alpha::J, alpha::K, alpha::L, alpha::M, alpha::N, alpha::O, alpha::P, alpha::Q, alpha::R, alpha::S, alpha::T, alpha::U, alpha::V, alpha::W, alpha::X, alpha::Y, alpha::Z };
+	std::array<modalpha, alpha_max> tst = gen_freq_seq(ctb, cte);
 
 	bool improved = true;
 	while (improved)
@@ -151,7 +198,7 @@ template<typename IC, typename F, size_t max_stecker = 10 > auto hillclimb_permu
 		{
 //			std::cout << "Apply " << mx << " - " << my << " get " << scr << '\n';
 			m3.ApplyPlug(mx, my);
-			std::next_permutation(std::begin(tst), std::end(tst));
+//			std::next_permutation(std::begin(tst), std::end(tst));
 		}
 	}
 	mst = m3.machine_settings();

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cmath>
 #include "modalpha.h"
 #include "const_helpers.h"
 #include "gram_common.h"
@@ -47,9 +48,10 @@ constexpr bigram_table make_bigram_table(bg_def const* b, bg_def const* e, int s
 
 // the end result used for scoring.
 //
-constexpr bigram_table bg_gen  = make_bigram_table(std::begin(gen_bg_def), std::end(gen_bg_def));
+constexpr bigram_table bg_cur  = make_bigram_table(std::begin(bg_def_cur), std::end(bg_def_cur));
+constexpr bigram_table bg_gen  = make_bigram_table(std::begin(bg_def_gen), std::end(bg_def_gen));
 constexpr bigram_table bg_1941 = make_bigram_table(std::begin(bg_def_1941), std::end(bg_def_1941), 100);
-constexpr bigram_table bg_xxx  = make_bigram_table(std::begin(bg_def_xxx), std::end(bg_def_xxx));
+// constexpr bigram_table bg_xxx  = make_bigram_table(std::begin(bg_def_xxx), std::end(bg_def_xxx));
 
 // score with the given bigram table.
 //
@@ -70,8 +72,40 @@ template<typename I> unsigned bigram_score(I b, I e, bigram_table const& bt)
 	return score / (static_cast<unsigned>(len) - 1);
 }
 
+template<typename I> unsigned bigram_score_loud(I b, I e, bigram_table const& bt)
+{
+	if (b == e)
+		return 0;
+	auto len = std::distance(b, e);
+	unsigned score = 0;
+	auto n = b + 1;
+	while (n != e)
+	{
+		auto wt = bt.wt(*b, *n);
+		std::cout << "(" << *b << *n << ":" << wt << ")\n";
+		score += wt;
+		++b;
+		++n;
+	}
+	// normalise to message length here, right down at the source.
+	return score / (static_cast<unsigned>(len) - 1);
+}
+
 // convenience functions.
 //
+template<typename I> unsigned bigram_score_cur(I b, I e)
+{
+	return bigram_score(b, e, bg_cur) ;
+}
+
+struct bigram_score_cur_op
+{
+	template<typename I> unsigned operator()(I b, I e)
+	{
+		return bigram_score(b, e, bg_cur);
+	}
+};
+
 template<typename I> unsigned bigram_score_gen(I b, I e)
 {
 	return bigram_score(b, e, bg_gen) ;
@@ -98,6 +132,7 @@ struct bigram_score_1941_op
 	}
 };
 
+#if 0
 template<typename I> unsigned bigram_score_xxx(I b, I e)
 {
 	return bigram_score(b, e, bg_xxx) ;
@@ -110,16 +145,17 @@ struct bigram_score_xxx_op
 		return bigram_score(b, e, bg_xxx);
 	}
 };
+#endif
 
 template<typename I> unsigned bigram_score(I b, I e)
 {
-	return bigram_score(b, e, bg_xxx) ;
+	return bigram_score(b, e, bg_gen) ;
 }
 
 struct bigram_score_op
 {
 	template<typename I> unsigned operator()(I b, I e)
 	{
-		return bigram_score(b, e, bg_xxx);
+		return bigram_score(b, e, bg_gen);
 	}
 };

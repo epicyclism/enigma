@@ -9,7 +9,7 @@
 #include "match.h"
 #include "hillclimb.h"
 
-constexpr  char version[] = "v0.01";
+constexpr  char version[] = "v0.02";
 
 std::vector<modalpha> read_ciphertext()
 {
@@ -40,9 +40,25 @@ void report_ciphertext(std::vector<modalpha> const& ct, std::ostream& ostr)
 auto hillclimb_bg(machine_settings_t mst, std::vector<modalpha> const& ct)
 {
 	auto start = std::chrono::steady_clock::now();
-	auto ns = hillclimb_base(ct.begin(), ct.end(), bigram_score_xxx_op(), mst);
+	auto ns = hillclimb_permuted(ct.begin(), ct.end(), bigram_score_gen_op(), mst);
 	auto now = std::chrono::steady_clock::now();
-	std::cout << "hillclimb_bg time: " << std::chrono::duration<double, std::milli>(now - start).count() << "ms\n";
+	std::cout << "hillclimb_bg (gen) time: " << std::chrono::duration<double, std::milli>(now - start).count() << "ms\n";
+	machine3 m3 = MakeMachine3(mst);
+	std::vector<modalpha> vo;
+	vo.reserve(ct.size());
+	decode(ct.begin(), ct.end(), m3, vo);
+	// report
+	std::cout << mst << " = " << ns << " - ";
+	report_ciphertext(vo, std::cout);
+	return m3.machine_settings();
+}
+
+auto hillclimb_bg2(machine_settings_t mst, std::vector<modalpha> const& ct)
+{
+	auto start = std::chrono::steady_clock::now();
+	auto ns = hillclimb_permuted(ct.begin(), ct.end(), bigram_score_cur_op(), mst);
+	auto now = std::chrono::steady_clock::now();
+	std::cout << "hillclimb_bg (cur) time: " << std::chrono::duration<double, std::milli>(now - start).count() << "ms\n";
 	machine3 m3 = MakeMachine3(mst);
 	std::vector<modalpha> vo;
 	vo.reserve(ct.size());
@@ -56,7 +72,23 @@ auto hillclimb_bg(machine_settings_t mst, std::vector<modalpha> const& ct)
 auto hillclimb_tg(machine_settings_t mst, std::vector<modalpha> const& ct)
 {
 	auto start = std::chrono::steady_clock::now();
-	auto ns = hillclimb_base(ct.begin(), ct.end(), trigram_score_1941_op(), mst);
+	auto ns = hillclimb_permuted(ct.begin(), ct.end(), trigram_score_gen_op(), mst);
+	auto now = std::chrono::steady_clock::now();
+	std::cout << "hillclimb_tg time: " << std::chrono::duration<double, std::milli>(now - start).count() << "ms\n";
+	machine3 m3 = MakeMachine3(mst);
+	std::vector<modalpha> vo;
+	vo.reserve(ct.size());
+	decode(ct.begin(), ct.end(), m3, vo);
+	// report
+	std::cout << mst << " = " << ns << " - ";
+	report_ciphertext(vo, std::cout);
+	return m3.machine_settings();
+}
+
+auto hillclimb_tg2(machine_settings_t mst, std::vector<modalpha> const& ct)
+{
+	auto start = std::chrono::steady_clock::now();
+	auto ns = hillclimb_permuted(ct.begin(), ct.end(), trigram_score_cur_op(), mst);
 	auto now = std::chrono::steady_clock::now();
 	std::cout << "hillclimb_tg time: " << std::chrono::duration<double, std::milli>(now - start).count() << "ms\n";
 	machine3 m3 = MakeMachine3(mst);
@@ -101,38 +133,6 @@ auto hillclimb3_tg(machine_settings_t mst, std::vector<modalpha> const& ct)
 	return m3.machine_settings();
 }
 
-auto hillclimb3_bg41(machine_settings_t mst, std::vector<modalpha> const& ct)
-{
-	auto start = std::chrono::steady_clock::now();
-	auto ns = hillclimb_3(ct.begin(), ct.end(), bigram_score_1941_op(), mst);
-	auto now = std::chrono::steady_clock::now();
-	std::cout << "hillclimb3_bg time: " << std::chrono::duration<double, std::milli>(now - start).count() << "ms\n";
-	machine3 m3 = MakeMachine3(mst);
-	std::vector<modalpha> vo;
-	vo.reserve(ct.size());
-	decode(ct.begin(), ct.end(), m3, vo);
-	// report
-	std::cout << mst << " = " << ns << " - ";
-	report_ciphertext(vo, std::cout);
-	return m3.machine_settings();
-}
-
-auto hillclimb3_tg41(machine_settings_t mst, std::vector<modalpha> const& ct)
-{
-	auto start = std::chrono::steady_clock::now();
-	auto ns = hillclimb_3(ct.begin(), ct.end(), trigram_score_1941_op(), mst);
-	auto now = std::chrono::steady_clock::now();
-	std::cout << "hillclimb3_tg time: " << std::chrono::duration<double, std::milli>(now - start).count() << "ms\n";
-	machine3 m3 = MakeMachine3(mst);
-	std::vector<modalpha> vo;
-	vo.reserve(ct.size());
-	decode(ct.begin(), ct.end(), m3, vo);
-	// report
-	std::cout << mst << " = " << ns << " - ";
-	report_ciphertext(vo, std::cout);
-	return m3.machine_settings();
-}
-
 void Help()
 {
 	std::cerr << "hillclimbtest " << version << " : test bed for hillclimb variations.\n\n";
@@ -165,8 +165,11 @@ int main(int ac, char** av)
 		std::cout << "Ciphertext is -\n";
 		report_ciphertext(ct, std::cout);
 		hillclimb_bg(m3.machine_settings(), ct);
+		hillclimb_bg2(m3.machine_settings(), ct);
 		hillclimb_tg(m3.machine_settings(), ct);
+		hillclimb_tg2(m3.machine_settings(), ct);
 #if 0
+		hillclimb_bg2(m3.machine_settings(), ct);
 		hillclimb3_bg(m3.machine_settings(), ct);
 		hillclimb3_tg(m3.machine_settings(), ct);
 		hillclimb3_bg41(m3.machine_settings(), ct);

@@ -24,6 +24,27 @@ template<typename I> std::array<unsigned, alpha_max> gen_freq_tab(I b, I e)
 	return tab;
 }
 
+// return an array of modalpha in freq order, high low
+template<typename I> std::array<modalpha, alpha_max> gen_freq_seq(I b, I e)
+{
+	static_assert(std::is_same<modalpha, typename I::value_type>::value);
+
+	std::array<std::pair<unsigned, modalpha>, alpha_max> tab;
+	modalpha l{ alpha::A };
+	std::for_each(tab.begin(), tab.end(), [&l](auto& p) { p.first = 0, p.second = l; ++l; });
+	// count
+	std::for_each(b, e, [&tab](auto c)
+	{
+		++tab[c.Val()].first;
+	});
+	std::sort(tab.begin(), tab.end(), [](auto& l, auto& r) { return l.first < r.first; });
+
+	std::array<modalpha, alpha_max> ra;
+	std::transform(tab.begin(), tab.end(), ra.begin(), [](auto& p) { return p.second; });
+
+	return ra;;
+}
+
 double ioc_wkr(std::array<unsigned, alpha_max> const& tab, size_t N)
 {
 	double nn = double(N) * double(N - 1);

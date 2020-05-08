@@ -61,7 +61,7 @@ arena_t arena;
 constexpr unsigned ees_threshold_default = 17; // greater than this
 constexpr double   ioc_threshold         = 0.045;
 constexpr unsigned bg_threshold          = 48000; // bigram - not used at present, we always do both
-constexpr unsigned tg_threshold          = 1400; // trigram
+constexpr unsigned tg_threshold          = 18000; // trigram
 
 template<typename J, typename... ARGS> auto make_job_list_t(std::string_view reflector, std::string_view wheels, ARGS... args) -> std::vector<J>
 {
@@ -273,7 +273,7 @@ int main(int ac, char** av)
 							std::cout << c;
 						std::cout << "\n";
 					});
-			} while (AdvanceRingAll(j.mst_));
+			} while (AdvanceRing(j.mst_));
 			auto now = std::chrono::steady_clock::now();
 			std::cout << "Wheel order search time: " << std::chrono::duration<double>(now - start_wo).count() << "s\n";
 		}
