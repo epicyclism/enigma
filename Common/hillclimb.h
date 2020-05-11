@@ -1,9 +1,11 @@
 #pragma once
 
 #include <numeric>
+#include <tuple>
 
 #include "modalpha.h"
 #include "ioc.h"
+#include "unigram.h"
 #include "bigram.h"
 #include "trigram.h"
 
@@ -27,7 +29,7 @@ template<typename IC, typename IA, typename R> void use_ees(IC ctb, IC cte, IA b
 			s.ioc_ = 0;
 		else
 		{
-			m3.Stecker(); // clears
+			m3.ClearPlugs(); // clears
 			m3.ApplyPlug(s.f_, s.t_);
 			decode(ctb, cte, m3, vo);
 			s.ioc_ = index_of_coincidence(std::begin(vo), std::end(vo));
@@ -42,7 +44,7 @@ template<typename IC, typename IA, typename R> void use_ees(IC ctb, IC cte, IA b
 	psm.unique();
 //	psm.print_ioc(std::cout);
 	// apply
-	m3.Stecker(); // clears
+	m3.ClearPlugs(); // clears
 	auto pr = psm.begin() + (psm.size() > 10 ? 10 : psm.size());
 	do
 	{
@@ -205,80 +207,118 @@ template<typename IC, typename F, size_t max_stecker = 10 > auto hillclimb_permu
 	return scr;
 }
 
-// try partitioning the text and separating the climb.
+// tries all connections from a 'f' including 'f' itself
+// returns the score, modifies the machine_settings
 //
-constexpr int PTS = 3;
-using scrs_t = std::array<unsigned, PTS>;
-
-#if 0
-inline  bool operator< (scrs_t const& l, scrs_t const& r)
-{
-	return std::transform_reduce(l.begin(), l.end(), r.begin(), 0, std::plus<>(), [](auto le, auto re) { return le < re ? 1 : 0; });
-}
-#else
-inline  bool operator< (scrs_t const& l, scrs_t const& r)
-{
-	return *std::max_element(l.begin(), l.end()) < *std::max_element(r.begin(), r.end());
-}
-#endif
-
-inline std::ostream& operator<<(std::ostream& o, scrs_t const& s)
-{
-	o << "{" << s[0] << ", " << s[1] << ", " << s[2] << "}";
-
-	return o;
-}
-
-template<typename IC, typename F, size_t max_stecker = 10 > scrs_t hillclimb_3(IC ctb, IC cte, F eval_fn, machine_settings_t& mst)
+template<typename IC, typename F> auto single_stecker(IC ctb, IC cte, F eval_fn, modalpha f, machine_settings_t& mst) 
 {
 	// prepare a machine
 	machine3 m3 = MakeMachine3(mst);
 	std::vector<modalpha> vo;
-	vo.resize(std::distance(ctb, cte));
+	vo.reserve(std::distance(ctb, cte));
 	// establish the baseline
-	decode_tx(ctb, cte, vo.begin(), m3);
-
-	std::array<std::vector<modalpha>::const_iterator, PTS + 1> pts;
-	pts[0] = vo.begin();
-	// fill the middle with the middle
-	// PTS is number of partitions, so '3', we want begin, begin+size/3, begin+s*size/3, end
-	for (int n = 1; n < PTS; ++n)
-		pts[n] = vo.begin() + vo.size() * n / PTS;
-	pts[PTS] = vo.end();
-	// score!
-	scrs_t scrs;
-	std::transform(pts.begin(), pts.end() - 1, pts.begin() + 1, scrs.begin(), [&](auto b, auto e) { return eval_fn(b, e); });
-
-	bool improved = true;
-	while (improved)
+	decode(ctb, cte, m3, vo);
+	auto scr = eval_fn(std::begin(vo), std::end(vo));
+	modalpha mt = 0;
+	for (int ti = 0; ti < alpha_max; ++ti)
 	{
-		improved = false;
-		modalpha mx = 0;
-		modalpha my = 0;
-		for (int fi = 0; fi < alpha_max; ++fi)
+		modalpha t{ ti };
+		m3.PushStecker();
+		m3.ApplyPlug(f, t);
+		decode(ctb, cte, m3, vo);
+		auto scrn = eval_fn(std::begin(vo), std::end(vo));
+		if (scrn > scr)
 		{
-			modalpha f{ fi };
-			for (int ti = fi; ti < alpha_max; ++ti)
+			mt = t;
+			scr = scrn;
+		}
+		m3.PopStecker();
+	}
+
+	return std::make_pair( scr, mt );
+}
+
+// tries all connections from a 'f' including 'f' itself
+// returns the score, modifies the machine_settings
+//
+template<typename IC, typename F> auto triple_stecker(IC ctb, IC cte, F eval_fn, modalpha f1, modalpha f2, modalpha f3, machine_settings_t& mst)
+{
+	// prepare a machine
+	machine3 m3 = MakeMachine3(mst);
+	std::vector<modalpha> vo;
+	vo.reserve(std::distance(ctb, cte));
+	// establish the baseline
+	decode(ctb, cte, m3, vo);
+	auto scr = eval_fn(std::begin(vo), std::end(vo));
+	modalpha mt1 = 0;
+	modalpha mt2 = 0;
+	modalpha mt3 = 0;
+	for (int ti1 = 0; ti1 < alpha_max; ++ti1)
+	{
+		for (int ti2 = 0; ti2 < alpha_max; ++ti2)
+		{
+			for (int ti3 = 0; ti3 < alpha_max; ++ti3)
 			{
-				modalpha t{ ti };
+				modalpha t1{ ti1 };
+				modalpha t2{ ti2 };
+				modalpha t3{ ti3 };
 				m3.PushStecker();
-				m3.ApplyPlug(f, t);
-				decode_tx(ctb, cte, vo.begin(), m3);
-				scrs_t scrsn;
-				std::transform(pts.begin(), pts.end() - 1, pts.begin() + 1, scrsn.begin(), [&](auto b, auto e) { return eval_fn(b, e); });
-				if (scrs < scrsn && m3.SteckerCount() < max_stecker + 1)
+				m3.ApplyPlug(f3, t3);
+				m3.ApplyPlug(f2, t2);
+				m3.ApplyPlug(f1, t1);
+				decode(ctb, cte, m3, vo);
+				auto scrn = eval_fn(std::begin(vo), std::end(vo));
+				if (scrn > scr)
 				{
-					mx = f;
-					my = t;
-					scrs = scrsn;
-					improved = true;
+					mt1 = t1;
+					mt2 = t2;
+					mt3 = t3;
+					scr = scrn;
 				}
 				m3.PopStecker();
 			}
 		}
-		if (improved)
-			m3.ApplyPlug(mx, my);
 	}
-	mst = m3.machine_settings();
-	return scrs;
+
+	return std::make_tuple(scr, mt1, mt2, mt3);
+}
+
+template<typename IC, typename F> auto hillclimb_partial_exhaust3(IC ctb, IC cte, F eval_fn, modalpha f1, modalpha f2, modalpha f3, machine_settings_t& mst)
+{
+	// prepare a machine
+	machine3 m3 = MakeMachine3(mst);
+	std::vector<modalpha> vo;
+	vo.reserve(std::distance(ctb, cte));
+	// establish the baseline
+	decode(ctb, cte, m3, vo);
+	auto scr = eval_fn(std::begin(vo), std::end(vo));
+	for (int ti1 = 0; ti1 < alpha_max; ++ti1)
+	{
+		for (int ti2 = 0; ti2 < alpha_max; ++ti2)
+		{
+			if (ti1 == ti2 || ti2 == f1)
+				continue;
+			for (int ti3 = 0; ti3 < alpha_max; ++ti3)
+			{
+				if (ti3 == ti2 || ti3 == ti1 || ti3 == f1 || ti3 == f2)
+					continue;
+				modalpha t1{ ti1 };
+				modalpha t2{ ti2 };
+				modalpha t3{ ti3 };
+				m3.PushStecker();
+				m3.ApplyPlug(f3, t3);
+				m3.ApplyPlug(f2, t2);
+				m3.ApplyPlug(f1, t1);
+				auto mstt = m3.machine_settings();
+				auto scrn = hillclimb_base(ctb, cte, eval_fn, mstt);
+				if (scrn > scr)
+				{
+					mst = mstt;
+					scr = scrn;
+				}
+				m3.PopStecker();
+			}
+		}
+	}
+	return scr;
 }

@@ -9,7 +9,7 @@
 #include "match.h"
 #include "hillclimb.h"
 
-constexpr  char version[] = "v0.02";
+constexpr  char version[] = "v0.03";
 
 std::vector<modalpha> read_ciphertext()
 {
@@ -101,28 +101,85 @@ auto hillclimb_tg2(machine_settings_t mst, std::vector<modalpha> const& ct)
 	return m3.machine_settings();
 }
 
-auto hillclimb3_bg(machine_settings_t mst, std::vector<modalpha> const& ct)
+void hillclimb_test_single(machine_settings_t mst, std::vector<modalpha> const& ct)
 {
-	auto start = std::chrono::steady_clock::now();
-	auto ns = hillclimb_3(ct.begin(), ct.end(), bigram_score_gen_op(), mst);
-	auto now = std::chrono::steady_clock::now();
-	std::cout << "hillclimb3_bg time: " << std::chrono::duration<double, std::milli>(now - start).count() << "ms\n";
-	machine3 m3 = MakeMachine3(mst);
-	std::vector<modalpha> vo;
-	vo.reserve(ct.size());
-	decode(ct.begin(), ct.end(), m3, vo);
-	// report
-	std::cout << mst << " = " << ns << " - ";
-	report_ciphertext(vo, std::cout);
-	return m3.machine_settings();
+	// single for the 4 most common, one at a time.
+	std::cout << "IOC, single, individual\n";
+	constexpr modalpha tst_arr[]{ alpha::E, alpha::X, alpha::N, alpha::R, alpha::S, alpha::I };
+	for (auto f : tst_arr)
+	{
+		auto [scr, t] = single_stecker(ct.begin(), ct.end(), index_of_coincidence_op(), f, mst);
+		std::cout << "Single " << f << " to " << t << " {" << scr << "}\n";
+	}
+	std::cout << "\nunigram, single, individual\n";
+	for (auto f : tst_arr)
+	{
+		auto [scr, t] = single_stecker(ct.begin(), ct.end(), unigram_score_op(), f, mst);
+		std::cout << "Single " << f << " to " << t << " {" << scr << "}\n";
+	}
+	std::cout << "\n\n";
 }
 
-auto hillclimb3_tg(machine_settings_t mst, std::vector<modalpha> const& ct)
+void hillclimb_test_iterative(machine_settings_t mst, std::vector<modalpha> const& ct)
+{
+	std::cout << "IOC, iterative\n";
+	constexpr modalpha tst_arr[]{ alpha::E, alpha::X, alpha::N, alpha::R, alpha::S, alpha::I };
+	double scrm = 0;
+	for (auto c = 0; c < 6; ++c)
+	{
+		modalpha mf = 0;
+		modalpha mt = 0;
+		for (auto f : tst_arr)
+		{
+			auto [scr, t] = single_stecker(ct.begin(), ct.end(), index_of_coincidence_op(), f, mst);
+			if (scr > scrm)
+			{
+				std::cout << "    Mx " << f << " to " << t << " {" << scr << "}\n";
+				mf = f;
+				mt = t;
+				scrm = scr;
+			}
+		}
+		std::cout << "Apply " << mf << " to " << mt << " {" << scrm << "}\n";
+		mst.stecker_.Apply(mf, mt);
+	}
+	std::cout << "Finally = " << mst << '\n';
+#if 0
+	std::cout << "\nunigram, iterative, individual\n";
+	for (auto f : tst_arr)
+	{
+		auto [scr, t] = single_stecker(ct.begin(), ct.end(), unigram_score_op(), f, mst);
+		std::cout << "Single " << f << " to " << t << " {" << scr << "}\n";
+	}
+#endif
+	hillclimb_tg(mst, ct);
+
+	std::cout << "\n\n";
+}
+
+void hillclimb_test_triple(machine_settings_t mst, std::vector<modalpha> const& ct)
+{
+	// single for the 4 most common, one at a time.
+	std::cout << "IOC, single, individual\n";
+	constexpr modalpha tst_arr[]{ alpha::E, alpha::X, alpha::N, alpha::R, alpha::S, alpha::I };
+	{
+		auto [scr, t1, t2, t3] = triple_stecker(ct.begin(), ct.end(), index_of_coincidence_op(), alpha::E, alpha::N, alpha::S, mst);
+		std::cout << "triple E " << " to " << t1 << ", X to " << t2 << ", N to " << t3 << " {" << scr << "}\n";
+	}
+	{
+		std::cout << "\nunigram, single, individual\n";
+		auto [scr, t1, t2, t3] = triple_stecker(ct.begin(), ct.end(), unigram_score_op(), alpha::E, alpha::N, alpha::S, mst);
+		std::cout << "triple E " << " to " << t1 << ", X to " << t2 << ", N to " << t3 << " {" << scr << "}\n";
+	}
+	std::cout << "\n";
+}
+
+void hillclimb_test_partial_ex (machine_settings_t mst, std::vector<modalpha> const& ct)
 {
 	auto start = std::chrono::steady_clock::now();
-	auto ns = hillclimb_3(ct.begin(), ct.end(), trigram_score_gen_op(), mst);
+	auto ns = hillclimb_partial_exhaust3(ct.begin(), ct.end(), trigram_score_gen_op(), alpha::E, alpha::N, alpha::S, mst);
 	auto now = std::chrono::steady_clock::now();
-	std::cout << "hillclimb3_tg time: " << std::chrono::duration<double, std::milli>(now - start).count() << "ms\n";
+	std::cout << "hillclimb_test_partial_ex time: " << std::chrono::duration<double, std::milli>(now - start).count() << "ms\n";
 	machine3 m3 = MakeMachine3(mst);
 	std::vector<modalpha> vo;
 	vo.reserve(ct.size());
@@ -130,7 +187,6 @@ auto hillclimb3_tg(machine_settings_t mst, std::vector<modalpha> const& ct)
 	// report
 	std::cout << mst << " = " << ns << " - ";
 	report_ciphertext(vo, std::cout);
-	return m3.machine_settings();
 }
 
 void Help()
@@ -164,11 +220,15 @@ int main(int ac, char** av)
 		auto ct = read_ciphertext();
 		std::cout << "Ciphertext is -\n";
 		report_ciphertext(ct, std::cout);
+		hillclimb_test_partial_ex(m3.machine_settings(), ct);
+#if 0
+		hillclimb_test_single(m3.machine_settings(), ct);
+		hillclimb_test_triple(m3.machine_settings(), ct);
+		hillclimb_test_iterative(m3.machine_settings(), ct);
 		hillclimb_bg(m3.machine_settings(), ct);
 		hillclimb_bg2(m3.machine_settings(), ct);
 		hillclimb_tg(m3.machine_settings(), ct);
 		hillclimb_tg2(m3.machine_settings(), ct);
-#if 0
 		hillclimb_bg2(m3.machine_settings(), ct);
 		hillclimb3_bg(m3.machine_settings(), ct);
 		hillclimb3_tg(m3.machine_settings(), ct);

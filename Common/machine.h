@@ -35,9 +35,14 @@ public:
 		w_.Setting(s3, s2, s1);
 	}
 	// clear
-	void Stecker()
+	void ClearPlugs() noexcept
 	{
 		s_.Clear();
+	}
+	// retrieve
+	[[nodiscard]] constexpr stecker GetPlugs() const noexcept
+	{
+		return s_;
 	}
 	// add a plug pair, this cannot fail, you can map from and too to
 	// the same, but that's fine, like clear that pair...

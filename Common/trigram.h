@@ -109,20 +109,9 @@ struct trigram_score_1941_op
 		return trigram_score(b, e, tg_1941);
 	}
 };
-#if 0
-template<typename I> unsigned trigram_score_xxx(I b, I e)
-{
-	return trigram_score(b, e, tg_xxx);
-}
 
-struct trigram_score_xxx_op
-{
-	template<typename I> unsigned operator()(I b, I e)
-	{
-		return trigram_score(b, e, tg_xxx);
-	}
-};
-#endif
+// default
+//
 template<typename I> unsigned trigram_score(I b, I e)
 {
 	return trigram_score(b, e, tg_gen);

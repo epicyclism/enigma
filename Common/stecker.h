@@ -40,6 +40,15 @@ public:
 	{
 		return std::count_if(board_.begin(), board_.end(), [](auto& v) { return v != 0; }) / 2;
 	}
+	void Apply(modalpha from, modalpha to)
+	{
+		if (Is(from, to))
+		{
+			Clear(from);
+			Clear(to);
+		}
+		Set(from, to);
+	}
 	template<typename O> constexpr modalpha Eval(modalpha from, O& ostr) const
 	{
 		auto r = Eval(from);

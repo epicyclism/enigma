@@ -132,21 +132,8 @@ struct bigram_score_1941_op
 	}
 };
 
-#if 0
-template<typename I> unsigned bigram_score_xxx(I b, I e)
-{
-	return bigram_score(b, e, bg_xxx) ;
-}
-
-struct bigram_score_xxx_op
-{
-	template<typename I> unsigned operator()(I b, I e)
-	{
-		return bigram_score(b, e, bg_xxx);
-	}
-};
-#endif
-
+// default
+//
 template<typename I> unsigned bigram_score(I b, I e)
 {
 	return bigram_score(b, e, bg_gen) ;
