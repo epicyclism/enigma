@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cmath>
 #include "modalpha.h"
 #include "const_helpers.h"
 #include "gram_common.h"
