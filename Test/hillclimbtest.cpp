@@ -157,27 +157,11 @@ void hillclimb_test_iterative(machine_settings_t mst, std::vector<modalpha> cons
 	std::cout << "\n\n";
 }
 
-void hillclimb_test_triple(machine_settings_t mst, std::vector<modalpha> const& ct)
-{
-	// single for the 4 most common, one at a time.
-	std::cout << "IOC, single, individual\n";
-	constexpr modalpha tst_arr[]{ alpha::E, alpha::X, alpha::N, alpha::R, alpha::S, alpha::I };
-	{
-		auto [scr, t1, t2, t3] = triple_stecker(ct.begin(), ct.end(), index_of_coincidence_op(), alpha::E, alpha::N, alpha::S, mst);
-		std::cout << "triple E " << " to " << t1 << ", X to " << t2 << ", N to " << t3 << " {" << scr << "}\n";
-	}
-	{
-		std::cout << "\nunigram, single, individual\n";
-		auto [scr, t1, t2, t3] = triple_stecker(ct.begin(), ct.end(), unigram_score_op(), alpha::E, alpha::N, alpha::S, mst);
-		std::cout << "triple E " << " to " << t1 << ", X to " << t2 << ", N to " << t3 << " {" << scr << "}\n";
-	}
-	std::cout << "\n";
-}
-
-void hillclimb_test_partial_ex (machine_settings_t mst, std::vector<modalpha> const& ct)
+void hillclimb_test_partial_ex (machine_settings_t mst, bool b3, std::vector<modalpha> const& ct)
 {
 	auto start = std::chrono::steady_clock::now();
-	auto ns = hillclimb_partial_exhaust3(ct.begin(), ct.end(), trigram_score_gen_op(), alpha::E, alpha::N, alpha::S, mst);
+	auto ns = b3 ? hillclimb_partial_exhaust3(ct.begin(), ct.end(), trigram_score_gen_op(), alpha::E, alpha::N, alpha::S, mst) :
+					hillclimb_partial_exhaust2(ct.begin(), ct.end(), trigram_score_gen_op(), alpha::N, alpha::S, mst);
 	auto now = std::chrono::steady_clock::now();
 	std::cout << "hillclimb_test_partial_ex time: " << std::chrono::duration<double, std::milli>(now - start).count() << "ms\n";
 	machine3 m3 = MakeMachine3(mst);
@@ -212,15 +196,19 @@ int main(int ac, char** av)
 		machine3 m3 = MakeMachine3(av[1]);
 		Ring(m3, av[2]);
 		Setting(m3, av[3]);
+		bool b3 = true;
 		if (ac > 4)
+		{
 			Stecker(m3, av[4]);
+			b3 = false;
+		}
 		std::cout << "hillclimbtest " << version << " configured : ";
 		m3.ReportSettings(std::cout);
 		std::cout << "\nReady to read ciphertext...\n\n";
 		auto ct = read_ciphertext();
 		std::cout << "Ciphertext is -\n";
 		report_ciphertext(ct, std::cout);
-		hillclimb_test_partial_ex(m3.machine_settings(), ct);
+		hillclimb_test_partial_ex(m3.machine_settings(), b3, ct);
 #if 0
 		hillclimb_test_single(m3.machine_settings(), ct);
 		hillclimb_test_triple(m3.machine_settings(), ct);

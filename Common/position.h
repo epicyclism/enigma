@@ -35,6 +35,17 @@ struct position
 	{
 		return (l.wp_[2] == r.wp_[2]) && (l. wp_[1] == r.wp_[1]) && (l.wp_[0] == r.wp_[0]);
 	}
+	friend constexpr bool operator<(position const& l, position const& r) noexcept
+	{
+		if (l.wp_[2] == r.wp_[2])
+		{
+			if (l.wp_[1] == r.wp_[1])
+				return l.wp_[0] < r.wp_[0];
+			else
+				return l.wp_[1] < r.wp_[1];
+		}
+		return l.wp_[2] < r.wp_[2];
+	}
 };
 
 inline std::ostream& operator<<( std::ostream& o, position const& p)

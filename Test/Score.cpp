@@ -105,7 +105,7 @@ template<typename CT> void do_slice(machine3& m3, CT const& ct)
 		auto scr2 = test_score(ct.begin(), ct.end(), et.begin(), bsi);
 		std::cout << modalpha(bsi) << std::setw(5) << scr1 << ", " << std::setw(8) << scr2 << '\n';
 		scr1_ioc[bsi] = scr1;
-		scr2_ioc[bsi] = scr2;
+		scr2_ioc[bsi] = static_cast<unsigned>(scr2);
 	}
 	std::cout << "ioc scr1 = " << std::transform_reduce( std::begin(scr1_ioc), std::end(scr1_ioc), 0.0, std::plus{}, [](auto n)
 		{
