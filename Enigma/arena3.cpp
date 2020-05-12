@@ -97,9 +97,9 @@ struct result_t
 struct result_bs_t
 {
 	machine_settings_t	mst_;
-	unsigned			scr_;
+	unsigned			scr_ = 0;
+	int ees_cnt_ = 0;
 	std::array<modalpha, alpha_max> ees_;
-	int ees_cnt_;
 	void push_ee(modalpha bs)
 	{
 		ees_[ees_cnt_] = bs;
