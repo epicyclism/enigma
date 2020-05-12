@@ -186,7 +186,8 @@ unsigned collate_results_tg(std::vector<result_bs_t> const& in, std::vector<resu
 	return tg_max;
 }
 
-template<typename I> void report_result(result_t const& r, I cb, I ce)
+#if 0
+template<typename I> void report_result(result_out_t const& r, I cb, I ce)
 {
 	machine3 m3 = MakeMachine3(r.mst_);
 	std::vector<modalpha> vo;
@@ -199,11 +200,12 @@ template<typename I> void report_result(result_t const& r, I cb, I ce)
 	}
 	m3.ReportSettings(std::cout);
 	std::cout << " - ";
-	std::cout << r.ioc_ << " - ";
+	std::cout << r.scr_ << " - ";
 	for (auto c : vo)
 		std::cout << c;
 	std::cout << "\n";
 }
+#endif
 
 int main(int ac, char** av)
 {
