@@ -113,7 +113,6 @@ struct result_bs_t
 	result_bs_t() = default;
 	explicit result_bs_t(machine_settings_t const& mst, modalpha bs) : mst_(mst)
 	{
-		scr_ = 0;
 		ees_cnt_ = 0;
 		push_ee(bs);
 	}
@@ -145,6 +144,10 @@ template<typename J> void collect_results(J& j, unsigned ees_thld, unsigned ees_
 		if ((score > ees_thld) && (score < ees_thld_end)) // look at
 		{
 			auto off = std::distance(std::begin(j.r_), rb);
+#if 0
+			if (*(itp + off) == position(alpha::U, alpha::G, alpha::L))
+				std::cout << "UGL score = " << score << '\n';
+#endif
 			j.vr_.emplace_back(j.mst_, *(itp + off), j.bs_);
 		}
 		++rb;
@@ -282,10 +285,21 @@ int main(int ac, char** av)
 					});
 				// do the search for most likely
 				auto vr = collate_results(vjb);
-				std::cout << " - considering " << vr.size() << " possibles.";
+				std::cout << " - considering " << vr.size() << " possibles.\n";
 				std::for_each(std::execution::par, std::begin(vr), std::end(vr), [&ct](auto& r)
 					{
+#if 1
 						r.scr_ = hillclimb_partial_exhaust_fast(std::begin(ct), std::end(ct), r.ees_.begin(), r.ees_.begin() + r.ees_cnt_, trigram_score_op(), r.mst_);
+#else
+						if (r.mst_.pos_ == position(alpha::U, alpha::G, alpha::L))
+						{
+							auto scr = r.scr_;
+							r.scr_ = hillclimb_partial_exhaust_fast(std::begin(ct), std::end(ct), r.ees_.begin(), r.ees_.begin() + r.ees_cnt_, trigram_score_op(), r.mst_);
+							std::cout << r.mst_ << " - " << r.scr_ << " - EEs = ";
+							std::copy(r.ees_.begin(), r.ees_.begin() + r.ees_cnt_, std::ostream_iterator<modalpha>(std::cout));
+							std::cout << ", score was " << scr << "\n";
+						}
+#endif
 					});
 				auto n = vr_oall.size();
 				auto mx = collate_results_tg(vr, vr_oall);
