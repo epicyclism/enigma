@@ -62,7 +62,7 @@ arena_t arena;
 constexpr unsigned ees_threshold_default = 50;   // greater than this
 constexpr unsigned ees_threshold_range   = 1000000; // range to end of threshold window
 constexpr double   ioc_threshold = 0.045; // irrelevant?
-constexpr unsigned tg_threshold = 18000; // trigram
+constexpr unsigned tg_threshold = 14000; // trigram
 
 template<typename J, typename... ARGS> auto make_job_list_t(std::string_view reflector, std::string_view wheels, ARGS... args) -> std::vector<J>
 {
@@ -110,6 +110,7 @@ struct result_bs_t
 		for (int ee = 0; ee < r.ees_cnt_; ++ee)
 			push_ee(r.ees_[ee]);
 	}
+	result_bs_t() = default;
 	explicit result_bs_t(machine_settings_t const& mst, modalpha bs) : mst_(mst)
 	{
 		scr_ = 0;
@@ -281,10 +282,10 @@ int main(int ac, char** av)
 					});
 				// do the search for most likely
 				auto vr = collate_results(vjb);
-				std::cout << " - considering " << vr.size() << " possibles.\n";
+				std::cout << " - considering " << vr.size() << " possibles.";
 				std::for_each(std::execution::par, std::begin(vr), std::end(vr), [&ct](auto& r)
 					{
-						r.scr_ = hillclimb_partial_exhaust(std::begin(ct), std::end(ct), r.ees_.begin(), r.ees_.begin() + r.ees_cnt_, trigram_score_op(), r.mst_);
+						r.scr_ = hillclimb_partial_exhaust_fast(std::begin(ct), std::end(ct), r.ees_.begin(), r.ees_.begin() + r.ees_cnt_, trigram_score_op(), r.mst_);
 					});
 				auto n = vr_oall.size();
 				auto mx = collate_results_tg(vr, vr_oall);

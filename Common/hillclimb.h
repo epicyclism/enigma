@@ -110,7 +110,7 @@ template<typename IC, typename F, size_t max_stecker = 10 > auto hillclimb_base(
 	return scr;
 }
 
-template<typename IC, typename F, size_t max_stecker = 10 > auto hillclimb_base_fast(IC ctb, IC cte, F eval_fn, fast_decoder const& fd, stecker& s_base)
+template<typename IC, typename F, size_t max_stecker = 10 > auto hillclimb_base_fast(IC ctb, IC cte, F eval_fn, double iocb, fast_decoder const& fd, stecker& s_base)
 {
 	std::vector<modalpha> vo;
 	vo.reserve(std::distance(ctb, cte));
@@ -119,8 +119,11 @@ template<typename IC, typename F, size_t max_stecker = 10 > auto hillclimb_base_
 	stecker s_b;
 	vo = fd.decode(ctb, cte, s);
 	auto scr = eval_fn(std::begin(vo), std::end(vo));
-	s_base.Report(std::cout);
-	std::cout << " ioc = " << index_of_coincidence(vo.begin(), vo.end()) << '\n';
+	auto iocs = index_of_coincidence(vo.begin(), vo.end());
+	if (iocs < iocb)
+		return 0U;
+//	s_base.Report(std::cout);
+//	std::cout << " ioc += " << (iocs - iocb)* 100 / iocb << "%\n";
 	bool improved = true;
 	while (improved)
 	{
@@ -374,6 +377,7 @@ template<typename IC, typename F> auto hillclimb_partial_exhaust2_fast(IC ctb, I
 	// establish the baseline
 	vo = fd.decode(ctb, cte, s);
 	auto scr = eval_fn(std::begin(vo), std::end(vo));
+	auto iocb = index_of_coincidence(vo.begin(), vo.end());
 	for (int ti1 = 0; ti1 < alpha_max; ++ti1)
 	{
 		modalpha t1{ ti1 };
@@ -387,7 +391,7 @@ template<typename IC, typename F> auto hillclimb_partial_exhaust2_fast(IC ctb, I
 			s_b = s;
 			s.Apply(f2, t2);
 			s.Apply(f1, t1);
-			auto scrn = hillclimb_base_fast(ctb, cte, eval_fn, fd, s);
+			auto scrn = hillclimb_base_fast(ctb, cte, eval_fn, iocb, fd, s);
 			if (scrn > scr)
 			{
 				s_best = s;
@@ -413,6 +417,7 @@ template<typename IC, typename F> auto hillclimb_partial_exhaust3_fast(IC ctb, I
 	// establish the baseline
 	vo = fd.decode(ctb, cte, s);
 	auto scr = eval_fn(std::begin(vo), std::end(vo));
+	auto iocb = index_of_coincidence(vo.begin(), vo.end());
 	for (int ti1 = 0; ti1 < alpha_max; ++ti1)
 	{
 		modalpha t1{ ti1 };
@@ -430,7 +435,7 @@ template<typename IC, typename F> auto hillclimb_partial_exhaust3_fast(IC ctb, I
 				s.Apply(f3, t3);
 				s.Apply(f2, t2);
 				s.Apply(f1, t1);
-				auto scrn = hillclimb_base_fast(ctb, cte, eval_fn, fd, s);
+				auto scrn = hillclimb_base_fast(ctb, cte, eval_fn, iocb, fd, s);
 				if (scrn > scr)
 				{
 					s_best = s;
@@ -444,6 +449,55 @@ template<typename IC, typename F> auto hillclimb_partial_exhaust3_fast(IC ctb, I
 	return scr;
 }
 
+template<typename IC, typename EC, typename F> auto hillclimb_partial_exhaust_fast(IC ctb, IC cte, EC bsb, EC bse, F eval_fn, machine_settings_t& mst)
+{
+	constexpr modalpha f1 = alpha::E;
+	constexpr modalpha f2 = alpha::N;
+	constexpr modalpha f3 = alpha::S;
+
+	// prepare a machine
+	machine3 m3 = MakeMachine3(mst);
+	std::vector<modalpha> vo;
+	vo.reserve(std::distance(ctb, cte));
+	fast_decoder fd(m3);
+	stecker s = mst.stecker_;
+	stecker s_b;
+	stecker s_best;
+	// establish the baseline
+	vo = fd.decode(ctb, cte, s);
+	auto scr = eval_fn(std::begin(vo), std::end(vo));
+	auto iocb = index_of_coincidence(vo.begin(), vo.end());
+	while (bsb != bse)
+	{
+		for (int ti2 = 0; ti2 < alpha_max; ++ti2)
+		{
+			modalpha t2{ ti2 };
+			if (t2 == *bsb || t2 == f1)
+				continue;
+			for (int ti3 = 0; ti3 < alpha_max; ++ti3)
+			{
+				modalpha t3{ ti3 };
+				if (t3 == t2 || t3 == *bsb || t3 == f1 || t3 == f2)
+					continue;
+				m3.PushStecker();
+				s_b = s;
+				s.Apply(f3, t3);
+				s.Apply(f2, t2);
+				s.Apply(f1, *bsb);
+				auto scrn = hillclimb_base_fast(ctb, cte, eval_fn, iocb, fd, s);
+				if (scrn > scr)
+				{
+					s_best = s;
+					scr = scrn;
+				}
+				s = s_b;
+			}
+		}
+		++bsb;
+	}
+	mst.stecker_ = s_best;
+	return scr;
+}
 
 template<typename IC, typename EC, typename F> auto hillclimb_partial_exhaust(IC ctb, IC cte, EC bsb, EC bse, F eval_fn, machine_settings_t& mst)
 {

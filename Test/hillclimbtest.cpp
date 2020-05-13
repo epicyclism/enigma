@@ -224,7 +224,7 @@ int main(int ac, char** av)
 		auto ct = read_ciphertext();
 		std::cout << "Ciphertext is -\n";
 		report_ciphertext(ct, std::cout);
-		hillclimb_test_partial_ex(m3.machine_settings(), b3, ct);
+//		hillclimb_test_partial_ex(m3.machine_settings(), b3, ct);
 		hillclimb_test_partial_ex_fast(m3.machine_settings(), b3, ct);
 #if 0
 		hillclimb_test_single(m3.machine_settings(), ct);
