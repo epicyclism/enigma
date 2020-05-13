@@ -8,6 +8,7 @@
 #include "unigram.h"
 #include "bigram.h"
 #include "trigram.h"
+#include "fast_decoder.h"
 
 template<typename IC, typename IA, typename R> void use_ees(IC ctb, IC cte, IA base, position const& pos, modalpha bs, machine_settings_t const& mst_j, R& r)
 {
@@ -106,6 +107,51 @@ template<typename IC, typename F, size_t max_stecker = 10 > auto hillclimb_base(
 			m3.ApplyPlug(mx, my);
 	}
 	mst = m3.machine_settings();
+	return scr;
+}
+
+template<typename IC, typename F, size_t max_stecker = 10 > auto hillclimb_base_fast(IC ctb, IC cte, F eval_fn, fast_decoder const& fd, stecker& s_base)
+{
+	std::vector<modalpha> vo;
+	vo.reserve(std::distance(ctb, cte));
+	// establish the baseline
+	stecker s = s_base;
+	stecker s_b;
+	vo = fd.decode(ctb, cte, s);
+	auto scr = eval_fn(std::begin(vo), std::end(vo));
+	s_base.Report(std::cout);
+	std::cout << " ioc = " << index_of_coincidence(vo.begin(), vo.end()) << '\n';
+	bool improved = true;
+	while (improved)
+	{
+		improved = false;
+		modalpha mx = 0;
+		modalpha my = 0;
+		for (int fi = 0; fi < alpha_max; ++fi)
+		{
+			modalpha f{ fi };
+			for (int ti = fi; ti < alpha_max; ++ti)
+			{
+				modalpha t{ ti };
+				s_b = s;
+				s.Apply(f, t);
+				vo = fd.decode(ctb, cte, s);
+				auto scrn = eval_fn(std::begin(vo), std::end(vo));
+				if (scrn > scr && s.Count() < max_stecker + 1)
+				{
+					mx = f;
+					my = t;
+					scr = scrn;
+					improved = true;
+				}
+				s = s_b;
+			}
+		}
+		if (improved)
+			s.Apply(mx, my);
+	}
+	s_base = s;
+
 	return scr;
 }
 
@@ -311,6 +357,90 @@ template<typename IC, typename F> auto hillclimb_partial_exhaust3(IC ctb, IC cte
 			}
 		}
 	}
+	return scr;
+}
+
+// use the fast decoder, for test
+template<typename IC, typename F> auto hillclimb_partial_exhaust2_fast(IC ctb, IC cte, F eval_fn, modalpha f1, modalpha f2, machine_settings_t& mst)
+{
+	// prepare a machine
+	machine3 m3 = MakeMachine3(mst);
+	std::vector<modalpha> vo;
+	vo.reserve(std::distance(ctb, cte));
+	fast_decoder fd(m3);
+	stecker s = mst.stecker_;
+	stecker s_b;
+	stecker s_best;
+	// establish the baseline
+	vo = fd.decode(ctb, cte, s);
+	auto scr = eval_fn(std::begin(vo), std::end(vo));
+	for (int ti1 = 0; ti1 < alpha_max; ++ti1)
+	{
+		modalpha t1{ ti1 };
+		if (t1 == alpha::E || ti1 == f2)
+			continue;
+		for (int ti2 = 0; ti2 < alpha_max; ++ti2)
+		{
+			modalpha t2{ ti2 };
+			if (ti2 == ti1 || t2 == alpha::E || t2 == f1)
+				continue;
+			s_b = s;
+			s.Apply(f2, t2);
+			s.Apply(f1, t1);
+			auto scrn = hillclimb_base_fast(ctb, cte, eval_fn, fd, s);
+			if (scrn > scr)
+			{
+				s_best = s;
+				scr = scrn;
+			}
+			s = s_b;
+		}
+	}
+	mst.stecker_ = s_best;
+	return scr;
+}
+
+template<typename IC, typename F> auto hillclimb_partial_exhaust3_fast(IC ctb, IC cte, F eval_fn, modalpha f1, modalpha f2, modalpha f3, machine_settings_t& mst)
+{
+	// prepare a machine
+	machine3 m3 = MakeMachine3(mst);
+	std::vector<modalpha> vo;
+	vo.reserve(std::distance(ctb, cte));
+	fast_decoder fd(m3);
+	stecker s = mst.stecker_;
+	stecker s_b;
+	stecker s_best;
+	// establish the baseline
+	vo = fd.decode(ctb, cte, s);
+	auto scr = eval_fn(std::begin(vo), std::end(vo));
+	for (int ti1 = 0; ti1 < alpha_max; ++ti1)
+	{
+		modalpha t1{ ti1 };
+		for (int ti2 = 0; ti2 < alpha_max; ++ti2)
+		{
+			modalpha t2{ ti2 };
+			if (ti1 == ti2 || ti2 == f1)
+				continue;
+			for (int ti3 = 0; ti3 < alpha_max; ++ti3)
+			{
+				if (ti3 == ti2 || ti3 == ti1 || ti3 == f1 || ti3 == f2)
+					continue;
+				modalpha t3{ ti3 };
+				s_b = s;
+				s.Apply(f3, t3);
+				s.Apply(f2, t2);
+				s.Apply(f1, t1);
+				auto scrn = hillclimb_base_fast(ctb, cte, eval_fn, fd, s);
+				if (scrn > scr)
+				{
+					s_best = s;
+					scr = scrn;
+				}
+				s = s_b;
+			}
+		}
+	}
+	mst.stecker_ = s_best;
 	return scr;
 }
 

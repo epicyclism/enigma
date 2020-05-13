@@ -173,6 +173,22 @@ void hillclimb_test_partial_ex (machine_settings_t mst, bool b3, std::vector<mod
 	report_ciphertext(vo, std::cout);
 }
 
+void hillclimb_test_partial_ex_fast (machine_settings_t mst, bool b3, std::vector<modalpha> const& ct)
+{
+	auto start = std::chrono::steady_clock::now();
+	auto ns = b3 ? hillclimb_partial_exhaust3_fast(ct.begin(), ct.end(), trigram_score_gen_op(), alpha::E, alpha::N, alpha::S, mst) :
+					hillclimb_partial_exhaust2_fast(ct.begin(), ct.end(), trigram_score_gen_op(), alpha::N, alpha::S, mst);
+	auto now = std::chrono::steady_clock::now();
+	std::cout << "hillclimb_test_partial_ex_fast time: " << std::chrono::duration<double, std::milli>(now - start).count() << "ms\n";
+	machine3 m3 = MakeMachine3(mst);
+	std::vector<modalpha> vo;
+	vo.reserve(ct.size());
+	decode(ct.begin(), ct.end(), m3, vo);
+	// report
+	std::cout << mst << " = " << ns << " - ";
+	report_ciphertext(vo, std::cout);
+}
+
 void Help()
 {
 	std::cerr << "hillclimbtest " << version << " : test bed for hillclimb variations.\n\n";
@@ -209,6 +225,7 @@ int main(int ac, char** av)
 		std::cout << "Ciphertext is -\n";
 		report_ciphertext(ct, std::cout);
 		hillclimb_test_partial_ex(m3.machine_settings(), b3, ct);
+		hillclimb_test_partial_ex_fast(m3.machine_settings(), b3, ct);
 #if 0
 		hillclimb_test_single(m3.machine_settings(), ct);
 		hillclimb_test_triple(m3.machine_settings(), ct);

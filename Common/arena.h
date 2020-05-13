@@ -5,6 +5,19 @@
 
 #include <execution>
 
+// a simple arena for fast decode
+//
+
+template<size_t W> struct arena_simple
+{
+	static const size_t Width = W;
+	// a line
+	using line_t = std::array<modalpha, W>;
+
+	// the arena
+	std::array<line_t, alpha_max> arena_;
+};
+
 // maintain alpha_max rows of width W, each row is the output of encoding continuous letters in the machine.
 // position recorded to ensure can go back without having to separate out the stepping process.
 //
@@ -38,7 +51,8 @@ template<typename A> void fill_arena(wheels3& w, A& a, size_t off)
 	// for each wheel state we have to go down all 26 arrays
 	for (auto i = off; i < A::Width; ++i)
 	{
-		a.pos_[i] = w.Position();
+		if constexpr (!std::is_same_v<A, arena_simple<A::Width>>)
+			a.pos_[i] = w.Position();
 		w.Step();
 		auto col = w.Evaluate(alphabet);
 		auto itc = std::begin(col);
@@ -47,7 +61,8 @@ template<typename A> void fill_arena(wheels3& w, A& a, size_t off)
 			(*ita)[i] = *itc;
 		}
 	}
-	a.active_width_ = A::Width - off;
+	if constexpr (!std::is_same_v<A, arena_simple<A::Width>>)
+		a.active_width_ = A::Width - off;
 }
 
 // fills the arena for width steps, so that the cycle length of the particular machine plus

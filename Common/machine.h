@@ -112,6 +112,11 @@ public:
 		ostr << " ";
 		s_.Report(ostr);
 	}
+	// access
+	stecker const& Plugs() const
+	{
+		return s_;
+	}
 	// forward on
 	position Position() const
 	{
