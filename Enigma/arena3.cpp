@@ -62,7 +62,7 @@ arena_t arena;
 constexpr unsigned ees_threshold_default = 50;   // greater than this
 constexpr unsigned ees_threshold_range   = 1000000; // range to end of threshold window
 constexpr double   ioc_threshold = 0.045; // irrelevant?
-constexpr unsigned tg_threshold = 14000; // trigram
+constexpr unsigned tg_threshold = 16000; // trigram
 
 template<typename J, typename... ARGS> auto make_job_list_t(std::string_view reflector, std::string_view wheels, ARGS... args) -> std::vector<J>
 {
@@ -285,7 +285,7 @@ int main(int ac, char** av)
 					});
 				// do the search for most likely
 				auto vr = collate_results(vjb);
-				std::cout << " - considering " << vr.size() << " possibles.\n";
+				std::cout << " - considering " << vr.size() << " possibles.";
 				std::for_each(std::execution::par, std::begin(vr), std::end(vr), [&ct](auto& r)
 					{
 #if 1
