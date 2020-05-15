@@ -110,20 +110,16 @@ template<typename IC, typename F, size_t max_stecker = 10 > auto hillclimb_base(
 	return scr;
 }
 
-template<typename IC, typename F, size_t max_stecker = 10 > auto hillclimb_base_fast(IC ctb, IC cte, F eval_fn, double iocb, fast_decoder const& fd, stecker& s_base)
+template<typename IC, typename F, size_t max_stecker = 10 > auto hillclimb_base_fast(IC ctb, IC cte, F eval_fn, double iocb, fast_decoder& fd, stecker& s_base)
 {
-	std::vector<modalpha> vo;
-	vo.reserve(std::distance(ctb, cte));
-	// establish the baseline
 	stecker s = s_base;
 	stecker s_b;
-	vo = fd.decode(ctb, cte, s);
-	auto scr = eval_fn(std::begin(vo), std::end(vo));
+	auto vo = fd.decode(ctb, cte, s);
 	auto iocs = index_of_coincidence(vo.begin(), vo.end());
-	if (iocs < iocb)
+	if (iocs * .95 < iocb)
 		return 0U;
-//	s_base.Report(std::cout);
-//	std::cout << " ioc += " << (iocs - iocb)* 100 / iocb << "%\n";
+	// establish the baseline
+	auto scr = eval_fn(std::begin(vo), std::end(vo));
 	bool improved = true;
 	while (improved)
 	{
@@ -155,103 +151,6 @@ template<typename IC, typename F, size_t max_stecker = 10 > auto hillclimb_base_
 	}
 	s_base = s;
 
-	return scr;
-}
-
-template<typename IC, typename F, size_t max_stecker = 10 > auto hillclimb_filter(IC ctb, IC cte, F eval_fn, machine_settings_t& mst)
-{
-	// prepare a machine
-	machine3 m3 = MakeMachine3(mst);
-	std::vector<modalpha> vo;
-	vo.reserve(std::distance(ctb, cte));
-	// establish the baseline
-	decode(ctb, cte, m3, vo);
-	auto ioc = index_of_coincidence(std::begin(vo), std::end(vo));
-	if (ioc < 0.044)
-		return 0U;
-	auto scr = eval_fn(std::begin(vo), std::end(vo));
-	bool improved = true;
-	while (improved)
-	{
-		improved = false;
-		modalpha mx = 0;
-		modalpha my = 0;
-		for (int fi = 0; fi < alpha_max; ++fi)
-		{
-			modalpha f{ fi };
-			for (int ti = fi; ti < alpha_max; ++ti)
-			{
-				modalpha t{ ti };
-				m3.PushStecker();
-				m3.ApplyPlug(f, t);
-				decode(ctb, cte, m3, vo);
-				auto scrn = eval_fn(std::begin(vo), std::end(vo));
-				if (scrn > scr && m3.SteckerCount() < max_stecker + 1)
-				{
-					mx = f;
-					my = t;
-					scr = scrn;
-					improved = true;
-				}
-				m3.PopStecker();
-			}
-		}
-		if (improved)
-			m3.ApplyPlug(mx, my);
-	}
-	mst = m3.machine_settings();
-	return scr;
-}
-
-template<typename IC, typename F, size_t max_stecker = 10 > auto hillclimb_permuted(IC ctb, IC cte, F eval_fn, machine_settings_t& mst)
-{
-	// prepare a machine
-	machine3 m3 = MakeMachine3(mst);
-	std::vector<modalpha> vo;
-	vo.reserve(std::distance(ctb, cte));
-	// establish the baseline
-	decode(ctb, cte, m3, vo);
-	auto scr = eval_fn(std::begin(vo), std::end(vo));
-	// the order we're going to examine with
-//	std::array<modalpha, alpha_max> tst { alpha::A, alpha::B, alpha::C, alpha::D, alpha::E, alpha::F, alpha::G, alpha::H, alpha::I, alpha::J, alpha::K, alpha::L, alpha::M, alpha::N, alpha::O, alpha::P, alpha::Q, alpha::R, alpha::S, alpha::T, alpha::U, alpha::V, alpha::W, alpha::X, alpha::Y, alpha::Z };
-	std::array<modalpha, alpha_max> tst = gen_freq_seq(ctb, cte);
-
-	bool improved = true;
-	while (improved)
-	{
-//		std::cout << "Base = " << scr << '\n';
-		improved = false;
-		modalpha mx = 0;
-		modalpha my = 0;
-		for (int fi = 0; fi < alpha_max; ++fi)
-		{
-			modalpha f{ tst[fi] };
-			for (int ti = fi; ti < alpha_max; ++ti)
-			{
-				modalpha t{ tst[ti] };
-				m3.PushStecker();
-				m3.ApplyPlug(f, t);
-				decode(ctb, cte, m3, vo);
-				auto scrn = eval_fn(std::begin(vo), std::end(vo));
-				if (scrn > scr && m3.SteckerCount() < max_stecker + 1)
-				{
-//					std::cout << "Step " << f << " - " << t << " get " << scrn << '\n';
-					mx = f;
-					my = t;
-					scr = scrn;
-					improved = true;
-				}
-				m3.PopStecker();
-			}
-		}
-		if (improved)
-		{
-//			std::cout << "Apply " << mx << " - " << my << " get " << scr << '\n';
-			m3.ApplyPlug(mx, my);
-//			std::next_permutation(std::begin(tst), std::end(tst));
-		}
-	}
-	mst = m3.machine_settings();
 	return scr;
 }
 
@@ -368,14 +267,12 @@ template<typename IC, typename F> auto hillclimb_partial_exhaust2_fast(IC ctb, I
 {
 	// prepare a machine
 	machine3 m3 = MakeMachine3(mst);
-	std::vector<modalpha> vo;
-	vo.reserve(std::distance(ctb, cte));
 	fast_decoder fd(m3);
 	stecker s = mst.stecker_;
 	stecker s_b;
 	stecker s_best;
 	// establish the baseline
-	vo = fd.decode(ctb, cte, s);
+	auto vo = fd.decode(ctb, cte, s);
 	auto scr = eval_fn(std::begin(vo), std::end(vo));
 	auto iocb = index_of_coincidence(vo.begin(), vo.end());
 	for (int ti1 = 0; ti1 < alpha_max; ++ti1)
@@ -408,14 +305,12 @@ template<typename IC, typename F> auto hillclimb_partial_exhaust3_fast(IC ctb, I
 {
 	// prepare a machine
 	machine3 m3 = MakeMachine3(mst);
-	std::vector<modalpha> vo;
-	vo.reserve(std::distance(ctb, cte));
 	fast_decoder fd(m3);
 	stecker s = mst.stecker_;
 	stecker s_b;
 	stecker s_best;
 	// establish the baseline
-	vo = fd.decode(ctb, cte, s);
+	auto vo = fd.decode(ctb, cte, s);
 	auto scr = eval_fn(std::begin(vo), std::end(vo));
 	auto iocb = index_of_coincidence(vo.begin(), vo.end());
 	for (int ti1 = 0; ti1 < alpha_max; ++ti1)
@@ -457,14 +352,12 @@ template<typename IC, typename EC, typename F> auto hillclimb_partial_exhaust_fa
 
 	// prepare a machine
 	machine3 m3 = MakeMachine3(mst);
-	std::vector<modalpha> vo;
-	vo.reserve(std::distance(ctb, cte));
 	fast_decoder fd(m3);
 	stecker s = mst.stecker_;
 	stecker s_b;
 	stecker s_best;
 	// establish the baseline
-	vo = fd.decode(ctb, cte, s);
+	auto vo = fd.decode(ctb, cte, s);
 	auto scr = eval_fn(std::begin(vo), std::end(vo));
 	auto iocb = index_of_coincidence(vo.begin(), vo.end());
 	while (bsb != bse)
@@ -496,49 +389,5 @@ template<typename IC, typename EC, typename F> auto hillclimb_partial_exhaust_fa
 		++bsb;
 	}
 	mst.stecker_ = s_best;
-	return scr;
-}
-
-template<typename IC, typename EC, typename F> auto hillclimb_partial_exhaust(IC ctb, IC cte, EC bsb, EC bse, F eval_fn, machine_settings_t& mst)
-{
-	constexpr modalpha f1 = alpha::E;
-	constexpr modalpha f2 = alpha::N;
-	constexpr modalpha f3 = alpha::S;
-
-	// prepare a machine
-	machine3 m3 = MakeMachine3(mst);
-	std::vector<modalpha> vo;
-	vo.reserve(std::distance(ctb, cte));
-	// establish the baseline
-	decode(ctb, cte, m3, vo);
-	auto scr = eval_fn(std::begin(vo), std::end(vo));
-	while(bsb != bse)
-	{
-		for (int ti2 = 0; ti2 < alpha_max; ++ti2)
-		{
-			modalpha t2{ ti2 };
-			if (t2 == *bsb || t2 == f1)
-				continue;
-			for (int ti3 = 0; ti3 < alpha_max; ++ti3)
-			{
-				modalpha t3{ ti3 };
-				if (t3 == t2 || t3 == *bsb || t3 == f1 || t3 == f2)
-					continue;
-				m3.PushStecker();
-				m3.ApplyPlug(f3, t3);
-				m3.ApplyPlug(f2, t2);
-				m3.ApplyPlug(f1, *bsb);
-				auto mstt = m3.machine_settings();
-				auto scrn = hillclimb_filter(ctb, cte, eval_fn, mstt);
-				if (scrn > scr)
-				{
-					mst = mstt;
-					scr = scrn;
-				}
-				m3.PopStecker();
-			}
-		}
-		++bsb;
-	}
 	return scr;
 }

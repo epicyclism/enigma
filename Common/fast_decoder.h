@@ -10,27 +10,29 @@ class fast_decoder
 {
 private:
 	arena_simple<max_msg_size> a_;
+	std::vector<modalpha>      vo_;
+
 public:
 	fast_decoder() = delete;
 	fast_decoder(machine3& m3) // we're going to mess with this machine...
 	{
-		fill_arena(m3.Wheels(), a_, 0);
+		fill_arena_simple(m3.Wheels(), a_);
+		vo_.reserve(max_msg_size);
 	}
-	template<typename IC> std::vector<modalpha> decode(IC ctb, IC cte, stecker const& s) const
+	template<typename IC> std::vector<modalpha> const& decode(IC ctb, IC cte, stecker const& s)
 	{
-		std::vector<modalpha> vo;
-		size_t pos = 0;
-		std::for_each(ctb, cte, [&](auto c) {
-			// in stecker
-			auto o = s.Eval(c);
-			// rotor cache
-			o = a_.arena_[o.Val()][pos];
-			// out stecker 
-			o = s.Eval(o);
-			vo.push_back(o);
-			++pos;
+		vo_.resize(std::distance(ctb, cte));
+		std::transform(ctb, cte, a_.arena_.begin(), vo_.begin(), [&](auto c, auto const& a)
+			{
+				// in stecker
+				auto o = s.Eval(c);
+				// rotor cache
+				o = a[o.Val()];
+				// out stecker 
+				o = s.Eval(o);
+				return o;
 			});
 
-		return vo;
+		return vo_;
 	}
 };
