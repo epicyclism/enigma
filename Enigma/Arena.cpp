@@ -190,7 +190,7 @@ int main(int ac, char** av)
 	if (ac > 3)
 		ees_threshold = ::atoi(av[3]);
 	if (ac > 4)
-		ees_threshold_end = ::atoi(av[4]);
+		ees_threshold_end = ees_threshold + ::atoi(av[4]);
 	if (ac > 5)
 		jobbegin = ::atoi(av[5]);
 	if (ac > 6)
