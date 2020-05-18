@@ -17,7 +17,7 @@
 #include "arena.h"
 #include "jobs.h"
 
-constexpr  char version[] = "v0.11";
+constexpr  char version[] = "v0.12";
 
 std::vector<modalpha> read_ciphertext()
 {
@@ -59,7 +59,7 @@ arena_t arena;
 
 // thresholds
 constexpr unsigned ees_threshold_default = 17; // greater than this
-constexpr double   ioc_threshold         = 0.045;
+constexpr double   ioc_threshold         = 0.05;
 constexpr unsigned bg_threshold          = 48000; // bigram - not used at present, we always do both
 constexpr unsigned tg_threshold          = 18000; // trigram
 
@@ -250,8 +250,12 @@ int main(int ac, char** av)
 				std::cout << " - considering " << vr.size() << " possibles.";
 				std::for_each(std::execution::par, std::begin(vr), std::end(vr), [&ct](auto& r)
 					{
+#if 0
 						hillclimb_base(std::begin(ct), std::end(ct), bigram_score_op(), r.mst_);
 						r.btg_ = hillclimb_base(std::begin(ct), std::end(ct), trigram_score_op(), r.mst_);
+#else
+						r.btg_ = hillclimb_bgtg_fast(std::begin(ct), std::end(ct), r.mst_);
+#endif
 					});
 				auto n = vr_oall.size();
 				auto mx = collate_results_tg(vr, vr_oall);

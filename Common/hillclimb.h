@@ -391,3 +391,22 @@ template<typename IC, typename EC, typename F> auto hillclimb_partial_exhaust_fa
 	mst.stecker_ = s_best;
 	return scr;
 }
+
+// fast(er) version of the arena practice of bg->tg pair
+//
+// viz
+//
+// 	         hillclimb_base(std::begin(ct), std::end(ct), bigram_score_op(), r.mst_);
+//  r.btg_ = hillclimb_base(std::begin(ct), std::end(ct), trigram_score_op(), r.mst_);
+//
+template<typename IC> auto hillclimb_bgtg_fast(IC ctb, IC cte, machine_settings_t& mst)
+{
+	// prepare a machine
+	machine3 m3 = MakeMachine3(mst);
+	fast_decoder fd(m3);
+	stecker s = mst.stecker_;
+	hillclimb_base_fast(ctb, cte, bigram_score_op(), 0.0, fd, s);
+	auto rv = hillclimb_base_fast(ctb, cte, trigram_score_op(), 0.0, fd, s);
+	mst.stecker_ = s;
+	return rv;
+}
