@@ -240,7 +240,7 @@ int main(int ac, char** av)
 	std::vector<result_out_t> vr_oall;
 	try
 	{
-		std::cout << "arena version " << version << '\n';
+		std::cout << "arena3 version " << version << '\n';
 		std::cout << "Accept scores between " << ees_threshold << " and " << ees_threshold_end << ", job range from " << jobbegin << " to " << jobend << ".\n\n";
 		std::cout << "\nReady to read ciphertext\n";
 		// capture the ciphertext

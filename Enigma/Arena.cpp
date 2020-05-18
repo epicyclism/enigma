@@ -17,7 +17,7 @@
 #include "arena.h"
 #include "jobs.h"
 
-constexpr  char version[] = "v0.12";
+constexpr  char version[] = "v0.13";
 
 std::vector<modalpha> read_ciphertext()
 {
@@ -40,11 +40,12 @@ void Help()
 {
 	std::cerr << "arena " << version << " : Enigma settings hunt.\n\n";
 	std::cerr << "For example,\n\n";
-	std::cerr << "./arena BC 12345 [t [b [e]]]\n";
+	std::cerr << "./arena BC 12345 [t [r [b [e]]]]\n";
 	std::cerr << "Reads ciphertext from stdin then searches all wheel orders formed from reflectors BC and\n";
 	std::cerr << "wheels 12345 and attempts to find wheels, ring and plug settings that produce a decrypt.\n";
-	std::cerr << "The optional trailing 't' is a value to use as the first pass threshold. Default is 17.\n";
-	std::cerr << "The further optional trailing 'b' and 'e' values determine where in the order to\n";
+	std::cerr << "The optional trailing 't' is a value to use as the first pass threshold. Default is 50.\n";
+	std::cerr << "The further optional trailing 'r' is the range of threshold to process.\n";
+	std::cerr << "And the final optional trailing 'b' and 'e' values determine where in the order to\n";
 	std::cerr << "start, and, if present where to end so that sessions can be interrupted,\n";
 	std::cerr << "restarted or shared across systems.\n\n";
 }
@@ -58,7 +59,8 @@ using arena_t = arena_base<26 * 26 * 26 + 256>;
 arena_t arena;
 
 // thresholds
-constexpr unsigned ees_threshold_default = 17; // greater than this
+constexpr unsigned ees_threshold_default = 50; // greater than this
+constexpr unsigned ees_threshold_range   = 1000000; // range to end of threshold window
 constexpr double   ioc_threshold         = 0.05;
 constexpr unsigned bg_threshold          = 48000; // bigram - not used at present, we always do both
 constexpr unsigned tg_threshold          = 18000; // trigram
@@ -98,7 +100,7 @@ struct result_t
 
 // these are sort of shared and could be common...
 //
-template<typename J> void collect_results(J& j, unsigned ees_thld)
+template<typename J> void collect_results(J& j, unsigned ees_thld, unsigned ees_thld_end)
 {
 	auto sz = std::distance(j.ctb_, j.cte_);
 	auto itp = std::begin(j.pos_);
@@ -107,7 +109,7 @@ template<typename J> void collect_results(J& j, unsigned ees_thld)
 	while (rb != std::end(j.r_))
 	{
 		auto score = *rb;
-		if (score > ees_thld) // decode!
+		if (score >= ees_thld && score < ees_thld_end) // decode!
 		{
 			auto off = std::distance(std::begin(j.r_), rb);
 			use_ees(j.ctb_, j.cte_, std::begin(j.line_) + off, *(itp + off), j.bs_, j.mst_, j.vr_);
@@ -182,14 +184,17 @@ int main(int ac, char** av)
 		return 0;
 	}
 	unsigned ees_threshold = ees_threshold_default;
+	unsigned ees_threshold_end = ees_threshold_default + ees_threshold_range;
 	int jobbegin = 0;
 	int jobend = -1;
 	if (ac > 3)
 		ees_threshold = ::atoi(av[3]);
 	if (ac > 4)
-		jobbegin = ::atoi(av[4]);
+		ees_threshold_end = ::atoi(av[4]);
 	if (ac > 5)
-		jobend = ::atoi(av[5]);
+		jobbegin = ::atoi(av[5]);
+	if (ac > 6)
+		jobend = ::atoi(av[6]);
 
 	if (jobend != -1 && jobend <= jobbegin)
 	{
@@ -202,7 +207,7 @@ int main(int ac, char** av)
 	try
 	{
 		std::cout << "arena version " << version << '\n';
-		std::cout << "Threshold = " << ees_threshold << ", job range from " << jobbegin << " to " << jobend << ".\n\n";
+		std::cout << "Accept scores between " << ees_threshold << " and " << ees_threshold_end << ", job range from " << jobbegin << " to " << jobend << ".\n\n";
 		std::cout << "\nReady to read ciphertext\n";
 		// capture the ciphertext
 		auto ct = read_ciphertext();
@@ -241,9 +246,9 @@ int main(int ac, char** av)
 						match_search_exp(aj.ctb_, aj.cte_, aj.line_, arena.active_width_, aj.r_, aj.bs_);
 					});
 				// do the search for more likely
-				std::for_each(std::execution::par, std::begin(vjb), std::end(vjb), [ees_threshold](auto& aj)
+				std::for_each(std::execution::par, std::begin(vjb), std::end(vjb), [ees_threshold, ees_threshold_end](auto& aj)
 					{
-						collect_results(aj, ees_threshold);
+						collect_results(aj, ees_threshold, ees_threshold_end);
 					});
 				// do the search for most likely
 				auto vr = collate_results_ioc(vjb);
