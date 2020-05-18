@@ -343,7 +343,7 @@ template<typename IC, typename F> auto hillclimb_partial_exhaust3_fast(IC ctb, I
 	mst.stecker_ = s_best;
 	return scr;
 }
-
+#if 0
 template<typename IC, typename EC, typename F> auto hillclimb_partial_exhaust_fast(IC ctb, IC cte, EC bsb, EC bse, F eval_fn, machine_settings_t& mst)
 {
 	constexpr modalpha f1 = alpha::E;
@@ -391,7 +391,54 @@ template<typename IC, typename EC, typename F> auto hillclimb_partial_exhaust_fa
 	mst.stecker_ = s_best;
 	return scr;
 }
+#else
+template<typename IC, typename EC, typename F> auto hillclimb_partial_exhaust_fast(IC ctb, IC cte, EC bsb, EC bse, F eval_fn, machine_settings_t& mst)
+{
+	constexpr modalpha f1 = alpha::E;
+	constexpr modalpha f2 = alpha::N;
+	constexpr modalpha f3 = alpha::S;
 
+	// prepare a machine
+	machine3 m3 = MakeMachine3(mst);
+	fast_decoder fd(m3);
+	stecker s = mst.stecker_;
+	stecker s_b;
+	stecker s_best;
+	// establish the baseline
+	auto vo = fd.decode(ctb, cte, s);
+	auto scr = eval_fn(std::begin(vo), std::end(vo));
+	auto iocb = index_of_coincidence(vo.begin(), vo.end());
+	for (int ti2 = 0; ti2 < alpha_max; ++ti2)
+	{
+		modalpha t2{ ti2 };
+		if (t2 == f1)
+			continue;
+		for (int ti3 = 0; ti3 < alpha_max; ++ti3)
+		{
+			modalpha t3{ ti3 };
+			if (t3 == t2 || t3 == f1 || t3 == f2)
+				continue;
+			for (auto bs = bsb; bs != bse; ++bs)
+			{
+				m3.PushStecker();
+				s_b = s;
+				s.Apply(f3, t3);
+				s.Apply(f2, t2);
+				s.Apply(f1, *bs);
+				auto scrn = hillclimb_base_fast(ctb, cte, eval_fn, iocb, fd, s);
+				if (scrn > scr)
+				{
+					s_best = s;
+					scr = scrn;
+				}
+				s = s_b;
+			}
+		}
+	}
+	mst.stecker_ = s_best;
+	return scr;
+}
+#endif
 // fast(er) version of the arena practice of bg->tg pair
 //
 // viz

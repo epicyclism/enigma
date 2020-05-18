@@ -61,7 +61,7 @@ arena_t arena;
 // thresholds
 constexpr unsigned ees_threshold_default = 50; // greater than this
 constexpr unsigned ees_threshold_range   = 1000000; // range to end of threshold window
-constexpr double   ioc_threshold         = 0.05;
+constexpr double   ioc_threshold         = 0.045;
 constexpr unsigned bg_threshold          = 48000; // bigram - not used at present, we always do both
 constexpr unsigned tg_threshold          = 18000; // trigram
 
