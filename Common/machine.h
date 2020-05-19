@@ -266,6 +266,19 @@ inline wiring const& reflector_from_name_throw(char nm)
 	throw std::out_of_range("invalid reflector name");
 }
 
+// helper to build a wheelset
+//
+inline wheels3 MakeWheels3(machine_settings_t const& mst)
+{
+	auto& ref = reflector_from_name_throw(mst.ref_);
+	auto& w3 = rotor_from_name_throw(mst.w3_);
+	auto& w2 = rotor_from_name_throw(mst.w2_);
+	auto& w1 = rotor_from_name_throw(mst.w1_);
+	wheels3 ws3(ref, w3, w2, w1);
+
+	return ws3;
+}
+
 // take a string like 'B321' and return a suitably configured machine.
 // throws on nonsense.
 //

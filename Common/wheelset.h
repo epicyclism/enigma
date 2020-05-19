@@ -145,3 +145,4 @@ public:
 			w3_.ring_, w2_.ring_, w1_.ring_ };
 	}
 };
+

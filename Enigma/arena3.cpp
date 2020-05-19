@@ -230,8 +230,7 @@ int main(int ac, char** av)
 		// capture the ciphertext
 		auto ct = read_ciphertext();
 		std::cout << "Ciphertext is - ";
-		for (auto c : ct)
-			std::cout << c;
+		report_ciphertext(ct, std::cout);
 		std::cout << "\nInitialising search\n";
 		using job_wheels_t = job_wheels<decltype(ct.cbegin())>;
 		std::vector<job_wheels_t> vjbw = make_job_list<job_wheels_t>(av[1], av[2], jobbegin, jobend, std::begin(ct), std::end(ct));
