@@ -16,25 +16,9 @@
 #include "hillclimb.h"
 #include "arena.h"
 #include "jobs.h"
+#include "utility.h"
 
 constexpr  char version[] = "v0.14";
-
-std::vector<modalpha> read_ciphertext()
-{
-	std::vector<modalpha> rv;
-	while (1)
-	{
-		char c;
-		std::cin >> c;
-		if (!std::cin)
-			break;
-		if (valid_from_char(c))
-		{
-			rv.push_back(from_printable(c));
-		}
-	}
-	return rv;
-}
 
 void Help()
 {
@@ -284,7 +268,7 @@ int main(int ac, char** av)
 		auto now = std::chrono::steady_clock::now();
 		std::cout << "Finished, search time: " << std::chrono::duration<double>(now - start).count() << "s\n";
 		// sort in best->worst!
-		std::sort(std::begin(vr_oall), std::end(vr_oall), [](auto const& l, auto const& r) { if (l.scr_ == r.scr_) return l.ioc_ < r.ioc_; else return l.scr_ < r.scr_; });
+		std::sort(std::begin(vr_oall), std::end(vr_oall), [](auto const& l, auto const& r) { if (l.btg_ == r.btg_) return l.ioc_ < r.ioc_; else return l.btg_ < r.btg_; });
 		// report
 		for (auto r : vr_oall)
 		{

@@ -7,6 +7,7 @@
 #include "const_helpers.h"
 #include "machine.h"
 #include "match.h"
+#include "utility.h"
 
 constexpr  char version[] = "v0.03";
 
@@ -54,21 +55,25 @@ template<typename IC, typename IA> unsigned test_score2(IC ctb, IC cte, IA base,
 	return (*psm.begin()).cnt_ ;
 }
 
-std::vector<modalpha> read_ciphertext()
+template<typename IC, typename IA> double test_score3(IC ctb, IC cte, IA base, modalpha bs)
 {
-	std::vector<modalpha> rv;
-	while (1)
-	{
-		char c;
-		std::cin >> c;
-		if (!std::cin)
-			break;
-		if (valid_from_char(c))
+	plug_set_msg psm;
+	// collect stecker possibles
+	std::for_each(ctb, cte, [&base, &psm](auto const c)
 		{
-			rv.push_back(from_printable(c));
-		}
-	}
-	return rv;
+			psm.set(c, *base);
+			++base;
+		});
+	// sort highest cnt first
+	std::sort(std::begin(psm), std::end(psm), [](auto const& l, auto const& r) { return l.cnt_ > r.cnt_; });
+	// remove all cnt < 2 and make others unique
+	psm.unique();
+	psm.print(std::cout);
+	auto pr = psm.begin() + (psm.size() > 10 ? 10 : psm.size());
+	auto ctl = std::distance(ctb, cte);
+	double dbit = 10.0 / (0.14 * ctl);
+	double direct = psm.direct() * dbit;
+	return std::accumulate(psm.begin(), pr, direct, [dbit](auto& l, auto& r) { return l + dbit * r.cnt_; });
 }
 
 template<typename CT> void do_solo(machine3& m3, modalpha bs, CT const& ct)
@@ -83,7 +88,7 @@ template<typename CT> void do_solo(machine3& m3, modalpha bs, CT const& ct)
 	std::cout << '\n';
 //	// match and score
 	auto scr1 = match_ciphertext(ct.begin(), ct.end(), et.begin(), bs);
-	auto scr2 = test_score(ct.begin(), ct.end(), et.begin(), bs);
+	auto scr2 = test_score3(ct.begin(), ct.end(), et.begin(), bs);
 	std::cout << modalpha(bs) << std::setw(5) << scr1 << ", " << std::setw(8) << scr2 << '\n';
 }
 

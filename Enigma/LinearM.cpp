@@ -13,6 +13,7 @@
 #include "arena.h"
 #include "ioc.h"
 #include "jobs.h"
+#include "utility.h"
 
 constexpr  char version[] = "v0.06";
 
@@ -178,18 +179,7 @@ int main(int ac, char**av)
 			simple = true;
 		}
 		// capture the ciphertext
-		std::vector<modalpha> ct;
-		while (1)
-		{
-			char c;
-			std::cin >> c;
-			if (!std::cin)
-				break;
-			if (valid_from_char(c))
-			{
-				ct.push_back(from_printable(c));
-			}
-		}
+		std::vector<modalpha> ct = read_ciphertext();
 		std::cout << "Message length is " << ct.size() << " characters.\n";
 		// make the job list
 		auto vjb = make_job_list<job>(av[1], av[2], 0, -1, std::begin(ct), std::end(ct));

@@ -9,6 +9,7 @@
 #include "machine.h"
 #include "arena.h"
 #include "match.h"
+#include "utility.h"
 
 // B423 gto SDV "AD EH GY IM KN LR OZ QV TX UW"
 // FDZCJJDKVWPYFDWPOQZGTJQYYXAFRHSQESERKGJBWBYPEOOKFMMPOMKQDDOLCPKHYPGUZYXBZYANYSAXIPXVQCPJBFFFDRDXFIJJPPPEYALCYKVLKXQHWIRZANGWUJBWVJYCKESMJQRYKQHCQKMMYWMCKVLZJDVZXRUMRMNWFDZBQGXJQAPFFFZTAHJQZPWQWNIVZWUIJTHOYXGDCOJUW
@@ -104,18 +105,7 @@ int main(int ac, char**av)
 		}
 		std::cout << "Ready - \n";
 		// capture the ciphertext
-		std::vector<modalpha> ct;
-		while (1)
-		{
-			char c;
-			std::cin >> c;
-			if (!std::cin)
-				break;
-			if (valid_from_char(c))
-			{
-				ct.push_back(from_printable(c));
-			}
-		}
+		std::vector<modalpha> ct = read_ciphertext();
 		std::cout << "Message length is " << ct.size() << " characters.\n";
 		std::cout << "\nInitialising search\n";
 		fill_line(m3, l, testch);

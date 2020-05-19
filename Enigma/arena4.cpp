@@ -1,4 +1,4 @@
-// Enigma.cpp : Defines the entry point for the application.
+// arena4.cpp : final cut
 //
 
 #include <iostream>
@@ -18,7 +18,7 @@
 #include "jobs.h"
 #include "utility.h"
 
-constexpr  char version[] = "v0.02";
+constexpr  char version[] = "v0.01";
 
 void Help()
 {
@@ -44,7 +44,7 @@ arena_t arena;
 
 // thresholds
 constexpr unsigned ees_threshold_default = 50;   // greater than this
-constexpr unsigned ees_threshold_range   = 1000000; // range to end of threshold window
+constexpr unsigned ees_threshold_range = 1000000; // range to end of threshold window
 constexpr double   ioc_threshold = 0.045; // irrelevant?
 constexpr unsigned tg_threshold = 16000; // trigram
 
@@ -152,11 +152,11 @@ template<typename J> std::vector<result_bs_t> collate_results(std::vector<J> con
 	std::sort(std::execution::par, vr.begin(), vr.end(), [](auto const& l, auto const& r) { return l.mst_.pos_ < r.mst_.pos_; });
 	// and condense
 	auto end = std::unique(std::execution::par, vr.begin(), vr.end(), [](auto& l, auto const& r) { if (l.mst_.pos_ == r.mst_.pos_)
-																											{
-																												l.concat_ees(r);
-																												return true;
-																											}
-																											return false;});
+	{
+		l.concat_ees(r);
+		return true;
+	}
+	return false; });
 	vr.erase(end, vr.end());
 	return vr;
 }
@@ -202,7 +202,7 @@ int main(int ac, char** av)
 		Help();
 		return 0;
 	}
-	unsigned ees_threshold     = ees_threshold_default;
+	unsigned ees_threshold = ees_threshold_default;
 	unsigned ees_threshold_end = ees_threshold_default + ees_threshold_range;
 	int jobbegin = 0;
 	int jobend = -1;

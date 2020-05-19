@@ -8,32 +8,9 @@
 #include "machine.h"
 #include "match.h"
 #include "hillclimb.h"
+#include "utility.h"
 
 constexpr  char version[] = "v0.03";
-
-std::vector<modalpha> read_ciphertext()
-{
-	std::vector<modalpha> rv;
-	while (1)
-	{
-		char c;
-		std::cin >> c;
-		if (!std::cin)
-			break;
-		if (valid_from_char(c))
-		{
-			rv.push_back(from_printable(c));
-		}
-	}
-	return rv;
-}
-
-void report_ciphertext(std::vector<modalpha> const& ct, std::ostream& ostr)
-{
-	for (auto c : ct)
-		ostr << c;
-	ostr << '\n';
-}
 
 // machine by value.
 //
@@ -191,8 +168,8 @@ void hillclimb_test_partial_ex_fast (machine_settings_t mst, bool b3, std::vecto
 
 void hillclimb_test_partial_ex_fast_flex (machine_settings_t mst, std::vector<modalpha> const& ct)
 {
-	std::array<modalpha, 2> ees{ alpha::X, alpha::C };
-	std::cout << "hillclimb_test_partial_ex_fast_flex testing EX and EC in the outer loop.\n";
+	std::array<modalpha, 2> ees{ alpha::F, alpha::C };
+	std::cout << "hillclimb_test_partial_ex_fast_flex testing EF in the outer loop.\n";
 	auto start = std::chrono::steady_clock::now();
 	auto ns = hillclimb_partial_exhaust_fast(std::begin(ct), std::end(ct), ees.begin(), ees.begin() + 2, trigram_score_op(), mst);
 	auto now = std::chrono::steady_clock::now();

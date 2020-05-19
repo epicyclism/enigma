@@ -4,25 +4,9 @@
 
 #include "modalpha.h"
 #include "ioc.h"
+#include "utility.h"
 
 constexpr  char version[] = "v0.01";
-
-std::vector<modalpha> read_ciphertext()
-{
-	std::vector<modalpha> rv;
-	while (1)
-	{
-		char c;
-		std::cin >> c;
-		if (!std::cin)
-			break;
-		if (valid_from_char(c))
-		{
-			rv.push_back(from_printable(c));
-		}
-	}
-	return rv;
-}
 
 int main(int ac, char** av)
 {

@@ -9,6 +9,7 @@
 #include "machine.h"
 #include "arena.h"
 #include "ioc.h"
+#include "utility.h"
 
 constexpr  char version[] = "v0.03";
 
@@ -152,18 +153,7 @@ int main(int ac, char**av)
 		m3.ReportSettings(std::cout);
 		std::cout << "\nReady\n";
 		// capture the ciphertext
-		std::vector<modalpha> ct;
-		while (1)
-		{
-			char c;
-			std::cin >> c;
-			if (!std::cin)
-				break;
-			if (valid_from_char(c))
-			{
-				ct.push_back(from_printable(c));
-			}
-		}
+		std::vector<modalpha> ct = read_ciphertext();
 		std::cout << "\nInitialising search\n";
 		modalpha E = alpha::E;
 		if (ac == 5)
