@@ -185,84 +185,7 @@ template<typename IC, typename F> auto single_stecker(IC ctb, IC cte, F eval_fn,
 	return std::make_pair( scr, mt );
 }
 
-// assumes an 'E' connection has already been made, iterates another two exhaustively
-//
-template<typename IC, typename F> auto hillclimb_partial_exhaust2(IC ctb, IC cte, F eval_fn, modalpha f1, modalpha f2, machine_settings_t& mst)
-{
-	// prepare a machine
-	machine3 m3 = MakeMachine3(mst);
-	std::vector<modalpha> vo;
-	vo.reserve(std::distance(ctb, cte));
-	// establish the baseline
-	decode(ctb, cte, m3, vo);
-	auto scr = eval_fn(std::begin(vo), std::end(vo));
-	for (int ti1 = 0; ti1 < alpha_max; ++ti1)
-	{
-		modalpha t1{ ti1 };
-		if (t1 == alpha::E || ti1 == f2)
-			continue;
-		for (int ti2 = 0; ti2 < alpha_max; ++ti2)
-		{
-			modalpha t2{ ti2 };
-			if (ti2 == ti1 || t2 == alpha::E || t2 == f1 )
-				continue;
-			m3.PushStecker();
-			m3.ApplyPlug(f2, t2);
-			m3.ApplyPlug(f1, t1);
-			auto mstt = m3.machine_settings();
-			auto scrn = hillclimb_base(ctb, cte, eval_fn, mstt);
-			if (scrn > scr)
-			{
-				mst = mstt;
-				scr = scrn;
-			}
-			m3.PopStecker();
-		}
-	}
-	return scr;
-}
-
-template<typename IC, typename F> auto hillclimb_partial_exhaust3(IC ctb, IC cte, F eval_fn, modalpha f1, modalpha f2, modalpha f3, machine_settings_t& mst)
-{
-	// prepare a machine
-	machine3 m3 = MakeMachine3(mst);
-	std::vector<modalpha> vo;
-	vo.reserve(std::distance(ctb, cte));
-	// establish the baseline
-	decode(ctb, cte, m3, vo);
-	auto scr = eval_fn(std::begin(vo), std::end(vo));
-	for (int ti1 = 0; ti1 < alpha_max; ++ti1)
-	{
-		modalpha t1{ ti1 };
-		for (int ti2 = 0; ti2 < alpha_max; ++ti2)
-		{
-			modalpha t2{ ti2 };
-			if (ti1 == ti2 || ti2 == f1)
-				continue;
-			for (int ti3 = 0; ti3 < alpha_max; ++ti3)
-			{
-				if (ti3 == ti2 || ti3 == ti1 || ti3 == f1 || ti3 == f2)
-					continue;
-				modalpha t3{ ti3 };
-				m3.PushStecker();
-				m3.ApplyPlug(f3, t3);
-				m3.ApplyPlug(f2, t2);
-				m3.ApplyPlug(f1, t1);
-				auto mstt = m3.machine_settings();
-				auto scrn = hillclimb_base(ctb, cte, eval_fn, mstt);
-				if (scrn > scr)
-				{
-					mst = mstt;
-					scr = scrn;
-				}
-				m3.PopStecker();
-			}
-		}
-	}
-	return scr;
-}
-
-// use the fast decoder, for test
+// use the fast decoder
 template<typename IC, typename F> auto hillclimb_partial_exhaust2_fast(IC ctb, IC cte, F eval_fn, modalpha f1, modalpha f2, machine_settings_t& mst)
 {
 	// prepare a machine
@@ -278,12 +201,12 @@ template<typename IC, typename F> auto hillclimb_partial_exhaust2_fast(IC ctb, I
 	for (int ti1 = 0; ti1 < alpha_max; ++ti1)
 	{
 		modalpha t1{ ti1 };
-		if (t1 == alpha::E || ti1 == f2)
+		if (ti1 == f2)
 			continue;
 		for (int ti2 = 0; ti2 < alpha_max; ++ti2)
 		{
 			modalpha t2{ ti2 };
-			if (ti2 == ti1 || t2 == alpha::E || t2 == f1)
+			if (t2 == t1 || t2 == f1)
 				continue;
 			s_b = s;
 			s.Apply(f2, t2);

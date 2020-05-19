@@ -174,7 +174,11 @@ int main(int ac, char** av)
 #if 0
 						aj.scr_ = hillclimb_bgtg_fast(aj.ctb_, aj.cte_, aj.mst_);
 #else
+#if 0
 						aj.scr_ = hillclimb_partial_exhaust_all(aj.ctb_, aj.cte_, trigram_score_op(), aj.mst_);
+#else
+						aj.scr_ = hillclimb_partial_exhaust2_fast(aj.ctb_, aj.cte_, trigram_score_op(), alpha::E, alpha::N, aj.mst_);
+#endif
 #endif
 					});
 				auto n = vr_oall.size();
