@@ -17,7 +17,7 @@
 #include "arena.h"
 #include "jobs.h"
 
-constexpr  char version[] = "v0.01";
+constexpr  char version[] = "v0.02";
 
 std::vector<modalpha> read_ciphertext()
 {
@@ -322,6 +322,8 @@ int main(int ac, char** av)
 		}
 		auto now = std::chrono::steady_clock::now();
 		std::cout << "Finished, search time: " << std::chrono::duration<double>(now - start).count() << "s\n";
+		// sort in best->worst!
+		std::sort(std::begin(vr_oall), std::end(vr_oall), [](auto const& l, auto const& r) { return l.scr_ == r.scr_; });
 		// report
 		for (auto r : vr_oall)
 		{
