@@ -110,7 +110,7 @@ template<typename IC, typename F, size_t max_stecker = 10 > auto hillclimb_base(
 	return scr;
 }
 
-template<typename IC, typename F, size_t max_stecker = 10 > auto hillclimb_base_fast(IC ctb, IC cte, F eval_fn, double iocb, fast_decoder& fd, stecker& s_base)
+template<typename IC, typename F, typename FD, size_t max_stecker = 10 > auto hillclimb_base_fast(IC ctb, IC cte, F eval_fn, double iocb, FD& fd, stecker& s_base)
 {
 	stecker s = s_base;
 	stecker s_b;
@@ -421,6 +421,16 @@ template<typename IC> auto hillclimb_bgtg_fast(IC ctb, IC cte, machine_settings_
 	// prepare a machine
 	machine3 m3 = MakeMachine3(mst);
 	fast_decoder fd(m3);
+	stecker s = mst.stecker_;
+	hillclimb_base_fast(ctb, cte, bigram_score_op(), 0.0, fd, s);
+	auto rv = hillclimb_base_fast(ctb, cte, trigram_score_op(), 0.0, fd, s);
+	mst.stecker_ = s;
+	return rv;
+}
+
+template<typename IC, typename AI> auto hillclimb_bgtg_fast(IC ctb, IC cte, AI ai, machine_settings_t& mst)
+{
+	fast_decoder_ref fd(ai);
 	stecker s = mst.stecker_;
 	hillclimb_base_fast(ctb, cte, bigram_score_op(), 0.0, fd, s);
 	auto rv = hillclimb_base_fast(ctb, cte, trigram_score_op(), 0.0, fd, s);

@@ -36,3 +36,34 @@ public:
 		return vo_;
 	}
 };
+
+// accepts an external pointer into a full arena
+template<typename AI> class fast_decoder_ref
+{
+private:
+	AI						ai_;
+	std::vector<modalpha>   vo_;
+
+public:
+	fast_decoder_ref() = delete;
+	fast_decoder_ref(AI ai) : ai_(ai) 
+	{
+		vo_.reserve(max_msg_size);
+	}
+	template<typename IC> std::vector<modalpha> const& decode(IC ctb, IC cte, stecker const& s)
+	{
+		vo_.resize(std::distance(ctb, cte));
+		std::transform(ctb, cte, ai_, vo_.begin(), [&](auto c, auto const& a)
+			{
+				// in stecker
+				auto o = s.Eval(c);
+				// rotor cache
+				o = a[o.Val()];
+				// out stecker 
+				o = s.Eval(o);
+				return o;
+			});
+
+		return vo_;
+	}
+};

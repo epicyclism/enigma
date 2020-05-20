@@ -18,15 +18,15 @@
 #include "jobs.h"
 #include "utility.h"
 
-constexpr  char version[] = "v0.03";
+constexpr  char version[] = "v0.01";
 
 constexpr unsigned tg_threshold = 16000; // trigram
 
 void Help()
 {
-	std::cerr << "arena4 " << version << " : Enigma settings hunt.\n\n";
+	std::cerr << "arena5 " << version << " : Enigma settings hunt, CUDA testbed.\n\n";
 	std::cerr << "For example,\n\n";
-	std::cerr << "./arena4 BC 12345 [b [e]]\n";
+	std::cerr << "./arena5 BC 12345 [b [e]]\n";
 	std::cerr << "Reads ciphertext from stdin then searches all wheel orders formed from reflectors BC and\n";
 	std::cerr << "wheels 12345 and attempts to find wheels, ring and plug settings that produce a decrypt.\n";
 	std::cerr << "The optional trailing 'b' and 'e' values determine where in the set of wheel orders to\n";
@@ -185,15 +185,7 @@ int main(int ac, char** av)
 				std::cout << " - considering " << vjb.size() << " possibles.";
 				std::for_each(std::execution::par, std::begin(vjb), std::end(vjb), [&pa](auto& aj)
 					{
-#if 1
 						aj.scr_ = hillclimb_bgtg_fast(aj.ctb_, aj.cte_, pa + aj.off_, aj.mst_);
-#else
-#if 0
-						aj.scr_ = hillclimb_partial_exhaust_all(aj.ctb_, aj.cte_, trigram_score_op(), aj.mst_);
-#else
-						aj.scr_ = hillclimb_partial_exhaust2_fast(aj.ctb_, aj.cte_, trigram_score_op(), alpha::E, alpha::N, aj.mst_);
-#endif
-#endif
 					});
 				auto n = vr_oall.size();
 				auto mx = collate_results_tg(vjb, vr_oall);

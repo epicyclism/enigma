@@ -151,6 +151,25 @@ void hillclimb_test_partial_ex_fast_flex (machine_settings_t mst, std::vector<mo
 	report_ciphertext(vo, std::cout);
 }
 
+void hillclimb_test_fd_ref (machine_settings_t mst, std::vector<modalpha> const& ct)
+{
+	std::cout << "hillclimb_test_fd_ref.\n";
+	auto start = std::chrono::steady_clock::now();
+	arena_simple<256> arena;
+	machine3 m3 = MakeMachine3(mst);
+	fill_arena_simple(m3.Wheels(), arena);
+	auto ns = hillclimb_bgtg_fast(std::begin(ct), std::end(ct), arena.arena_.begin(), mst);
+	auto now = std::chrono::steady_clock::now();
+	std::cout << "hillclimb_test_fd_ref time: " << std::chrono::duration<double, std::milli>(now - start).count() << "ms\n";
+	machine3 m3a = MakeMachine3(mst);
+	std::vector<modalpha> vo;
+	vo.reserve(ct.size());
+	decode(ct.begin(), ct.end(), m3a, vo);
+	// report
+	std::cout << mst << " = " << ns << " - ";
+	report_ciphertext(vo, std::cout);
+}
+
 void Help()
 {
 	std::cerr << "hillclimbtest " << version << " : test bed for hillclimb variations.\n\n";
@@ -188,6 +207,7 @@ int main(int ac, char** av)
 		report_ciphertext(ct, std::cout);
 //		hillclimb_test_partial_ex(m3.machine_settings(), b3, ct);
 //		hillclimb_test_partial_ex_fast(m3.machine_settings(), b3, ct);
+		hillclimb_test_fd_ref(m3.machine_settings(), ct);
 		hillclimb_test_partial_ex_fast_flex(m3.machine_settings(), ct);
 #if 0
 		hillclimb_test_single(m3.machine_settings(), ct);

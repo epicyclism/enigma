@@ -275,6 +275,8 @@ inline wheels3 MakeWheels3(machine_settings_t const& mst)
 	auto& w2 = rotor_from_name_throw(mst.w2_);
 	auto& w1 = rotor_from_name_throw(mst.w1_);
 	wheels3 ws3(ref, w3, w2, w1);
+	ws3.Ring(mst.r3_, mst.r2_, mst.r1_);
+	ws3.Position(position());
 
 	return ws3;
 }
