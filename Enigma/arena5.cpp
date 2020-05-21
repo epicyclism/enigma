@@ -10,13 +10,15 @@
 #include "wheelset.h"
 #include "machine.h"
 #include "position.h"
-#include "ioc.h"
-#include "bigram.h"
-#include "match.h"
-#include "hillclimb.h"
+//#include "ioc.h"
+//#include "bigram.h"
+//#include "match.h"
+//#include "hillclimb.h"
 #include "arena.h"
 #include "jobs.h"
 #include "utility.h"
+#include "hillclimb_cuda.h"
+#include "trigram.h"
 
 constexpr  char version[] = "v0.01";
 
@@ -31,20 +33,6 @@ void Help()
 	std::cerr << "wheels 12345 and attempts to find wheels, ring and plug settings that produce a decrypt.\n";
 	std::cerr << "The optional trailing 'b' and 'e' values determine where in the set of wheel orders to\n";
 	std::cerr << "start, and optionally, to end so that sessions can be interrupted, restarted or shared across systems.\n\n";
-}
-
-template<typename J, typename... ARGS> auto make_job_list_t(std::string_view reflector, std::string_view wheels, ARGS... args) -> std::vector<J>
-{
-	machine_settings_t mst;
-	ZeroRing(mst);
-	std::vector <J> vjb;
-	mst.ref_ = reflector[0];
-	mst.w3_ = wheels[0];
-	mst.w2_ = wheels[1];
-	mst.w1_ = wheels[2];
-	vjb.emplace_back(mst, args...);
-
-	return vjb;
 }
 
 template<typename CI> struct job_position
@@ -119,15 +107,13 @@ template<typename CI, typename SCR> void report_result(machine_settings_t const&
 	decode(ctb, cte, m3, vo);
 	// report
 	std::cout << mst << " { " << scr << " } : ";
-	for (auto c : vo)
-		std::cout << c;
-	std::cout << "\n";
+	report_ciphertext(vo, std::cout);
 }
 
 // an arena for bulk fast decode, shouldn't be slower than calulating per position, should be quicker because each
 // position only calculated once!
 //
-arena_simple<26 * 26 * 26 + 250> arena_;
+arena_decode_t arena_;
 
 int main(int ac, char** av)
 {
@@ -158,6 +144,15 @@ int main(int ac, char** av)
 		std::cout << "Ciphertext is - ";
 		report_ciphertext(ct, std::cout);
 		std::cout << "\nInitialising search\n";
+
+		cudaWrap cw(tg_gen, ct);
+		// check GPU
+		if (!cw.cudaGood())
+		{
+			std::cout << "No go with check_cuda!\nCuda is required for this implementation.\n";
+			return -1;
+		}
+
 		using job_wheels_t = job_wheels<decltype(ct.cbegin())>;
 		std::vector<job_wheels_t> vjbw = make_job_list<job_wheels_t>(av[1], av[2], jobbegin, jobend, std::begin(ct), std::end(ct));
 		if (vjbw.empty())
@@ -180,13 +175,16 @@ int main(int ac, char** av)
 				using job_position_t = job_position<decltype(ct.cbegin())>;
 				// fills the arena for this wheel order
 				auto vjb = make_job_list_position<job_position_t>(j.mst_, arena_, j.ctb_, j.cte_);
-				auto pa = arena_.arena_.begin();
-				// do the search for quite likely
+				// punt to CUDA
+				cw.set_arena(arena_);
 				std::cout << " - considering " << vjb.size() << " possibles.";
+#if 0
+				auto pa = arena_.arena_.begin();
 				std::for_each(std::execution::par, std::begin(vjb), std::end(vjb), [&pa](auto& aj)
 					{
 						aj.scr_ = hillclimb_bgtg_fast(aj.ctb_, aj.cte_, pa + aj.off_, aj.mst_);
 					});
+#endif
 				auto n = vr_oall.size();
 				auto mx = collate_results_tg(vjb, vr_oall);
 				std::cout << " Max tg score = " << mx << ".\n";

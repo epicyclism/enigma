@@ -15,17 +15,6 @@ struct bg_def
 
 // the tables we end up with.
 //
-struct bigram_table
-{
-	const std::array<unsigned, stride_ * alpha_max> tab_;
-
-	[[nodiscard]] const unsigned wt(modalpha a, modalpha b) const noexcept
-	{
-		unsigned off = a.Val() * stride_ + b.Val();
-		return tab_[off];
-	}
-	bigram_table() = delete;
-};
 
 // general data table
 #include "bigram_data.h"

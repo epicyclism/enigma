@@ -5,17 +5,7 @@
 
 #include <execution>
 
-// a simple arena for fast decode
-//
-template<size_t W> struct arena_simple
-{
-	static const size_t Width = W;
-	// a line
-	using pos_t = std::array<modalpha, alpha_max>;
-
-	// the arena
-	std::array<pos_t, W> arena_;
-};
+#include "arena_simple.h"
 
 // maintain alpha_max rows of width W, each row is the output of encoding continuous letters in the machine.
 // position recorded to ensure can go back without having to separate out the stepping process.

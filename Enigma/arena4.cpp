@@ -33,20 +33,6 @@ void Help()
 	std::cerr << "start, and optionally, to end so that sessions can be interrupted, restarted or shared across systems.\n\n";
 }
 
-template<typename J, typename... ARGS> auto make_job_list_t(std::string_view reflector, std::string_view wheels, ARGS... args) -> std::vector<J>
-{
-	machine_settings_t mst;
-	ZeroRing(mst);
-	std::vector <J> vjb;
-	mst.ref_ = reflector[0];
-	mst.w3_ = wheels[0];
-	mst.w2_ = wheels[1];
-	mst.w1_ = wheels[2];
-	vjb.emplace_back(mst, args...);
-
-	return vjb;
-}
-
 template<typename CI> struct job_position
 {
 	machine_settings_t mst_;
@@ -119,9 +105,7 @@ template<typename CI, typename SCR> void report_result(machine_settings_t const&
 	decode(ctb, cte, m3, vo);
 	// report
 	std::cout << mst << " { " << scr << " } : ";
-	for (auto c : vo)
-		std::cout << c;
-	std::cout << "\n";
+	report_ciphertext(vo, std::cout);
 }
 
 // an arena for bulk fast decode, shouldn't be slower than calulating per position, should be quicker because each

@@ -1,10 +1,12 @@
 ﻿# CMakeList.txt : CMake project for Enigma, include source and define
 # project specific logic here.
 #
-cmake_minimum_required (VERSION 3.8)
+cmake_minimum_required (VERSION 3.9)
 
 # Add source to this project's executable.
+include_directories(${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 include_directories("${PROJECT_SOURCE_DIR}/Common")
+include_directories("${PROJECT_SOURCE_DIR}/gpu")
 
 add_executable (Enigma "Enigma.cpp")
 add_executable (Arena "Arena.cpp")
@@ -26,7 +28,7 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 	target_link_libraries(Arena2 Common ${TBB_IMPORTED_TARGETS})
 	target_link_libraries(arena3 Common ${TBB_IMPORTED_TARGETS})
 	target_link_libraries(arena4 Common ${TBB_IMPORTED_TARGETS})
-	target_link_libraries(arena5 Common ${TBB_IMPORTED_TARGETS})
+	target_link_libraries(arena5 Common gpu ${TBB_IMPORTED_TARGETS})
 	target_link_libraries(Linear Common ${TBB_IMPORTED_TARGETS})
 	target_link_libraries(LinearM Common ${TBB_IMPORTED_TARGETS})
 	target_link_libraries(LinearE Common ${TBB_IMPORTED_TARGETS})
@@ -38,7 +40,7 @@ else()
 	target_link_libraries(Arena2 Common)
 	target_link_libraries(arena3 Common)
 	target_link_libraries(arena4 Common)
-	target_link_libraries(arena5 Common)
+	target_link_libraries(arena5 Common gpu)
 	target_link_libraries(Linear Common)
 	target_link_libraries(LinearM Common)
 	target_link_libraries(LinearE Common)

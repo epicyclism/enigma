@@ -14,20 +14,6 @@ struct tg_def
 	unsigned score_;
 };
 
-// the table we end up with.
-//
-struct trigram_table
-{
-	const std::array<unsigned, stride_ * stride_ * alpha_max> tab_;
-
-	[[nodiscard]] const unsigned wt(modalpha a, modalpha b, modalpha c) const noexcept
-	{
-		unsigned off = a.Val() * stride_ * stride_ + b.Val() * stride_ + c.Val();
-		return tab_[off];
-	}
-	trigram_table() = delete;
-};
-
 constexpr trigram_table make_trigram_table(tg_def const* b, tg_def const* e, int scale = 1)
 {
 	std::array<unsigned, stride_ * stride_ * alpha_max> wking{};

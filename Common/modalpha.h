@@ -27,14 +27,14 @@ using modalpha = mod_t<alpha_max, alpha>;
 
 constexpr inline char to_printable(modalpha const& c)
 {
-	if (c == alpha::SZ)
+	if (c.Val() == alpha_max)
 		return ' ';
 	return char(c.Val() + 'A');
 }
 
 constexpr inline char to_printable_lower(modalpha const& c)
 {
-	if (c == alpha::SZ)
+	if (c.Val() == alpha_max)
 		return ' ';
 	return char(c.Val() + 'a');
 }
