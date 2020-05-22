@@ -1,6 +1,5 @@
-// arena4.cpp : final cut
+// arena5.cpp : final cut
 //
-
 #include <iostream>
 #include <iomanip>
 #include <execution>
@@ -10,15 +9,13 @@
 #include "wheelset.h"
 #include "machine.h"
 #include "position.h"
-//#include "ioc.h"
-//#include "bigram.h"
-//#include "match.h"
-//#include "hillclimb.h"
 #include "arena.h"
 #include "jobs.h"
 #include "utility.h"
+#include "hillclimb.h"
 #include "hillclimb_cuda.h"
-#include "trigram.h"
+
+//#include "trigram.h"
 
 constexpr  char version[] = "v0.01";
 
@@ -35,26 +32,21 @@ void Help()
 	std::cerr << "start, and optionally, to end so that sessions can be interrupted, restarted or shared across systems.\n\n";
 }
 
-template<typename CI> struct job_position
+struct job_position
 {
 	machine_settings_t mst_;
-
-	CI ctb_;
-	CI cte_;
 	unsigned off_;
 	unsigned scr_;
 
-	job_position(machine_settings_t const& mst, unsigned off, CI ctb, CI cte)
-		: mst_(mst), ctb_(ctb), cte_(cte), off_(off), scr_(0)
+	job_position(machine_settings_t const& mst, unsigned off) : mst_(mst), off_(off), scr_(0)
 	{
 	}
 };
 
-template<typename J, typename A, typename CI> auto make_job_list_position(machine_settings_t mst, A& a, CI ctb, CI cte) -> std::vector<J>
+template<typename J, typename A> auto make_job_list_position(machine_settings_t mst, A& a, size_t ctl) -> std::vector<J>
 {
 	std::vector<J> vjb;
 
-	auto ctl = std::distance(ctb, cte);
 	bool bend = false;
 	auto w3 = MakeWheels3(mst);
 	unsigned off = 0;
@@ -62,7 +54,7 @@ template<typename J, typename A, typename CI> auto make_job_list_position(machin
 	do
 	{
 		mst.pos_ = w3.Position();
-		vjb.emplace_back(mst, off, ctb, cte);
+		vjb.emplace_back(mst, off);
 		w3.Step();
 		auto col = w3.Evaluate(alphabet);
 		std::copy(col.begin(), col.end(), (*ap).begin());
@@ -110,6 +102,20 @@ template<typename CI, typename SCR> void report_result(machine_settings_t const&
 	report_ciphertext(vo, std::cout);
 }
 
+std::vector<cudaJob> to_vjc(std::vector<job_position> const& jl)
+{
+	std::vector<cudaJob> vjc;
+	vjc.resize(jl.size());
+	std::transform(jl.begin(), jl.end(), vjc.begin(), [](auto const& jp) { return cudaJob(jp.off_, jp.mst_.stecker_); });
+	return vjc;
+}
+
+void update_vjb(std::vector<job_position>& vjb, std::vector<cudaJob> const& vjc)
+{
+	auto ito = vjb.begin();
+	std::for_each(vjc.begin(), vjc.end(), [&ito](auto const& cj) { (*ito).mst_.stecker_ = cj.s_; (*ito).scr_ = cj.scr_; ++ito; });
+}
+
 // an arena for bulk fast decode, shouldn't be slower than calulating per position, should be quicker because each
 // position only calculated once!
 //
@@ -145,7 +151,7 @@ int main(int ac, char** av)
 		report_ciphertext(ct, std::cout);
 		std::cout << "\nInitialising search\n";
 
-		cudaWrap cw(tg_gen, ct);
+		cudaWrap cw(bg_gen, tg_gen, ct);
 		// check GPU
 		if (!cw.cudaGood())
 		{
@@ -153,8 +159,7 @@ int main(int ac, char** av)
 			return -1;
 		}
 
-		using job_wheels_t = job_wheels<decltype(ct.cbegin())>;
-		std::vector<job_wheels_t> vjbw = make_job_list<job_wheels_t>(av[1], av[2], jobbegin, jobend, std::begin(ct), std::end(ct));
+		std::vector<job_wheels> vjbw = make_job_list<job_wheels>(av[1], av[2], jobbegin, jobend);
 		if (vjbw.empty())
 		{
 			std::cout << "No matching wheel and reflector arrangements found!\n";
@@ -172,19 +177,26 @@ int main(int ac, char** av)
 			do
 			{
 				std::cout << j.mst_ << " " << vr_oall.size();
-				using job_position_t = job_position<decltype(ct.cbegin())>;
-				// fills the arena for this wheel order
-				auto vjb = make_job_list_position<job_position_t>(j.mst_, arena_, j.ctb_, j.cte_);
+				// also fills the arena for this wheel order
+				auto vjb = make_job_list_position<job_position>(j.mst_, arena_, ct.size());
+				auto vjc = to_vjc(vjb);
 				// punt to CUDA
 				cw.set_arena(arena_);
+				cw.sync_joblist_to_device(vjc);
+
 				std::cout << " - considering " << vjb.size() << " possibles.";
-#if 0
+#if 1
+				cw.proc();
+#else
 				auto pa = arena_.arena_.begin();
-				std::for_each(std::execution::par, std::begin(vjb), std::end(vjb), [&pa](auto& aj)
+				std::for_each(std::execution::par, std::begin(vjb), std::end(vjb), [&pa, &ct](auto& aj)
 					{
-						aj.scr_ = hillclimb_bgtg_fast(aj.ctb_, aj.cte_, pa + aj.off_, aj.mst_);
+						aj.scr_ = hillclimb_bgtg_fast(std::begin(ct), std::end(ct), pa + aj.off_, aj.mst_);
 					});
 #endif
+				cw.sync_joblist_from_device(vjc);
+				update_vjb(vjb, vjc);
+
 				auto n = vr_oall.size();
 				auto mx = collate_results_tg(vjb, vr_oall);
 				std::cout << " Max tg score = " << mx << ".\n";

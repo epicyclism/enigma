@@ -2,6 +2,14 @@
 
 #include <limits>
 
+#if !defined(CONSTEXPR)
+#if defined (__NVCC__)
+#define CONSTEXPR
+#else
+#define CONSTEXPR constexpr
+#endif
+#endif
+
 // attempt at a generic modular arithmetic type, add and subtract, range 0-(M-1)
 //
 
@@ -12,31 +20,31 @@ private :
 	base_t val_;
 
 public:
-	constexpr mod_t(T v) noexcept : val_{ static_cast<base_t>(v) }
+	CONSTEXPR mod_t(T v) noexcept : val_{ static_cast<base_t>(v) }
 	{		
 	}
-	constexpr mod_t() noexcept : val_{}
+	CONSTEXPR mod_t() noexcept : val_{}
 	{
 	}
-	constexpr mod_t ( mod_t const& t) noexcept : val_(t.val_)
+	CONSTEXPR mod_t ( mod_t const& t) noexcept : val_(t.val_)
 	{}
-	constexpr mod_t(int n) noexcept : val_(static_cast<base_t>(n % M))
+	CONSTEXPR mod_t(int n) noexcept : val_(static_cast<base_t>(n % M))
 	{
 	}
-	constexpr mod_t& operator++() noexcept
+	CONSTEXPR mod_t& operator++() noexcept
 	{
 		++val_;
 		if (val_ == M)
 			val_ = 0;
 		return *this;
 	}
-	constexpr mod_t operator++(int) noexcept
+	CONSTEXPR mod_t operator++(int) noexcept
 	{
 		mod_t t(*this);
 		operator++();
 		return t;
 	}
-	constexpr mod_t& operator--() noexcept
+	CONSTEXPR mod_t& operator--() noexcept
 	{
 		if (val_ == 0)
 			val_ = M - 1;
@@ -44,13 +52,13 @@ public:
 			--val_;
 		return *this;
 	}
-	constexpr mod_t operator--(int) noexcept
+	CONSTEXPR mod_t operator--(int) noexcept
 	{
 		mod_t t(*this);
 		operator--();
 		return t;
 	}
-	constexpr mod_t& operator+=(const mod_t& rhs) noexcept
+	CONSTEXPR mod_t& operator+=(const mod_t& rhs) noexcept
 	{
 		val_ += rhs.val_;
 #if 0
@@ -61,38 +69,42 @@ public:
 #endif
 		return *this;
 	}
-	constexpr mod_t& operator-=(const mod_t& rhs) noexcept
+	CONSTEXPR mod_t& operator-=(const mod_t& rhs) noexcept
 	{
 		if (rhs.val_ > val_)
 			val_ += M;
 		val_ -= rhs.val_;
 		return *this;
 	}
-	constexpr friend mod_t operator+ (mod_t l, const mod_t& r) noexcept
+	CONSTEXPR friend mod_t operator+ (mod_t l, const mod_t& r) noexcept
 	{
 		l += r;
 		return l;
 	}
-	constexpr friend mod_t operator- (mod_t l, const mod_t& r) noexcept
+	CONSTEXPR friend mod_t operator- (mod_t l, const mod_t& r) noexcept
 	{
 		l -= r;
 		return l;
 	}
-	constexpr friend bool operator< (const mod_t& l, const mod_t& r) noexcept
+	CONSTEXPR friend bool operator< (const mod_t& l, const mod_t& r) noexcept
 	{
 		return l.val_ < r.val_;
 	}
-	friend constexpr bool operator> (const mod_t& l, const mod_t& r) noexcept { return r < l; }
-	friend constexpr bool operator<=(const mod_t& l, const mod_t& r) noexcept { return !(l > r); }
-	friend constexpr bool operator>=(const mod_t& l, const mod_t& r) noexcept { return !(l < r); }
-	friend constexpr bool operator==(const mod_t& l, const mod_t& r) noexcept { return l.val_ == r.val_; }
-	friend constexpr bool operator!=(const mod_t& l, const mod_t& r) noexcept { return !(l == r); }
+	friend CONSTEXPR bool operator> (const mod_t& l, const mod_t& r) noexcept { return r < l; }
+	friend CONSTEXPR bool operator<=(const mod_t& l, const mod_t& r) noexcept { return !(l > r); }
+	friend CONSTEXPR bool operator>=(const mod_t& l, const mod_t& r) noexcept { return !(l < r); }
+	friend CONSTEXPR bool operator==(const mod_t& l, const mod_t& r) noexcept { return l.val_ == r.val_; }
+	friend CONSTEXPR bool operator!=(const mod_t& l, const mod_t& r) noexcept { return !(l == r); }
 
-	constexpr auto Val() const noexcept 
+	CONSTEXPR auto Val() const noexcept 
 	{
 		return val_;
 	}
-	constexpr explicit operator size_t() const noexcept
+	auto Val_() const noexcept 
+	{
+		return val_;
+	}
+	CONSTEXPR explicit operator size_t() const noexcept
 	{
 		return val_;
 	}

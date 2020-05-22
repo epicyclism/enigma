@@ -129,15 +129,25 @@ template<typename J, typename... ARGS> auto make_job_list(std::string_view refle
 	return vjb;
 }
 
-template<typename CI> struct job_wheels
+// fix usage of this, it's redundant to carry the ct here.
+//
+template<typename CI> struct job_wheels_ct
 {
 	machine_settings_t mst_;
 
 	CI ctb_;
 	CI cte_;
 
-	job_wheels(machine_settings_t const& mst, CI ctb, CI cte)
+	job_wheels_ct(machine_settings_t const& mst, CI ctb, CI cte)
 		: mst_(mst), ctb_(ctb), cte_(cte)
+	{}
+};
+
+struct job_wheels
+{
+	machine_settings_t mst_;
+	job_wheels(machine_settings_t const& mst)
+		: mst_(mst)
 	{}
 };
 

@@ -63,13 +63,13 @@ inline std::ostream& operator<<( std::ostream& o, position const& p)
 struct machine_settings_t
 {
 	// reflector
-	char ref_;
+	char ref_; // eg 'B' or 'C'
 	// wheels
-	char w3_;
+	char w3_;  // '1','2','3','4','5','6','7','8' etc
 	char w2_;
 	char w1_;
 	// ring
-	modalpha     r3_;
+	modalpha     r3_; // translation of a-z into modalpha.
 	modalpha     r2_;
 	modalpha     r1_;
 	// plugs

@@ -125,7 +125,7 @@ int main(int ac, char** av)
 		for (auto c : ct)
 			std::cerr << c;
 		std::cerr << "\nInitialising search\n";
-		using job_wheels_t = job_wheels<decltype(ct.cbegin())>;
+		using job_wheels_t = job_wheels_ct<decltype(ct.cbegin())>;
 		std::vector<job_wheels_t> vjbw = make_job_list<job_wheels_t>(av[1], av[2], jobbegin, jobend, std::begin(ct), std::end(ct));
 		//		std::vector<job_wheels_t> vjbw = make_job_list_t<job_wheels_t>("B", "123", std::begin(ct), std::end(ct));
 		//		std::vector<job_wheels_t> vjbw = make_job_list_t<job_wheels_t>("B", "251", std::begin(ct), std::end(ct));
