@@ -2,53 +2,63 @@
 
 #include "modalpha.h"
 
-#if !defined(CONSTEXPR)
 #if defined (__NVCC__)
 #define CONSTEXPR
+#define DEVICE __device__ __host__
 #else
 #define CONSTEXPR constexpr
-#endif
+#define DEVICE
 #endif
 
 class stecker
 {
 private:
+#if defined (__NVCC__)
+	modalpha board_[alpha_max];
+#else
 	als_t board_;
-
+#endif
 public:
-	CONSTEXPR stecker() noexcept
+	CONSTEXPR DEVICE stecker() noexcept
 	{
 		Clear();
 	}
-	CONSTEXPR void Clear() noexcept
+	CONSTEXPR DEVICE void Clear() noexcept
 	{
 		for (auto& p : board_)
 			p = alpha::A;
 	}
-	CONSTEXPR void Clear(modalpha from) noexcept
+	CONSTEXPR DEVICE void Clear(modalpha from) noexcept
 	{
 		modalpha to = Eval(from);
 		board_[from.Val()] = alpha::A;
 		board_[to.Val()] = alpha::A;
 	}
-	CONSTEXPR void Set(modalpha from, modalpha to) noexcept
+	CONSTEXPR DEVICE void Set(modalpha from, modalpha to) noexcept
 	{
 		board_[from.Val()] = to - from;
 		board_[to.Val()] = from - to;
 	}
-	[[nodiscard]] CONSTEXPR modalpha Eval(modalpha from) const noexcept
+	[[nodiscard]] CONSTEXPR DEVICE modalpha Eval(modalpha from) const noexcept
 	{
 		return from + board_[from.Val()];
 	}
-	[[nodiscard]] CONSTEXPR bool Is(modalpha from, modalpha to) const noexcept
+	[[nodiscard]] CONSTEXPR DEVICE bool Is(modalpha from, modalpha to) const noexcept
 	{
 		return !(board_[from.Val()] == 0 && board_[to.Val()] == 0);
 	}
-	[[nodiscard]] auto Count() const noexcept
+	[[nodiscard]] DEVICE auto Count() const noexcept
 	{
+#if defined (__NVCC__)
+		size_t cnt = 0;
+		for(auto c : board_)
+			cnt += c != 0;
+		return cnt / 2;
+#else
 		return std::count_if(board_.begin(), board_.end(), [](auto& v) { return v != 0; }) / 2;
+#endif
 	}
-	void Apply(modalpha from, modalpha to)
+	DEVICE void Apply(modalpha from, modalpha to)
 	{
 		if (Is(from, to))
 		{
@@ -83,3 +93,6 @@ public:
 		}
 	}
 };
+
+#undef CONSTEXPR
+#undef DEVICE

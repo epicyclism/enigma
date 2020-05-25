@@ -7,6 +7,14 @@
 
 #include "modular.h"
 
+#if defined (__NVCC__)
+#define CONSTEXPR
+#define DEVICE __device__ __host__
+#else
+#define CONSTEXPR constexpr
+#define DEVICE
+#endif
+
 enum class alpha : char {A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, SZ };
 namespace std
 {
@@ -85,3 +93,5 @@ CONSTEXPR inline unsigned modalpha_set_bit(modalpha m, unsigned bits)
 	return bits | modalpha_bits[m.Val()];
 }
 
+#undef CONSTEXPR
+#undef DEVICE

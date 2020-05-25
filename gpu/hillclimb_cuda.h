@@ -2,14 +2,10 @@
 
 #include <vector>
 
-#include <thrust/host_vector.h>
-#include <thrust/device_vector.h>
-
 #include "modalpha.h"
 #include "stecker.h"
 #include "gram_common.h"
 #include "arena_simple.h"
-
 
 // stripped back from arena source for now, consider making completely compatible
 // to avoid double copy
@@ -41,22 +37,21 @@ struct cudaWrap
 	arena_decode_t* adt_;
 
 	// cipher text on device
-	thrust::device_vector<modalpha> ct_;
-
-	// joblist on host
-	thrust::host_vector<cudaJob> vjh_;
+	modalpha*       ct_;
+	unsigned        ctl_;
 
 	// joblist on device
-	thrust::device_vector<cudaJob> vjd_;
+	cudaJob*        jl_;
+	unsigned        jls_;
 
 	cudaWrap() = delete;
+	// these arguments are constant throughout the search
 	cudaWrap(bigram_table const& bgt, trigram_table const& tgt, std::vector<modalpha> const& ct);
 	~cudaWrap();
-
 	// test valid
 	bool cudaGood() const;
 
-	// set arena for decode
+	// the arena changes for each wheel order and ring setting
 	void set_arena(arena_decode_t const& a);
 	// set joblist for decode
 	void sync_joblist_to_device(std::vector<cudaJob> const& jl);

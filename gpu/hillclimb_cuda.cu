@@ -4,16 +4,17 @@
 #include <numeric>
 
 #include <cuda.h>
+#include <cuda_runtime.h>
 
 #include "hillclimb_cuda.h"
-#include <thrust/copy.h>
-#include <thrust/for_each.h>
 
 cudaWrap::cudaWrap(bigram_table const& bgt, trigram_table const& tgt, std::vector<modalpha> const& ct)
 {
 	bgt_ = nullptr;
 	tgt_ = nullptr;
 	adt_ = nullptr;
+	ct_ = nullptr;
+	jl_ = nullptr;
 	int deviceCount = 0;
 	cudaError_t err_id = cudaGetDeviceCount(&deviceCount);
 	if (err_id != cudaSuccess)
@@ -39,20 +40,24 @@ cudaWrap::cudaWrap(bigram_table const& bgt, trigram_table const& tgt, std::vecto
 	// reserve space for the arena
 	cudaMalloc(reinterpret_cast<void**>(&adt_), sizeof(arena_decode_t));
 
-	// copy the ciphertext to the device
-	ct_ = ct;
+	// reserve and copy ciphertext
+	ctl_ = static_cast<unsigned>(ct.size());
+	cudaMalloc(reinterpret_cast<void**>(&ct_), ctl_);
+	cudaMemcpy(ct_, ct.data(), ctl_, cudaMemcpyHostToDevice);
 }
 
 cudaWrap::~cudaWrap()
 {
 	cudaFree(adt_);
 	cudaFree(tgt_);
+	cudaFree(ct_);
+	cudaFree(jl_);
 	cudaDeviceReset();
 }
 
 bool cudaWrap::cudaGood() const
 {
-	return tgt_ != nullptr && adt_ != nullptr;
+	return tgt_ != nullptr && adt_ != nullptr && ct_ != nullptr ;
 }
 
 void cudaWrap::set_arena(arena_decode_t const& a)
@@ -63,43 +68,51 @@ void cudaWrap::set_arena(arena_decode_t const& a)
 
 void cudaWrap::sync_joblist_to_device(std::vector<cudaJob> const& jl)
 {
-	vjd_ = vjh_;
+	if (jl_ == nullptr)
+	{
+		jls_ = static_cast<unsigned>(jl.size());
+		cudaMalloc(reinterpret_cast<void**>(&jl_), sizeof(cudaJob) * jls_);
+	}
+	cudaMemcpy(jl_, jl.data(), jls_ * sizeof(cudaJob), cudaMemcpyHostToDevice);
 }
 
 void cudaWrap::sync_joblist_from_device(std::vector<cudaJob>& jl)
 {
-	vjh_ = vjd_;
+	cudaMemcpy(jl.data(), jl_, jls_ * sizeof(cudaJob), cudaMemcpyDeviceToHost);
 }
 
 // localise the hillclimb code(s) to here for now as functors
 //
-class fast_decoder_ref
+class fast_decoder_ptr
 {
 private:
-	arena_decode_t::pos_t const*	ai_;
-	thrust::device_vector<modalpha> vo_;
-
+	modalpha const*	ai_;
+	modalpha		vo_[256];
 public:
-	fast_decoder_ref() = delete;
+	fast_decoder_ptr() = delete;
 	__device__
-	fast_decoder_ref(arena_decode_t::pos_t const* ai) : ai_(ai)
+	fast_decoder_ptr(modalpha const* ai) : ai_(ai)
 	{
 	}
 	__device__
-	thrust::device_vector<modalpha> const& decode(thrust::device_vector<modalpha> const& ct, stecker const& s)
+	~fast_decoder_ptr()
 	{
-		vo_.resize(ct.size());
-		std::transform(ct.begin(), ct.end(), ai_, vo_.begin(), [&](auto c, auto const& a)
-			{
-				// in stecker
-				auto o = s.Eval(c);
-				// rotor cache
-				o = a[o.Val_()];
-				// out stecker 
-				o = s.Eval(o);
-				return o;
-			});
-
+	}
+	__device__
+	modalpha* decode(modalpha const* ctb, modalpha const* cte, stecker const& s)
+	{
+		modalpha const* a = ai_;
+		auto pt = vo_;
+		while (ctb != cte)
+		{
+			auto o = s.Eval(*ctb);
+			o = a[o.Val()];
+			o = s.Eval(o);
+			*pt = o;
+			++pt;
+			++ctb;
+			a += alpha_max;
+		}
 		return vo_;
 	}
 };
@@ -130,58 +143,60 @@ struct bigram_score_op
 	bigram_score_op(bigram_table const* bgt) : bgt_(bgt)
 	{}
 	__device__
-	unsigned operator()(thrust::device_vector<modalpha> const& pt)
+	unsigned operator()(modalpha const* ptb, modalpha const* pte)
 	{
 		unsigned score = 0;
-		auto b = pt.begin();
-		auto n = b + 1;
-		while (n != pt.end())
+		auto b = ptb;
+		auto n = ptb + 1;
+		while (n != pte)
 		{
 			score += bgt_->wt(*b, *n);
 			++b;
 			++n;
 		}
 		// normalise to message length here, right down at the source.
-		return score / (static_cast<unsigned>(pt.size()) - 1);
+		return score / (static_cast<unsigned>(pte - ptb) - 1);
 	}
 };
 
-__device__ struct trigram_score_op
+struct trigram_score_op
 {
 	trigram_table const* tgt_;
 	__device__
 	trigram_score_op(trigram_table const* tgt) : tgt_(tgt)
 	{}
 	__device__
-	unsigned operator()(thrust::device_vector<modalpha> const& pt)
+	unsigned operator()(modalpha const* ptb, modalpha const* pte)
 	{
 		unsigned score = 0;
-		auto b = pt.begin();
+		auto b = ptb;
 		auto m = b + 1;
 		auto n = m + 1;
-		while (n != pt.end())
+		while (n != pte)
 		{
 			score += tgt_->wt(*b, *m, *n);
 			++b;
 			++m;
 			++n;
 		}
-		return score / (static_cast<unsigned>(pt.size()) - 2);
+		return score / (static_cast<unsigned>(pte - ptb) - 2);
 	}
 };
 
-template<typename F, typename FD, size_t max_stecker = 10 > auto hillclimb_base_fast(thrust::device_vector<modalpha> const& ct, F eval_fn, double iocb, FD& fd, stecker& s_base)
+
+template<typename F, typename FD, size_t max_stecker = 10 > __device__ unsigned hillclimb_base_fast(modalpha const* ctb, modalpha const* cte, F eval_fn, double iocb, FD& fd, stecker* s_base)
 {
-	stecker s = s_base;
+	stecker s = *s_base;
 	stecker s_b;
-	auto vo = fd.decode(ct, s);
+	unsigned ctl = cte - ctb;
+	auto vo = fd.decode(ctb, cte, s);
 #if 0
 	auto iocs = index_of_coincidence(vo);
 	if (iocs * .95 < iocb)
 		return 0U;
 #endif
 	// establish the baseline
-	auto scr = eval_fn(vo);
+	auto scr = eval_fn(vo, vo + ctl);
 	bool improved = true;
 	while (improved)
 	{
@@ -196,8 +211,8 @@ template<typename F, typename FD, size_t max_stecker = 10 > auto hillclimb_base_
 				modalpha t{ ti };
 				s_b = s;
 				s.Apply(f, t);
-				vo = fd.decode(ct, s);
-				auto scrn = eval_fn(vo);
+				vo = fd.decode(ctb, cte, s);
+				auto scrn = eval_fn(vo, vo + ctl);
 				if (scrn > scr && s.Count() < max_stecker + 1)
 				{
 					mx = f;
@@ -211,32 +226,18 @@ template<typename F, typename FD, size_t max_stecker = 10 > auto hillclimb_base_
 		if (improved)
 			s.Apply(mx, my);
 	}
-	s_base = s;
+	*s_base = s;
 
 	return scr;
 }
 
-__device__ struct hillclimb_bgtg_fast
+__device__ void hillclimb_bgtg_fast(modalpha const* ctb, modalpha const* cte, arena_decode_t const* ai, bigram_table const* bgt, trigram_table const* tgt, cudaJob& cj)
 {
-	thrust::device_vector<modalpha> const& ct_;
-	arena_decode_t const* ai_;
-	bigram_table const* bgt_;
-	trigram_table const* tgt_;
-
-	__device__
-	hillclimb_bgtg_fast(thrust::device_vector<modalpha> const& ct, arena_decode_t const* ai, bigram_table const* bgt, trigram_table const* tgt) : ct_(ct), ai_(ai), bgt_(bgt), tgt_(tgt)
-	{}
-
-	__device__
-	void operator()( cudaJob& cj)
-	{
-		fast_decoder_ref fd(ai_->arena_.data() + cj.off_);
-		hillclimb_base_fast(ct_, bigram_score_op(bgt_), 0.0, fd, cj.s_);
-		cj.scr_ = hillclimb_base_fast(ct_, trigram_score_op(tgt_), 0.0, fd, cj.s_);
-	}
-};
+	fast_decoder_ptr fd(ai->arena_ + cj.off_ * alpha_max);
+	hillclimb_base_fast(ctb, cte, bigram_score_op(bgt), 0.0, fd, &cj.s_);
+	cj.scr_ = hillclimb_base_fast(ctb, cte, trigram_score_op(tgt), 0.0, fd, &cj.s_);
+}
 
 void cudaWrap::proc()
 {
-	thrust::for_each(vjd_.begin(), vjd_.end(), hillclimb_bgtg_fast(ct_, adt_, bgt_, tgt_));
 }
