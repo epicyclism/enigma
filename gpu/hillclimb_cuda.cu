@@ -71,14 +71,27 @@ void cudaWrap::sync_joblist_to_device(std::vector<cudaJob> const& jl)
 	if (jl_ == nullptr)
 	{
 		jls_ = static_cast<unsigned>(jl.size());
-		cudaMalloc(reinterpret_cast<void**>(&jl_), sizeof(cudaJob) * jls_);
+		auto err = cudaMalloc(reinterpret_cast<void**>(&jl_), sizeof(cudaJob) * jls_);
+		if (err != cudaSuccess)
+		{
+			std::cout << "cudaMalloc Error - " << err << ": " << cudaGetErrorString(err) << '\n';
+		}
+
 	}
-	cudaMemcpy(jl_, jl.data(), jls_ * sizeof(cudaJob), cudaMemcpyHostToDevice);
+	auto err = cudaMemcpy(jl_, jl.data(), jls_ * sizeof(cudaJob), cudaMemcpyHostToDevice);
+	if (err != cudaSuccess)
+	{
+		std::cout << "cudaMemcpy Error - " << err << ": " << cudaGetErrorString(err) << '\n';
+	}
 }
 
 void cudaWrap::sync_joblist_from_device(std::vector<cudaJob>& jl)
 {
-	cudaMemcpy(jl.data(), jl_, jls_ * sizeof(cudaJob), cudaMemcpyDeviceToHost);
+	auto err = cudaMemcpy(jl.data(), jl_, jls_ * sizeof(cudaJob), cudaMemcpyDeviceToHost);
+	if (err != cudaSuccess)
+	{
+		std::cout << "cudaMemcpy2 Error - " << err << ": " << cudaGetErrorString(err) << '\n';
+	}
 }
 
 // localise the hillclimb code(s) to here for now as functors
@@ -197,10 +210,9 @@ template<typename F, typename FD, size_t max_stecker = 10 > __device__ unsigned 
 #endif
 	// establish the baseline
 	auto scr = eval_fn(vo, vo + ctl);
-	bool improved = true;
-	while (improved)
+	while (1)
 	{
-		improved = false;
+		bool improved = false;
 		modalpha mx = 0;
 		modalpha my = 0;
 		for (int fi = 0; fi < alpha_max; ++fi)
@@ -213,7 +225,7 @@ template<typename F, typename FD, size_t max_stecker = 10 > __device__ unsigned 
 				s.Apply(f, t);
 				vo = fd.decode(ctb, cte, s);
 				auto scrn = eval_fn(vo, vo + ctl);
-				if (scrn > scr && s.Count() < max_stecker + 1)
+				if (scrn > scr /*&& s.Count() < max_stecker + 1*/)
 				{
 					mx = f;
 					my = t;
@@ -223,21 +235,47 @@ template<typename F, typename FD, size_t max_stecker = 10 > __device__ unsigned 
 				s = s_b;
 			}
 		}
-		if (improved)
-			s.Apply(mx, my);
+		if (!improved)
+			break;
+		s.Apply(mx, my);
 	}
 	*s_base = s;
-
 	return scr;
 }
 
-__device__ void hillclimb_bgtg_fast(modalpha const* ctb, modalpha const* cte, arena_decode_t const* ai, bigram_table const* bgt, trigram_table const* tgt, cudaJob& cj)
+__device__ void hillclimb_bgtg_fast(modalpha const* ctb, modalpha const* cte, arena_decode_t const* ai, bigram_table const* bgt, trigram_table const* tgt, cudaJob& cj, unsigned k)
 {
 	fast_decoder_ptr fd(ai->arena_ + cj.off_ * alpha_max);
-	hillclimb_base_fast(ctb, cte, bigram_score_op(bgt), 0.0, fd, &cj.s_);
+	cj.scr_ = 15432;
+//	cj.scr_ = hillclimb_base_fast(ctb, cte, bigram_score_op(bgt), 0.0, fd, &cj.s_);
 	cj.scr_ = hillclimb_base_fast(ctb, cte, trigram_score_op(tgt), 0.0, fd, &cj.s_);
 }
 
-void cudaWrap::proc()
+__global__ void process_hillclimb(cudaJob* jl, unsigned jls, modalpha* ct, unsigned ctl, arena_decode_t* ai, bigram_table* bgt, trigram_table* tgt)
 {
+	// figure out which cudaJob refers and call the actual worker fn.
+	unsigned j = blockIdx.x * blockDim.x + threadIdx.x;
+	if (j >= jls)
+	{
+//		printf("filter ob j = %d (%d, %d, %d) (%d, %d, %d) (%d, %d, %d)\n", j, blockIdx.x, blockIdx.y, blockIdx.z, blockDim.x, blockDim.y, blockDim.z, threadIdx.x, threadIdx.y, threadIdx.z);
+		return;
+	}
+	hillclimb_bgtg_fast(ct, ct + ctl, ai, bgt, tgt, *(jl + j), j);
+}
+
+void cudaWrap::run_gpu_process()
+{
+	// assume (for now) 32 threads per warp and so threads per block 
+	// is cj size / 32.
+	unsigned tpb = (jls_ + 31) / 32;
+	// start
+	dim3 block(tpb);
+	dim3 grid(32);
+	process_hillclimb <<<grid, block>>> (jl_, jls_, ct_, ctl_, adt_, bgt_, tgt_);
+	// wait
+	auto err = cudaDeviceSynchronize();
+	if (err != cudaSuccess)
+	{
+		std::cout << "Cuda Launch Error - " << err << ": " << cudaGetErrorString(err) << '\n';
+	}
 }

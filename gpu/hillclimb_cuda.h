@@ -18,9 +18,9 @@ struct cudaJob
 	stecker s_;
 	// final score
 	unsigned scr_;
-	cudaJob() : off_(0), scr_(0)
+	cudaJob() : off_(0), scr_(256)
 	{}
-	cudaJob(unsigned off, stecker const& s) : off_(off), s_(s), scr_(0)
+	cudaJob(unsigned off, stecker const& s) : off_(off), s_(s), scr_(512)
 	{}
 	cudaJob(cudaJob const& other) : off_(other.off_), s_(other.s_), scr_(other.scr_)
 	{}
@@ -57,6 +57,6 @@ struct cudaWrap
 	void sync_joblist_to_device(std::vector<cudaJob> const& jl);
 	// get joblist from decode
 	void sync_joblist_from_device(std::vector<cudaJob>& jl);
-	// do search
-	void proc();
+	// do search, blocks till completion
+	void run_gpu_process();
 };

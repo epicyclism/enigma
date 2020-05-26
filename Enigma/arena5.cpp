@@ -38,7 +38,7 @@ struct job_position
 	unsigned off_;
 	unsigned scr_;
 
-	job_position(machine_settings_t const& mst, unsigned off) : mst_(mst), off_(off), scr_(0)
+	job_position(machine_settings_t const& mst, unsigned off) : mst_(mst), off_(off), scr_(512)
 	{
 	}
 };
@@ -143,7 +143,7 @@ int main(int ac, char** av)
 	std::vector<result_out_t> vr_oall;
 	try
 	{
-		std::cout << "arena4 version " << version << '\n';
+		std::cout << "arena5 version " << version << '\n';
 		std::cout << "\nReady to read ciphertext\n";
 		// capture the ciphertext
 		auto ct = read_ciphertext();
@@ -186,7 +186,7 @@ int main(int ac, char** av)
 
 				std::cout << " - considering " << vjb.size() << " possibles.";
 #if 1
-				cw.proc();
+				cw.run_gpu_process();
 #else
 				auto pa = arena_.arena_.begin();
 				std::for_each(std::execution::par, std::begin(vjb), std::end(vjb), [&pa, &ct](auto& aj)
@@ -204,7 +204,8 @@ int main(int ac, char** av)
 					{
 						report_result(r.mst_, r.scr_, std::begin(ct), std::end(ct));
 					});
-			} while (AdvanceRing(j.mst_));
+//			} while (AdvanceRing(j.mst_));
+			} while (false);
 			auto now = std::chrono::steady_clock::now();
 			std::cout << "Wheel order search time: " << std::chrono::duration<double>(now - start_wo).count() << "s\n";
 		}
