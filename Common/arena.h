@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <numeric>
 
 #include "wheelset.h"
 #include "arena_simple.h"
