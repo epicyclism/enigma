@@ -57,7 +57,17 @@ cudaWrap::~cudaWrap()
 
 bool cudaWrap::cudaGood() const
 {
-	return tgt_ != nullptr && adt_ != nullptr && ct_ != nullptr ;
+	if (tgt_ != nullptr && adt_ != nullptr && ct_ != nullptr)
+	{
+		// wait
+		auto err = cudaDeviceSynchronize();
+		if (err != cudaSuccess)
+		{
+			std::cout << "Cuda Launch Error - " << err << ": " << cudaGetErrorString(err) << '\n';
+			return false;
+		}
+	}
+	return true;
 }
 
 void cudaWrap::set_arena(arena_decode_t const& a)
@@ -246,8 +256,7 @@ template<typename F, typename FD, size_t max_stecker = 10 > __device__ unsigned 
 __device__ void hillclimb_bgtg_fast(modalpha const* ctb, modalpha const* cte, arena_decode_t const* ai, bigram_table const* bgt, trigram_table const* tgt, cudaJob& cj, unsigned k)
 {
 	fast_decoder_ptr fd(ai->arena_ + cj.off_ * alpha_max);
-	cj.scr_ = 15432;
-//	cj.scr_ = hillclimb_base_fast(ctb, cte, bigram_score_op(bgt), 0.0, fd, &cj.s_);
+	hillclimb_base_fast(ctb, cte, bigram_score_op(bgt), 0.0, fd, &cj.s_);
 	cj.scr_ = hillclimb_base_fast(ctb, cte, trigram_score_op(tgt), 0.0, fd, &cj.s_);
 }
 
@@ -272,10 +281,4 @@ void cudaWrap::run_gpu_process()
 	dim3 block(tpb);
 	dim3 grid(32);
 	process_hillclimb <<<grid, block>>> (jl_, jls_, ct_, ctl_, adt_, bgt_, tgt_);
-	// wait
-	auto err = cudaDeviceSynchronize();
-	if (err != cudaSuccess)
-	{
-		std::cout << "Cuda Launch Error - " << err << ": " << cudaGetErrorString(err) << '\n';
-	}
 }

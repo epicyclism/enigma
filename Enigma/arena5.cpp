@@ -187,6 +187,9 @@ int main(int ac, char** av)
 				// also fills the arena for this wheel order
 				auto vjb = make_job_list_position<job_position>(j.mst_, arena_, ct.size());
 				auto vjc = to_vjc(vjb);
+				// wait for cuda good, this will overlap the job list creation on the CPU with the processing on the GPU
+				if (!cw.cudaGood())
+					throw std::exception("Some cuda failure in loop, see console above.");
 				// punt to CUDA
 				cw.set_arena(arena_);
 				cw.sync_joblist_to_device(vjc);
