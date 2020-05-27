@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <numeric>
-#include <execution>
 
 // Score a piece of text (presumably a trial decrypt) using the 'index of coincidence'
 // as documented widely, for example, https://en.wikipedia.org/wiki/Index_of_coincidence
@@ -49,10 +48,17 @@ double ioc_wkr(std::array<unsigned, alpha_max> const& tab, size_t N)
 {
 	double nn = double(N) * double(N - 1);
 
-	return 	std::transform_reduce(std::execution::seq, std::begin(tab), std::end(tab), 0.0, std::plus{}, [nn](auto n)
+#if __cplusplus < 201703L
+	return 	std::inner_product(std::begin(tab), std::end(tab), std::begin(tab), 0.0, std::plus{}, [nn](auto n, auto)
 	{
 		return double(n * (n - 1)) / nn;
 	});
+#else
+	return 	std::transform_reduce(std::begin(tab), std::end(tab), 0.0, std::plus{}, [nn](auto n)
+	{
+		return double(n * (n - 1)) / nn;
+	});
+#endif
 }
 
 // assumes that *I is a modalpha, IOW 0-25 for A-Z
@@ -72,10 +78,17 @@ template<typename I> double index_of_coincidence(I b, I e)
 	// calculate
 	double nn = double(N) * double(N - 1);
 
-	return 	std::transform_reduce(std::execution::seq, std::begin(tab), std::end(tab), 0.0, std::plus{}, [nn](auto n)
+#if __cplusplus < 201703L
+	return 	std::inner_product(std::begin(tab), std::end(tab), std::begin(tab), 0.0, std::plus{}, [nn](auto n, auto)
 	{
 		return double(n * (n - 1)) / nn;
 	});
+#else
+	return 	std::transform_reduce(std::begin(tab), std::end(tab), 0.0, std::plus{}, [nn](auto n)
+	{
+		return double(n * (n - 1)) / nn;
+	});
+#endif
 }
 
 struct index_of_coincidence_op

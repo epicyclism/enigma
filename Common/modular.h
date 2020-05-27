@@ -16,7 +16,7 @@
 template <int M, typename T = char> class mod_t
 {
 private :
-	using base_t = std::conditional_t<std::is_enum_v<T>, std::underlying_type_t<T>, T>;
+	using base_t = std::conditional_t<std::is_enum<T>::value, std::underlying_type_t<T>, T>;
 	base_t val_;
 
 public:

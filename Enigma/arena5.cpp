@@ -2,7 +2,14 @@
 //
 #include <iostream>
 #include <iomanip>
+#if !defined (_MSC_VER)
+#if defined ( __GNUC__ ) && ( __GNUC__ > 8)
 #include <execution>
+#else
+#define SEQ_PROC
+#pragma message("Note parallel STL not supported, sequential execution on the CPU may be intolerable.")
+#endif
+#endif
 #include <algorithm>
 #include <numeric>
 #include <chrono>
@@ -17,7 +24,7 @@
 
 //#include "trigram.h"
 
-constexpr  char version[] = "v0.01";
+constexpr  char version[] = "v0.02";
 
 constexpr unsigned tg_threshold = 16000; // trigram
 
@@ -186,10 +193,16 @@ int main(int ac, char** av)
 
 				std::cout << " - considering " << vjb.size() << " possibles.";
 #if 1
+				// GPU!
 				cw.run_gpu_process();
 #else
+				// CPU
 				auto pa = arena_.arena_.begin();
+#if defined (SEQ_PROC)
+				std::for_each(std::begin(vjb), std::end(vjb), [&pa, &ct](auto& aj)
+#else
 				std::for_each(std::execution::par, std::begin(vjb), std::end(vjb), [&pa, &ct](auto& aj)
+#endif
 					{
 						aj.scr_ = hillclimb_bgtg_fast(std::begin(ct), std::end(ct), pa + aj.off_, aj.mst_);
 					});
@@ -204,8 +217,7 @@ int main(int ac, char** av)
 					{
 						report_result(r.mst_, r.scr_, std::begin(ct), std::end(ct));
 					});
-//			} while (AdvanceRing(j.mst_));
-			} while (false);
+			} while (AdvanceRing(j.mst_));
 			auto now = std::chrono::steady_clock::now();
 			std::cout << "Wheel order search time: " << std::chrono::duration<double>(now - start_wo).count() << "s\n";
 		}

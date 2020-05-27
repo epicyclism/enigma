@@ -1,10 +1,8 @@
 #pragma once
 
 #include <array>
+
 #include "wheelset.h"
-
-#include <execution>
-
 #include "arena_simple.h"
 
 // maintain alpha_max rows of width W, each row is the output of encoding continuous letters in the machine.
@@ -121,7 +119,7 @@ template<typename I, size_t W> void linear_search(I cb, I ce, std::array<modalph
 	auto ito = std::begin(counts);
 	while (itb != ite)
 	{
-		*ito += std::transform_reduce(std::execution::seq, cb, ce, itb, 0, std::plus{}, [](auto l, auto r) { return l == r ? 1 : 0; });
+		*ito += std::inner_product(cb, ce, itb, 0, std::plus{}, [](auto l, auto r) { return l == r ? 1 : 0; });
 		++ito;
 		++itb;
 	}

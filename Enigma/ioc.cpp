@@ -1,6 +1,7 @@
 #include <iostream>
 #include <iomanip>
 #include <utility>
+#include <vector>
 
 #include "modalpha.h"
 #include "ioc.h"
