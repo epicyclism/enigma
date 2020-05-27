@@ -139,26 +139,25 @@ public:
 		return vo_;
 	}
 };
-#if 0
-double index_of_coincidence(thrust::device_vector<modalpha> const& pt)
+
+__device__ double index_of_coincidence(modalpha const* ctb, unsigned ctl)
 {
-	std::array<unsigned, alpha_max> tab;
-	tab.fill(0);
+	unsigned tab[alpha_max];
+	for (auto& t : tab)
+		t = 0;
 
 	// count
-	std::for_each(pt.begin(), pt.end(), [&tab](auto c)
-		{
-			++tab[c.Val()];
-		});
-	// calculate
-	double nn = double(pt.size()) * double(pt.size() - 1);
+	while(ctb != ctb + ctl)
+		++tab[(*ctb).Val()];
 
-	return 	std::inner_product(std::begin(tab), std::end(tab), 0.0, std::plus<double>{}, [nn](auto n)
-		{
-			return double(n * (n - 1)) / nn;
-		});
+	// calculate
+	double nn = double(ctl) * double(ctl - 1);
+	double rv = 0.0;
+	for (auto t : tab)
+		rv += double(t * (t - 1)) / nn;
+	return rv;
 }
-#endif
+
 struct bigram_score_op
 {
 	bigram_table const* bgt_;
@@ -213,11 +212,9 @@ template<typename F, typename FD, size_t max_stecker = 10 > __device__ unsigned 
 	stecker s_b;
 	unsigned ctl = cte - ctb;
 	auto vo = fd.decode(ctb, cte, s);
-#if 0
-	auto iocs = index_of_coincidence(vo);
+	auto iocs = index_of_coincidence(vo, ctl);
 	if (iocs * .95 < iocb)
 		return 0U;
-#endif
 	// establish the baseline
 	auto scr = eval_fn(vo, vo + ctl);
 	while (1)
@@ -253,7 +250,8 @@ template<typename F, typename FD, size_t max_stecker = 10 > __device__ unsigned 
 	return scr;
 }
 
-__device__ void hillclimb_bgtg_fast(modalpha const* ctb, modalpha const* cte, arena_decode_t const* ai, bigram_table const* bgt, trigram_table const* tgt, cudaJob& cj, unsigned k)
+// the simple form of hillclimb, best of bg followed by best of tg
+__device__ void hillclimb_bgtg_fast(modalpha const* ctb, modalpha const* cte, arena_decode_t const* ai, bigram_table const* bgt, trigram_table const* tgt, cudaJob& cj)
 {
 	fast_decoder_ptr fd(ai->arena_ + cj.off_ * alpha_max);
 	hillclimb_base_fast(ctb, cte, bigram_score_op(bgt), 0.0, fd, &cj.s_);
@@ -265,11 +263,58 @@ __global__ void process_hillclimb(cudaJob* jl, unsigned jls, modalpha* ct, unsig
 	// figure out which cudaJob refers and call the actual worker fn.
 	unsigned j = blockIdx.x * blockDim.x + threadIdx.x;
 	if (j >= jls)
-	{
-//		printf("filter ob j = %d (%d, %d, %d) (%d, %d, %d) (%d, %d, %d)\n", j, blockIdx.x, blockIdx.y, blockIdx.z, blockDim.x, blockDim.y, blockDim.z, threadIdx.x, threadIdx.y, threadIdx.z);
 		return;
+	hillclimb_bgtg_fast(ct, ct + ctl, ai, bgt, tgt, *(jl + j));
+}
+
+// try partial exhaustion of the combinations
+//
+// use the fast decoder
+__device__ void hillclimb_partial_exhaust2_fast(modalpha const* ctb, modalpha const* cte, arena_decode_t const* ai, trigram_table const* tgt, cudaJob& cj)
+{
+	const modalpha f1 = alpha::E;
+	const modalpha f2 = alpha::N;
+	fast_decoder_ptr fd(ai->arena_ + cj.off_ * alpha_max);
+	stecker s_b = cj.s_;
+	stecker s_best;
+	// establish the baseline
+	unsigned ctl = cte - ctb;
+	auto vo = fd.decode(ctb, cte, s_b);
+	auto ef = trigram_score_op(tgt);
+	auto scr = ef(vo, vo + ctl);
+	auto iocb = index_of_coincidence(vo, ctl);
+	for (int ti1 = 0; ti1 < alpha_max; ++ti1)
+	{
+		modalpha t1{ ti1 };
+		if (ti1 == f2)
+			continue;
+		for (int ti2 = 0; ti2 < alpha_max; ++ti2)
+		{
+			modalpha t2{ ti2 };
+			if (t2 == t1 || t2 == f1)
+				continue;
+			s_b = cj.s_;
+			s_b.Apply(f2, t2);
+			s_b.Apply(f1, t1);
+			auto scrn = hillclimb_base_fast(ctb, cte, ef, iocb, fd, &s_b);
+			if (scrn > scr)
+			{
+				s_best = s_b;
+				scr = scrn;
+			}
+		}
 	}
-	hillclimb_bgtg_fast(ct, ct + ctl, ai, bgt, tgt, *(jl + j), j);
+	cj.s_ = s_best;
+	cj.scr_ = scr;
+}
+
+__global__ void process_hillclimb_ex(cudaJob* jl, unsigned jls, modalpha* ct, unsigned ctl, arena_decode_t* ai, bigram_table* bgt, trigram_table* tgt)
+{
+	// figure out which cudaJob refers and call the actual worker fn.
+	unsigned j = blockIdx.x * blockDim.x + threadIdx.x;
+	if (j >= jls)
+		return;
+	hillclimb_partial_exhaust2_fast(ct, ct + ctl, ai, tgt, *(jl + j));
 }
 
 void cudaWrap::run_gpu_process()
@@ -281,4 +326,15 @@ void cudaWrap::run_gpu_process()
 	dim3 block(tpb);
 	dim3 grid(32);
 	process_hillclimb <<<grid, block>>> (jl_, jls_, ct_, ctl_, adt_, bgt_, tgt_);
+}
+
+void cudaWrap::run_gpu_process_ex()
+{
+	// assume (for now) 32 threads per warp and so threads per block 
+	// is cj size / 32.
+	unsigned tpb = (jls_ + 31) / 32;
+	// start
+	dim3 block(tpb);
+	dim3 grid(32);
+	process_hillclimb_ex <<<grid, block>>> (jl_, jls_, ct_, ctl_, adt_, bgt_, tgt_);
 }

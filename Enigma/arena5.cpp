@@ -194,7 +194,7 @@ int main(int ac, char** av)
 				std::cout << " - considering " << vjb.size() << " possibles.";
 #if 1
 				// GPU!
-				cw.run_gpu_process();
+				cw.run_gpu_process_ex();
 #else
 				// CPU
 				auto pa = arena_.arena_.begin();

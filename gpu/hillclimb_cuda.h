@@ -59,4 +59,5 @@ struct cudaWrap
 	void sync_joblist_from_device(std::vector<cudaJob>& jl);
 	// do search, blocks till completion
 	void run_gpu_process();
+	void run_gpu_process_ex();
 };
