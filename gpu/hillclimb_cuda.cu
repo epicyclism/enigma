@@ -148,8 +148,11 @@ __device__ double index_of_coincidence(modalpha const* ctb, unsigned ctl)
 		t = 0;
 
 	// count
-	while(ctb != ctb + ctl)
+	while (ctb != ctb + ctl)
+	{
 		++tab[(*ctb).Val()];
+		++ctb;
+	}
 
 	// calculate
 	double nn = double(ctl) * double(ctl - 1);
@@ -213,9 +216,11 @@ template<typename F, typename FD, size_t max_stecker = 10 > __device__ unsigned 
 	stecker s_b;
 	unsigned ctl = cte - ctb;
 	auto vo = fd.decode(ctb, cte, s);
+#if 0
 	auto iocs = index_of_coincidence(vo, ctl);
 	if (iocs * .95 < iocb)
 		return 0U;
+#endif
 	// establish the baseline
 	auto scr = eval_fn(vo, vo + ctl);
 	while (1)
@@ -267,7 +272,7 @@ __global__ void process_hillclimb(cudaJob* jl, unsigned jls, modalpha* ct, unsig
 		return;
 	hillclimb_bgtg_fast(ct, ct + ctl, ai, bgt, tgt, *(jl + j));
 }
-#if 0
+
 // try partial exhaustion of the combinations
 //
 // use the fast decoder
@@ -317,7 +322,7 @@ __global__ void process_hillclimb_ex(cudaJob* jl, unsigned jls, modalpha* ct, un
 		return;
 	hillclimb_partial_exhaust2_fast(ct, ct + ctl, ai, tgt, *(jl + j));
 }
-#endif
+
 void cudaWrap::run_gpu_process()
 {
 	// assume (for now) 32 threads per warp and so threads per block 
@@ -326,27 +331,11 @@ void cudaWrap::run_gpu_process()
 	// start
 	dim3 block(tpb);
 	dim3 grid(32);
-#if 0
-	unsigned step = jls_ / 16;
-	unsigned off = 0;
-	while (off < jls_)
-	{
-		process_hillclimb << <grid, block >> > (jl_ + off, step, ct_, ctl_, adt_, bgt_, tgt_);
-		auto err = cudaDeviceSynchronize();	if (err != cudaSuccess)
-		{
-			std::cout << "cudaDeviceSynchronize Error - " << err << ": " << cudaGetErrorString(err) << '\n';
-			return;
-		}
-		off += step;
-	}
-#else
 	process_hillclimb <<<grid, block>>> (jl_, jls_, ct_, ctl_, adt_, bgt_, tgt_);
-#endif
 }
 
 void cudaWrap::run_gpu_process_ex()
 {
-#if 0
 	// assume (for now) 32 threads per warp and so threads per block 
 	// is cj size / 32.
 	unsigned tpb = (jls_ + 31) / 32;
@@ -354,5 +343,4 @@ void cudaWrap::run_gpu_process_ex()
 	dim3 block(tpb);
 	dim3 grid(32);
 	process_hillclimb_ex <<<grid, block>>> (jl_, jls_, ct_, ctl_, adt_, tgt_);
-#endif
 }

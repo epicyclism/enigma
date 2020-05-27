@@ -3,6 +3,12 @@
 #include <algorithm>
 #include <numeric>
 
+#if !defined (_MSC_VER)
+#if defined ( __GNUC__ ) && ( __GNUC__ < 9)
+#define SEQ_PROC
+#endif
+#endif
+
 // Score a piece of text (presumably a trial decrypt) using the 'index of coincidence'
 // as documented widely, for example, https://en.wikipedia.org/wiki/Index_of_coincidence
 // Doesn't normalise by multiplying through by alpha_max, as seems to be the convention.
@@ -48,7 +54,7 @@ double ioc_wkr(std::array<unsigned, alpha_max> const& tab, size_t N)
 {
 	double nn = double(N) * double(N - 1);
 
-#if __cplusplus < 201703L
+#if defined(SEQ_PROC)
 	return 	std::inner_product(std::begin(tab), std::end(tab), std::begin(tab), 0.0, std::plus{}, [nn](auto n, auto)
 	{
 		return double(n * (n - 1)) / nn;
@@ -78,7 +84,7 @@ template<typename I> double index_of_coincidence(I b, I e)
 	// calculate
 	double nn = double(N) * double(N - 1);
 
-#if __cplusplus < 201703L
+#if defined(SEQ_PROC)
 	return 	std::inner_product(std::begin(tab), std::end(tab), std::begin(tab), 0.0, std::plus{}, [nn](auto n, auto)
 	{
 		return double(n * (n - 1)) / nn;

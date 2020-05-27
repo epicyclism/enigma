@@ -7,7 +7,7 @@
 #include <execution>
 #else
 #define SEQ_PROC
-#pragma message("Note parallel STL not supported, sequential execution on the CPU may be intolerable.")
+#pragma message "Note parallel STL not supported, sequential execution on the CPU may be intolerable."
 #endif
 #endif
 #include <algorithm>
