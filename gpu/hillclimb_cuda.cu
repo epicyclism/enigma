@@ -66,8 +66,9 @@ bool cudaWrap::cudaGood() const
 			std::cout << "Cuda Launch Error - " << err << ": " << cudaGetErrorString(err) << '\n';
 			return false;
 		}
+		return true;
 	}
-	return true;
+	return false;
 }
 
 void cudaWrap::set_arena(arena_decode_t const& a)
@@ -266,7 +267,7 @@ __global__ void process_hillclimb(cudaJob* jl, unsigned jls, modalpha* ct, unsig
 		return;
 	hillclimb_bgtg_fast(ct, ct + ctl, ai, bgt, tgt, *(jl + j));
 }
-
+#if 0
 // try partial exhaustion of the combinations
 //
 // use the fast decoder
@@ -308,7 +309,7 @@ __device__ void hillclimb_partial_exhaust2_fast(modalpha const* ctb, modalpha co
 	cj.scr_ = scr;
 }
 
-__global__ void process_hillclimb_ex(cudaJob* jl, unsigned jls, modalpha* ct, unsigned ctl, arena_decode_t* ai, bigram_table* bgt, trigram_table* tgt)
+__global__ void process_hillclimb_ex(cudaJob* jl, unsigned jls, modalpha* ct, unsigned ctl, arena_decode_t* ai, trigram_table* tgt)
 {
 	// figure out which cudaJob refers and call the actual worker fn.
 	unsigned j = blockIdx.x * blockDim.x + threadIdx.x;
@@ -316,7 +317,7 @@ __global__ void process_hillclimb_ex(cudaJob* jl, unsigned jls, modalpha* ct, un
 		return;
 	hillclimb_partial_exhaust2_fast(ct, ct + ctl, ai, tgt, *(jl + j));
 }
-
+#endif
 void cudaWrap::run_gpu_process()
 {
 	// assume (for now) 32 threads per warp and so threads per block 
@@ -325,16 +326,33 @@ void cudaWrap::run_gpu_process()
 	// start
 	dim3 block(tpb);
 	dim3 grid(32);
+#if 0
+	unsigned step = jls_ / 16;
+	unsigned off = 0;
+	while (off < jls_)
+	{
+		process_hillclimb << <grid, block >> > (jl_ + off, step, ct_, ctl_, adt_, bgt_, tgt_);
+		auto err = cudaDeviceSynchronize();	if (err != cudaSuccess)
+		{
+			std::cout << "cudaDeviceSynchronize Error - " << err << ": " << cudaGetErrorString(err) << '\n';
+			return;
+		}
+		off += step;
+	}
+#else
 	process_hillclimb <<<grid, block>>> (jl_, jls_, ct_, ctl_, adt_, bgt_, tgt_);
+#endif
 }
 
 void cudaWrap::run_gpu_process_ex()
 {
+#if 0
 	// assume (for now) 32 threads per warp and so threads per block 
 	// is cj size / 32.
 	unsigned tpb = (jls_ + 31) / 32;
 	// start
 	dim3 block(tpb);
 	dim3 grid(32);
-	process_hillclimb_ex <<<grid, block>>> (jl_, jls_, ct_, ctl_, adt_, bgt_, tgt_);
+	process_hillclimb_ex <<<grid, block>>> (jl_, jls_, ct_, ctl_, adt_, tgt_);
+#endif
 }

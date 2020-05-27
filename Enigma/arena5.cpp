@@ -24,7 +24,7 @@
 
 //#include "trigram.h"
 
-constexpr  char version[] = "v0.02";
+constexpr  char version[] = "v0.03";
 
 constexpr unsigned tg_threshold = 16000; // trigram
 
@@ -190,23 +190,9 @@ int main(int ac, char** av)
 				// punt to CUDA
 				cw.set_arena(arena_);
 				cw.sync_joblist_to_device(vjc);
-
 				std::cout << " - considering " << vjb.size() << " possibles.";
-#if 1
 				// GPU!
-				cw.run_gpu_process_ex();
-#else
-				// CPU
-				auto pa = arena_.arena_.begin();
-#if defined (SEQ_PROC)
-				std::for_each(std::begin(vjb), std::end(vjb), [&pa, &ct](auto& aj)
-#else
-				std::for_each(std::execution::par, std::begin(vjb), std::end(vjb), [&pa, &ct](auto& aj)
-#endif
-					{
-						aj.scr_ = hillclimb_bgtg_fast(std::begin(ct), std::end(ct), pa + aj.off_, aj.mst_);
-					});
-#endif
+				cw.run_gpu_process();
 				if (!cw.cudaGood())
 					throw std::runtime_error("Some cuda failure in loop, see console above.");
 				cw.sync_joblist_from_device(vjc);
