@@ -110,13 +110,14 @@ template<typename IC, typename F, size_t max_stecker = 10 > auto hillclimb_base(
 	return scr;
 }
 
-template<typename IC, typename F, typename FD, size_t max_stecker = 10 > auto hillclimb_base_fast(IC ctb, IC cte, F eval_fn, double iocb, FD& fd, stecker& s_base)
+template<typename IC, typename F, typename FD > auto hillclimb_base_fast(IC ctb, IC cte, F eval_fn, double iocb, FD& fd, stecker& s_base)
 {
+	constexpr size_t max_stecker = 10;
 	stecker s = s_base;
 	stecker s_b;
 	auto vo = fd.decode(ctb, cte, s);
 	auto iocs = index_of_coincidence(vo.begin(), vo.end());
-	if (iocs * .95 < iocb)
+	if (iocs * .97 < iocb)
 		return 0U;
 	// establish the baseline
 	auto scr = eval_fn(std::begin(vo), std::end(vo));
@@ -201,8 +202,6 @@ template<typename IC, typename F> auto hillclimb_partial_exhaust2_fast(IC ctb, I
 	for (int ti1 = 0; ti1 < alpha_max; ++ti1)
 	{
 		modalpha t1{ ti1 };
-		if (ti1 == f2)
-			continue;
 		for (int ti2 = 0; ti2 < alpha_max; ++ti2)
 		{
 			modalpha t2{ ti2 };
@@ -433,6 +432,16 @@ template<typename IC, typename AI> auto hillclimb_bgtg_fast(IC ctb, IC cte, AI a
 	fast_decoder_ref fd(ai);
 	stecker s = mst.stecker_;
 	hillclimb_base_fast(ctb, cte, bigram_score_op(), 0.0, fd, s);
+	auto rv = hillclimb_base_fast(ctb, cte, trigram_score_op(), 0.0, fd, s);
+	mst.stecker_ = s;
+	return rv;
+}
+
+template<typename IC, typename AI> auto hillclimb_iocbgtg_fast(IC ctb, IC cte, AI ai, machine_settings_t& mst)
+{
+	fast_decoder_ref fd(ai);
+	stecker s = mst.stecker_;
+	hillclimb_base_fast (ctb, cte, bigram_score_op(), 0.0, fd, s);
 	auto rv = hillclimb_base_fast(ctb, cte, trigram_score_op(), 0.0, fd, s);
 	mst.stecker_ = s;
 	return rv;

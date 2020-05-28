@@ -216,11 +216,9 @@ template<typename F, typename FD, size_t max_stecker = 10 > __device__ unsigned 
 	stecker s_b;
 	unsigned ctl = cte - ctb;
 	auto vo = fd.decode(ctb, cte, s);
-#if 0
 	auto iocs = index_of_coincidence(vo, ctl);
-	if (iocs * .95 < iocb)
+	if (iocs * .97 < iocb)
 		return 0U;
-#endif
 	// establish the baseline
 	auto scr = eval_fn(vo, vo + ctl);
 	while (1)

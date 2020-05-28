@@ -134,14 +134,72 @@ void hillclimb_test_iterative(machine_settings_t mst, std::vector<modalpha> cons
 	std::cout << "\n\n";
 }
 
+void hillclimb_test_consecutive(machine_settings_t mst, std::vector<modalpha> const& ct)
+{
+	std::cout << "IOC, consecutive\n";
+	constexpr modalpha tst_arr[]{ alpha::E, alpha::X, alpha::N, alpha::R, alpha::S, alpha::I };
+	double scrm = 0;
+	modalpha mf = 0;
+	modalpha mt = 0;
+	for (auto f : tst_arr)
+	{
+		auto [scr, t] = single_stecker(ct.begin(), ct.end(), index_of_coincidence_op(), f, mst);
+		if (scr > scrm)
+		{
+			std::cout << "    Mx " << f << " to " << t << " {" << scr << "}\n";
+			mf = f;
+			mt = t;
+			scrm = scr;
+		}
+	}
+	std::cout << "Apply " << mf << " to " << mt << " {" << scrm << "}\n";
+	mst.stecker_.Apply(mf, mt);
+	hillclimb_tg(mst, ct);
+
+	std::cout << "\n\n";
+}
+
 void hillclimb_test_partial_ex_fast_flex (machine_settings_t mst, std::vector<modalpha> const& ct)
 {
-	std::array<modalpha, 2> ees{ alpha::F, alpha::C };
-	std::cout << "hillclimb_test_partial_ex_fast_flex testing EF in the outer loop.\n";
+	std::array<modalpha, 2> ees{ alpha::X, alpha::F };
+	std::cout << "hillclimb_test_partial_ex_fast_flex testing EX in the outer loop.\n";
 	auto start = std::chrono::steady_clock::now();
 	auto ns = hillclimb_partial_exhaust_fast(std::begin(ct), std::end(ct), ees.begin(), ees.begin() + 2, trigram_score_op(), mst);
 	auto now = std::chrono::steady_clock::now();
 	std::cout << "hillclimb_test_partial_ex_fast_flex time: " << std::chrono::duration<double, std::milli>(now - start).count() << "ms\n";
+	machine3 m3 = MakeMachine3(mst);
+	std::vector<modalpha> vo;
+	vo.reserve(ct.size());
+	decode(ct.begin(), ct.end(), m3, vo);
+	// report
+	std::cout << mst << " = " << ns << " - ";
+	report_ciphertext(vo, std::cout);
+}
+
+
+void hillclimb_test_partial_ex_fast2 (machine_settings_t mst, std::vector<modalpha> const& ct)
+{
+	std::cout << "hillclimb_test_partial_ex_fast.\n";
+	auto start = std::chrono::steady_clock::now();
+	auto ns = hillclimb_partial_exhaust2_fast(std::begin(ct), std::end(ct), trigram_score_op(), alpha::E, alpha::S, mst);
+	auto now = std::chrono::steady_clock::now();
+	std::cout << "hillclimb_partial_exhaust2_fast time: " << std::chrono::duration<double, std::milli>(now - start).count() << "ms\n";
+	machine3 m3 = MakeMachine3(mst);
+	std::vector<modalpha> vo;
+	vo.reserve(ct.size());
+	decode(ct.begin(), ct.end(), m3, vo);
+	// report
+	std::cout << mst << " = " << ns << " - ";
+	report_ciphertext(vo, std::cout);
+}
+
+void hillclimb_test_partial_ex_fast3 (machine_settings_t mst, std::vector<modalpha> const& ct)
+{
+	std::cout << "hillclimb_test_partial_ex_fast.\n";
+	auto start = std::chrono::steady_clock::now();
+	auto ns = hillclimb_partial_exhaust3_fast(std::begin(ct), std::end(ct), trigram_score_op(), alpha::E, alpha::N, alpha::S, mst);
+	auto now = std::chrono::steady_clock::now();
+	std::cout << "hillclimb_partial_exhaust3_fast time: " << std::chrono::duration<double, std::milli>(now - start).count() << "ms\n";
 	machine3 m3 = MakeMachine3(mst);
 	std::vector<modalpha> vo;
 	vo.reserve(ct.size());
@@ -158,7 +216,7 @@ void hillclimb_test_fd_ref (machine_settings_t mst, std::vector<modalpha> const&
 	arena_simple<256> arena;
 	machine3 m3 = MakeMachine3(mst);
 	fill_arena_simple(m3.Wheels(), arena);
-	auto ns = hillclimb_bgtg_fast(std::begin(ct), std::end(ct), arena.arena_.begin(), mst);
+	auto ns = hillclimb_iocbgtg_fast(std::begin(ct), std::end(ct), arena.arena_.begin(), mst);
 	auto now = std::chrono::steady_clock::now();
 	std::cout << "hillclimb_test_fd_ref time: " << std::chrono::duration<double, std::milli>(now - start).count() << "ms\n";
 	machine3 m3a = MakeMachine3(mst);
@@ -206,13 +264,14 @@ int main(int ac, char** av)
 		std::cout << "Ciphertext is -\n";
 		report_ciphertext(ct, std::cout);
 //		hillclimb_test_partial_ex(m3.machine_settings(), b3, ct);
-//		hillclimb_test_partial_ex_fast(m3.machine_settings(), b3, ct);
-		hillclimb_test_fd_ref(m3.machine_settings(), ct);
+		hillclimb_test_partial_ex_fast2(m3.machine_settings(), ct);
+		hillclimb_test_partial_ex_fast3(m3.machine_settings(), ct);
+//		hillclimb_test_fd_ref(m3.machine_settings(), ct);
 		hillclimb_test_partial_ex_fast_flex(m3.machine_settings(), ct);
+		hillclimb_test_consecutive(m3.machine_settings(), ct);
 #if 0
 		hillclimb_test_single(m3.machine_settings(), ct);
 		hillclimb_test_triple(m3.machine_settings(), ct);
-		hillclimb_test_iterative(m3.machine_settings(), ct);
 		hillclimb_bg(m3.machine_settings(), ct);
 		hillclimb_bg2(m3.machine_settings(), ct);
 		hillclimb_tg(m3.machine_settings(), ct);
