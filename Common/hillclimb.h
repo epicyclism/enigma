@@ -193,7 +193,6 @@ template<typename IC, typename F> auto hillclimb_partial_exhaust2_fast(IC ctb, I
 	machine3 m3 = MakeMachine3(mst);
 	fast_decoder fd(m3);
 	stecker s = mst.stecker_;
-	stecker s_b;
 	stecker s_best;
 	// establish the baseline
 	auto vo = fd.decode(ctb, cte, s);
@@ -207,16 +206,15 @@ template<typename IC, typename F> auto hillclimb_partial_exhaust2_fast(IC ctb, I
 			modalpha t2{ ti2 };
 			if (t2 == t1 || t2 == f1)
 				continue;
-			s_b = s;
-			s.Apply(f2, t2);
-			s.Apply(f1, t1);
+			s.Set(f2, t2);
+			s.Set(f1, t1);
 			auto scrn = hillclimb_base_fast(ctb, cte, eval_fn, iocb, fd, s);
 			if (scrn > scr)
 			{
 				s_best = s;
 				scr = scrn;
 			}
-			s = s_b;
+			s.Clear();
 		}
 	}
 	mst.stecker_ = s_best;

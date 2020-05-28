@@ -143,7 +143,7 @@ public:
 
 __device__ double index_of_coincidence(modalpha const* ctb, unsigned ctl)
 {
-	unsigned tab[alpha_max];
+	char tab[alpha_max];
 	for (auto& t : tab)
 		t = 0;
 
@@ -279,11 +279,10 @@ __device__ void hillclimb_partial_exhaust2_fast(modalpha const* ctb, modalpha co
 	const modalpha f1 = alpha::E;
 	const modalpha f2 = alpha::N;
 	fast_decoder_ptr fd(ai->arena_ + cj.off_ * alpha_max);
-	stecker s_b = cj.s_;
 	stecker s_best;
 	// establish the baseline
 	unsigned ctl = cte - ctb;
-	auto vo = fd.decode(ctb, cte, s_b);
+	auto vo = fd.decode(ctb, cte, cj.s_);
 	auto ef = trigram_score_op(tgt);
 	auto scr = ef(vo, vo + ctl);
 	auto iocb = index_of_coincidence(vo, ctl);
@@ -297,15 +296,15 @@ __device__ void hillclimb_partial_exhaust2_fast(modalpha const* ctb, modalpha co
 			modalpha t2{ ti2 };
 			if (t2 == t1 || t2 == f1)
 				continue;
-			s_b = cj.s_;
-			s_b.Apply(f2, t2);
-			s_b.Apply(f1, t1);
-			auto scrn = hillclimb_base_fast(ctb, cte, ef, iocb, fd, &s_b);
+			cj.s_.Set(f2, t2);
+			cj.s_.Set(f1, t1);
+			auto scrn = hillclimb_base_fast(ctb, cte, ef, iocb, fd, &cj.s_);
 			if (scrn > scr)
 			{
-				s_best = s_b;
+				s_best = cj.s_;
 				scr = scrn;
 			}
+			cj.s_.Clear();
 		}
 	}
 	cj.s_ = s_best;
