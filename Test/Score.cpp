@@ -67,6 +67,7 @@ template<typename IC, typename IA> double test_score3(IC ctb, IC cte, IA base, m
 	// sort highest cnt first
 	std::sort(std::begin(psm), std::end(psm), [](auto const& l, auto const& r) { return l.cnt_ > r.cnt_; });
 	// remove all cnt < 2 and make others unique
+//	psm.print(std::cout);
 	psm.unique();
 	psm.print(std::cout);
 	auto pr = psm.begin() + (psm.size() > 10 ? 10 : psm.size());

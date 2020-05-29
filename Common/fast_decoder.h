@@ -35,6 +35,10 @@ public:
 
 		return vo_;
 	}
+	auto get_ref() const
+	{
+		return a_.arena_.begin();
+	}
 };
 
 // accepts an external pointer into a full arena

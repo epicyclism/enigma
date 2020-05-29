@@ -117,7 +117,7 @@ template<typename IC, typename F, typename FD > auto hillclimb_base_fast(IC ctb,
 	stecker s_b;
 	auto vo = fd.decode(ctb, cte, s);
 	auto iocs = index_of_coincidence(vo.begin(), vo.end());
-	if (iocs * .97 < iocb)
+	if (iocs * .85 < iocb)
 		return 0U;
 	// establish the baseline
 	auto scr = eval_fn(std::begin(vo), std::end(vo));
@@ -175,6 +175,7 @@ template<typename IC, typename F> auto single_stecker(IC ctb, IC cte, F eval_fn,
 		m3.ApplyPlug(f, t);
 		decode(ctb, cte, m3, vo);
 		auto scrn = eval_fn(std::begin(vo), std::end(vo));
+		std::cout << "        tst " << f << " to " << t << " {" << scrn << "}\n";
 		if (scrn > scr)
 		{
 			mt = t;
@@ -185,6 +186,44 @@ template<typename IC, typename F> auto single_stecker(IC ctb, IC cte, F eval_fn,
 
 	return std::make_pair( scr, mt );
 }
+
+template<typename IC, typename F, typename FD > auto single_pass_fast(IC ctb, IC cte, F eval_fn, FD& fd, stecker& s_base)
+{
+	stecker s = s_base;
+	stecker s_b;
+	auto vo = fd.decode(ctb, cte, s);
+	// establish the baseline
+	auto scr = eval_fn(std::begin(vo), std::end(vo));
+	bool improved =  false;
+	modalpha mx = 0;
+	modalpha my = 0;
+	for (int fi = 0; fi < alpha_max; ++fi)
+	{
+		modalpha f{ fi };
+		for (int ti = fi; ti < alpha_max; ++ti)
+		{
+			modalpha t{ ti };
+			s_b = s;
+			s.Apply(f, t);
+			vo = fd.decode(ctb, cte, s);
+			auto scrn = eval_fn(std::begin(vo), std::end(vo));
+			if (scrn > scr)
+			{
+				mx = f;
+				my = t;
+				scr = scrn;
+				improved = true;
+			}
+			s = s_b;
+		}
+	}
+	if (improved)
+		s.Apply(mx, my);
+	s_base = s;
+
+	return scr;
+}
+
 
 // use the fast decoder
 template<typename IC, typename F> auto hillclimb_partial_exhaust2_fast(IC ctb, IC cte, F eval_fn, modalpha f1, modalpha f2, machine_settings_t& mst)
@@ -209,7 +248,7 @@ template<typename IC, typename F> auto hillclimb_partial_exhaust2_fast(IC ctb, I
 			s.Set(f2, t2);
 			s.Set(f1, t1);
 			auto scrn = hillclimb_base_fast(ctb, cte, eval_fn, iocb, fd, s);
-			if (scrn > scr)
+			if(scrn > scr)
 			{
 				s_best = s;
 				scr = scrn;
@@ -435,12 +474,103 @@ template<typename IC, typename AI> auto hillclimb_bgtg_fast(IC ctb, IC cte, AI a
 	return rv;
 }
 
-template<typename IC, typename AI> auto hillclimb_iocbgtg_fast(IC ctb, IC cte, AI ai, machine_settings_t& mst)
+
+template<typename IF, typename IT> std::vector<std::array<std::pair<modalpha, modalpha>, 2>> make_plug_list2(IF fb, IF fe, IT tb, IT te)
+{
+	std::vector<std::array<std::pair<modalpha, modalpha>, 2>> rv;
+	if (std::distance(fb, fe) > 1 && std::distance(tb, te) > 1) // single plug doesn't apply
+	{
+		auto fb1 = fb;
+		while (fb1 != fe)
+		{
+			auto tb1 = tb;
+			while (tb1 != te)
+			{
+				auto fb2 = fb1 + 1;
+				while (fb2 != fe)
+				{
+					auto tb2 = tb1 + 1;
+					while (tb2 != te)
+					{
+						if (!(fb1 == fb2 || tb1 == tb2))
+						{
+							std::array<std::pair<modalpha, modalpha>, 2> a;
+							a[0] = std::make_pair(*fb1, *tb1);
+							a[1] = std::make_pair(*fb2, *tb2);
+							rv.emplace_back(a);
+						}
+						++tb2;
+					}
+					++fb2;
+				}
+				++tb1;
+			}
+			++fb1;
+		}
+	}
+
+	return rv;
+}
+
+
+template<typename IT> std::vector<std::array<std::pair<modalpha, modalpha>, 2>> make_plug_list2(IT tb, IT te)
+{
+	std::vector<std::array<std::pair<modalpha, modalpha>, 2>> rv;
+	auto fb1 = tb;
+	while (fb1 != te)
+	{
+		auto tb1 = fb1 + 1;
+		while (tb1 != te)
+		{
+			auto fb2 = tb;
+			while (fb2 != te)
+			{
+				auto tb2 = fb2 + 1;
+				while (tb2 != te)
+				{
+					if (!(fb1 == fb2 || tb1 == tb2))
+					{
+						std::array<std::pair<modalpha, modalpha>, 2> a;
+						a[0] = std::make_pair(*fb1, *tb1);
+						a[1] = std::make_pair(*fb2, *tb2);
+						rv.emplace_back(a);
+					}
+					++tb2;
+				}
+				++fb2;
+			}
+			++tb1;
+		}
+		++fb1;
+	}
+
+	return rv;
+}
+
+// SC is an iterator to an array of arrays of stecker pairs.
+//
+template<typename IC, typename SC, typename F, typename AI> auto hillclimb_specific_exhaust_fast(IC ctb, IC cte, SC sb, SC se, F eval_fn, AI ai, machine_settings_t& mst)
 {
 	fast_decoder_ref fd(ai);
-	stecker s = mst.stecker_;
-	hillclimb_base_fast (ctb, cte, bigram_score_op(), 0.0, fd, s);
-	auto rv = hillclimb_base_fast(ctb, cte, trigram_score_op(), 0.0, fd, s);
-	mst.stecker_ = s;
-	return rv;
+	stecker s_best;
+	// establish the baseline
+	auto vo = fd.decode(ctb, cte, s_best);
+	auto scr = eval_fn(std::begin(vo), std::end(vo));
+	auto iocb = index_of_coincidence(vo.begin(), vo.end());
+	std::for_each(sb, se, [&](auto const& sa)
+		{
+			stecker s;
+			for (auto const& p : sa)
+			{
+				s.Set(p.first, p.second);
+			}
+			auto scrn = hillclimb_base_fast(ctb, cte, eval_fn, iocb, fd, s);
+			if (scrn > scr)
+			{
+				s_best = s;
+				scr = scrn;
+			}
+		});
+	mst.stecker_ = s_best;
+	return scr;
 }

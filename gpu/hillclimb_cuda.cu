@@ -148,7 +148,8 @@ __device__ double index_of_coincidence(modalpha const* ctb, unsigned ctl)
 		t = 0;
 
 	// count
-	while (ctb != ctb + ctl)
+	auto cte = ctb + ctl;
+	while (ctb != cte)
 	{
 		++tab[(*ctb).Val()];
 		++ctb;

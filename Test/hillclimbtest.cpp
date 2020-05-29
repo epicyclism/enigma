@@ -12,9 +12,18 @@
 
 constexpr  char version[] = "v0.03";
 
-// machine by value.
-//
-auto hillclimb_bg(machine_settings_t mst, std::vector<modalpha> const& ct)
+void report_ct_stats(std::vector<modalpha> const& ct, std::ostream& ostr)
+{
+	ostr << "ct has " << ct.size() << " characters.\n";
+	auto tab = gen_freq_tab_seq(ct.begin(), ct.end());
+	for (auto& l : tab)
+	{
+		ostr << l.first << " : " << l.second << '\n';
+	}
+	ostr << '\n';
+}
+
+auto hillclimb_bg(machine_settings_t& mst, std::vector<modalpha> const& ct)
 {
 	auto start = std::chrono::steady_clock::now();
 	auto ns = hillclimb_base(ct.begin(), ct.end(), bigram_score_gen_op(), mst);
@@ -30,7 +39,7 @@ auto hillclimb_bg(machine_settings_t mst, std::vector<modalpha> const& ct)
 	return m3.machine_settings();
 }
 
-auto hillclimb_bg2(machine_settings_t mst, std::vector<modalpha> const& ct)
+auto hillclimb_bg2(machine_settings_t& mst, std::vector<modalpha> const& ct)
 {
 	auto start = std::chrono::steady_clock::now();
 	auto ns = hillclimb_base(ct.begin(), ct.end(), bigram_score_cur_op(), mst);
@@ -46,7 +55,7 @@ auto hillclimb_bg2(machine_settings_t mst, std::vector<modalpha> const& ct)
 	return m3.machine_settings();
 }
 
-auto hillclimb_tg(machine_settings_t mst, std::vector<modalpha> const& ct)
+auto hillclimb_tg(machine_settings_t& mst, std::vector<modalpha> const& ct)
 {
 	auto start = std::chrono::steady_clock::now();
 	auto ns = hillclimb_base(ct.begin(), ct.end(), trigram_score_gen_op(), mst);
@@ -121,14 +130,6 @@ void hillclimb_test_iterative(machine_settings_t mst, std::vector<modalpha> cons
 		mst.stecker_.Apply(mf, mt);
 	}
 	std::cout << "Finally = " << mst << '\n';
-#if 0
-	std::cout << "\nunigram, iterative, individual\n";
-	for (auto f : tst_arr)
-	{
-		auto [scr, t] = single_stecker(ct.begin(), ct.end(), unigram_score_op(), f, mst);
-		std::cout << "Single " << f << " to " << t << " {" << scr << "}\n";
-	}
-#endif
 	hillclimb_tg(mst, ct);
 
 	std::cout << "\n\n";
@@ -144,9 +145,9 @@ void hillclimb_test_consecutive(machine_settings_t mst, std::vector<modalpha> co
 	for (auto f : tst_arr)
 	{
 		auto [scr, t] = single_stecker(ct.begin(), ct.end(), index_of_coincidence_op(), f, mst);
+		std::cout << "    Mx " << f << " to " << t << " {" << scr << "}\n";
 		if (scr > scrm)
 		{
-			std::cout << "    Mx " << f << " to " << t << " {" << scr << "}\n";
 			mf = f;
 			mt = t;
 			scrm = scr;
@@ -154,7 +155,6 @@ void hillclimb_test_consecutive(machine_settings_t mst, std::vector<modalpha> co
 	}
 	std::cout << "Apply " << mf << " to " << mt << " {" << scrm << "}\n";
 	mst.stecker_.Apply(mf, mt);
-	hillclimb_tg(mst, ct);
 
 	std::cout << "\n\n";
 }
@@ -209,19 +209,41 @@ void hillclimb_test_partial_ex_fast3 (machine_settings_t mst, std::vector<modalp
 	report_ciphertext(vo, std::cout);
 }
 
-void hillclimb_test_fd_ref (machine_settings_t mst, std::vector<modalpha> const& ct)
+void hillclimb_test_specific_exhaust(machine_settings_t mst, std::vector<modalpha> const& ct)
 {
-	std::cout << "hillclimb_test_fd_ref.\n";
-	auto start = std::chrono::steady_clock::now();
-	arena_simple<256> arena;
+	// the fixed popular plaintext letters
+	constexpr modalpha tst_arr[]{ alpha::E, alpha::X, alpha::N, alpha::R, alpha::S, alpha::I };
+	constexpr modalpha tst_prs[]{ alpha::B, alpha::G, alpha::P, alpha::S };
+	// the computed popular ciphertext letters
+	auto tab = gen_freq_seq(ct.begin(), ct.end());
+	// make the plug combiations
+//	auto plugsets = make_plug_list2(std::begin(tst_arr), std::end(tst_arr), std::begin(tab), std::begin(tab) + 10);
+	auto plugsets = make_plug_list2(std::begin(tab), std::begin(tab) + 13);
+//	auto plugsets = make_plug_list2(std::begin(tst_prs), std::end(tst_prs));
+	for (auto& c : tab)
+	{
+		std::cout << c << ' ';
+	}
+	std::cout << '\n';
+#if 0
+	for (auto& ps : plugsets)
+	{
+		std::cout << ps[0].first << "<->" << ps[0].second << ", " << ps[1].first << "<->" << ps[1].second << '\n';
+	}
+	std::cout << '\n';
+#endif
+	std::cout << "Plugset size = " << plugsets.size() << '\n';
 	machine3 m3 = MakeMachine3(mst);
-	fill_arena_simple(m3.Wheels(), arena);
-	auto ns = hillclimb_iocbgtg_fast(std::begin(ct), std::end(ct), arena.arena_.begin(), mst);
+	fast_decoder fd(m3);
+
+	std::cout << "hillclimb_test_specific_exhaust.\n";
+	auto start = std::chrono::steady_clock::now();
+	auto ns = hillclimb_specific_exhaust_fast(std::begin(ct), std::end(ct), std::begin(plugsets), std::end(plugsets), trigram_score_op(), fd.get_ref(), mst);
 	auto now = std::chrono::steady_clock::now();
-	std::cout << "hillclimb_test_fd_ref time: " << std::chrono::duration<double, std::milli>(now - start).count() << "ms\n";
-	machine3 m3a = MakeMachine3(mst);
+	std::cout << "hillclimb_test_specific_exhaust time: " << std::chrono::duration<double, std::milli>(now - start).count() << "ms\n";
 	std::vector<modalpha> vo;
 	vo.reserve(ct.size());
+	machine3 m3a = MakeMachine3(mst);
 	decode(ct.begin(), ct.end(), m3a, vo);
 	// report
 	std::cout << mst << " = " << ns << " - ";
@@ -263,14 +285,19 @@ int main(int ac, char** av)
 		auto ct = read_ciphertext();
 		std::cout << "Ciphertext is -\n";
 		report_ciphertext(ct, std::cout);
+		std::cout << "stats - \n";
+		report_ct_stats(ct, std::cout);
 //		hillclimb_test_partial_ex(m3.machine_settings(), b3, ct);
-		hillclimb_test_partial_ex_fast2(m3.machine_settings(), ct);
-		hillclimb_test_partial_ex_fast3(m3.machine_settings(), ct);
+//		hillclimb_test_partial_ex_fast2(m3.machine_settings(), ct);
+//		hillclimb_test_partial_ex_fast3(m3.machine_settings(), ct);
 //		hillclimb_test_fd_ref(m3.machine_settings(), ct);
-		hillclimb_test_partial_ex_fast_flex(m3.machine_settings(), ct);
-		hillclimb_test_consecutive(m3.machine_settings(), ct);
+//		hillclimb_test_partial_ex_fast_flex(m3.machine_settings(), ct);
+//		hillclimb_test_consecutive(m3.machine_settings(), ct);
+		hillclimb_test_specific_exhaust(m3.machine_settings(), ct);
 #if 0
+		hillclimb_test_iterative(m3.machine_settings(), ct);
 		hillclimb_test_single(m3.machine_settings(), ct);
+
 		hillclimb_test_triple(m3.machine_settings(), ct);
 		hillclimb_bg(m3.machine_settings(), ct);
 		hillclimb_bg2(m3.machine_settings(), ct);

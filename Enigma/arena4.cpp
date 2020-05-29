@@ -18,7 +18,7 @@
 #include "jobs.h"
 #include "utility.h"
 
-constexpr  char version[] = "v0.03";
+constexpr  char version[] = "v0.04";
 
 constexpr unsigned tg_threshold = 16000; // trigram
 
@@ -149,6 +149,10 @@ int main(int ac, char** av)
 			std::cout << "No matching wheel and reflector arrangements found!\n";
 			return -1;
 		}
+		// process the ciphertext for worthwhile plugs
+		auto tab = gen_freq_seq(ct.begin(), ct.end());
+		auto plugsets = make_plug_list2(std::begin(tab), std::begin(tab) + 13);
+
 		std::cout << "Searching " << vjbw.size() << " wheel and reflector arrangements.\n";
 		auto start = std::chrono::steady_clock::now();
 
@@ -167,15 +171,16 @@ int main(int ac, char** av)
 				auto pa = arena_.arena_.begin();
 				// do the search for quite likely
 				std::cout << " - considering " << vjb.size() << " possibles.";
-				std::for_each(std::execution::par, std::begin(vjb), std::end(vjb), [&pa](auto& aj)
+				std::for_each(std::execution::par, std::begin(vjb), std::end(vjb), [&plugsets, &pa](auto& aj)
 					{
 #if 1
-						aj.scr_ = hillclimb_bgtg_fast(aj.ctb_, aj.cte_, pa + aj.off_, aj.mst_);
+//						aj.scr_ = hillclimb_bgtg_fast(aj.ctb_, aj.cte_, pa + aj.off_, aj.mst_);
+						aj.scr_ = hillclimb_specific_exhaust_fast(aj.ctb_, aj.cte_, std::begin(plugsets), std::end(plugsets), trigram_score_op(), pa + aj.off_, aj.mst_);
 #else
 #if 0
 						aj.scr_ = hillclimb_partial_exhaust_all(aj.ctb_, aj.cte_, trigram_score_op(), aj.mst_);
 #else
-						aj.scr_ = hillclimb_partial_exhaust2_fast(aj.ctb_, aj.cte_, trigram_score_op(), alpha::E, alpha::N, aj.mst_);
+						aj.scr_ = hillclimb_partial_exhaust2_fast(aj.ctb_, aj.cte_, trigram_score_op(), alpha::E, alpha::S, aj.mst_);
 #endif
 #endif
 					});
