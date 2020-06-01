@@ -189,6 +189,16 @@ public:
 			});
 		set_end(std::remove_if(std::begin(psm_), std::begin(psm_) + end_, [](auto& v) { return v.cnt_ == 0; }));
 	}
+	void prune(unsigned mx)
+	{
+		std::for_each(std::begin(psm_), std::begin(psm_) + end_,
+			[&](auto& v)
+			{
+				if (v.cnt_ < mx)
+					v.cnt_ = 0;
+			});
+		set_end(std::remove_if(std::begin(psm_), std::begin(psm_) + end_, [](auto& v) { return v.cnt_ == 0; }));
+	}
 	template<typename O> void print(O& ostr)
 	{
 		std::for_each(std::begin(psm_), std::begin(psm_) + end_, 
