@@ -3,14 +3,14 @@
 // common small functions
 // assumes the appropriate includes.
 //
-std::vector<modalpha> read_ciphertext()
+std::vector<modalpha> read_ciphertext(std::istream& is = std::cin)
 {
 	std::vector<modalpha> rv;
 	while (1)
 	{
 		char c;
-		std::cin >> c;
-		if (!std::cin)
+		is >> c;
+		if (!is)
 			break;
 		if (valid_from_char(c))
 		{

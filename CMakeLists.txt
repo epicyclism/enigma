@@ -2,8 +2,14 @@
 # and include sub-projects here.
 #
 cmake_minimum_required (VERSION 3.9)
+include (CheckLanguage)
 
-project ("Enigma" LANGUAGES CXX CUDA)
+check_language(CUDA)
+if(CMAKE_CUDA_COMPILER)
+	project ("Enigma" LANGUAGES CXX CUDA)
+else()
+	project ("Enigma" LANGUAGES CXX)
+endif()
 set_property(GLOBAL PROPERTY CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -18,4 +24,6 @@ endif()
 add_subdirectory ("Enigma")
 add_subdirectory ("Common")
 add_subdirectory ("Test")
-add_subdirectory ("gpu")
+if(CMAKE_CUDA_COMPILER)
+	add_subdirectory ("gpu")
+endif()

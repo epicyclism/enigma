@@ -218,7 +218,7 @@ void hillclimb_test_specific_exhaust(machine_settings_t mst, std::vector<modalph
 	auto tab = gen_freq_seq(ct.begin(), ct.end());
 	// make the plug combiations
 //	auto plugsets = make_plug_list2(std::begin(tst_arr), std::end(tst_arr), std::begin(tab), std::begin(tab) + 10);
-	auto plugsets = make_plug_list2(std::begin(tab), std::begin(tab) + 13);
+	auto plugsets = make_plug_list2(std::begin(tab), std::begin(tab) + 11);
 //	auto plugsets = make_plug_list2(std::begin(tst_prs), std::end(tst_prs));
 	for (auto& c : tab)
 	{

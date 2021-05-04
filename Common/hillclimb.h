@@ -117,7 +117,7 @@ template<typename IC, typename F, typename FD > auto hillclimb_base_fast(IC ctb,
 	stecker s_b;
 	auto vo = fd.decode(ctb, cte, s);
 	auto iocs = index_of_coincidence(vo.begin(), vo.end());
-	if (iocs * 0.9 < iocb)
+	if (iocs * .90 < iocb)
 		return 0U;
 	// establish the baseline
 	auto scr = eval_fn(std::begin(vo), std::end(vo));
