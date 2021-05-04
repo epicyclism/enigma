@@ -117,7 +117,7 @@ template<typename IC, typename F, typename FD > auto hillclimb_base_fast(IC ctb,
 	stecker s_b;
 	auto vo = fd.decode(ctb, cte, s);
 	auto iocs = index_of_coincidence(vo.begin(), vo.end());
-	if (iocs * .85 < iocb)
+	if (iocs * 0.9 < iocb)
 		return 0U;
 	// establish the baseline
 	auto scr = eval_fn(std::begin(vo), std::end(vo));
@@ -531,8 +531,14 @@ template<typename IT> std::vector<std::array<std::pair<modalpha, modalpha>, 2>> 
 					if (!(fb1 == fb2 || tb1 == tb2))
 					{
 						std::array<std::pair<modalpha, modalpha>, 2> a;
-						a[0] = std::make_pair(*fb1, *tb1);
-						a[1] = std::make_pair(*fb2, *tb2);
+						if ( *fb1 < *tb1)
+							a[0] = std::make_pair(*fb1, *tb1);
+						else
+							a[0] = std::make_pair(*tb1, *fb1);
+						if ( *fb2 < *tb2)
+							a[1] = std::make_pair(*fb2, *tb2);
+						else
+							a[1] = std::make_pair(*tb2, *fb2);
 						rv.emplace_back(a);
 					}
 					++tb2;
@@ -562,7 +568,7 @@ template<typename IC, typename SC, typename F, typename AI> auto hillclimb_speci
 			stecker s;
 			for (auto const& p : sa)
 			{
-				s.Set(p.first, p.second);
+				s.Apply(p.first, p.second);
 			}
 			auto scrn = hillclimb_base_fast(ctb, cte, eval_fn, iocb, fd, s);
 			if (scrn > scr)

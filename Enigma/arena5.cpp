@@ -26,7 +26,8 @@
 
 constexpr  char version[] = "v0.03";
 
-constexpr unsigned tg_threshold = 16000; // trigram
+// constexpr unsigned tg_threshold = 16000; // trigram
+constexpr unsigned tg_threshold = 12400; // trigram
 
 void Help()
 {
