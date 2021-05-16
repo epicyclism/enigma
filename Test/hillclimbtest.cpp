@@ -218,8 +218,13 @@ void hillclimb_test_specific_exhaust(machine_settings_t mst, std::vector<modalph
 	auto tab = gen_freq_seq(ct.begin(), ct.end());
 	// make the plug combiations
 //	auto plugsets = make_plug_list2(std::begin(tst_arr), std::end(tst_arr), std::begin(tab), std::begin(tab) + 10);
-	auto plugsets = make_plug_list2(std::begin(tab), std::begin(tab) + 11);
+//	auto plugsets = make_plug_list2(std::begin(tab), std::begin(tab) + 11);
 //	auto plugsets = make_plug_list2(std::begin(tst_prs), std::end(tst_prs));
+	constexpr modalpha all[]{alpha::A, alpha::B, alpha::C, alpha::D, alpha::E, alpha::F, alpha::G, alpha::H, alpha::I, alpha::J, alpha::K, alpha::L,
+								alpha::M, alpha::N, alpha::O, alpha::P, alpha::Q, alpha::R, alpha::S, alpha::T, alpha::U, alpha::V, alpha::W, alpha::X,
+								alpha::Y, alpha::Z };
+	auto plugsets = make_plug_list2(std::begin(tab), std::begin(tab) + 6, std::begin(all), std::end(all));
+
 	for (auto& c : tab)
 	{
 		std::cout << c << ' ';
@@ -285,15 +290,17 @@ int main(int ac, char** av)
 		auto ct = read_ciphertext();
 		std::cout << "Ciphertext is -\n";
 		report_ciphertext(ct, std::cout);
+#if 0
 		std::cout << "stats - \n";
 		report_ct_stats(ct, std::cout);
+#endif
 //		hillclimb_test_partial_ex(m3.machine_settings(), b3, ct);
 //		hillclimb_test_partial_ex_fast2(m3.machine_settings(), ct);
-//		hillclimb_test_partial_ex_fast3(m3.machine_settings(), ct);
+		hillclimb_test_partial_ex_fast3(m3.machine_settings(), ct);
 //		hillclimb_test_fd_ref(m3.machine_settings(), ct);
 //		hillclimb_test_partial_ex_fast_flex(m3.machine_settings(), ct);
 //		hillclimb_test_consecutive(m3.machine_settings(), ct);
-		hillclimb_test_specific_exhaust(m3.machine_settings(), ct);
+//		hillclimb_test_specific_exhaust(m3.machine_settings(), ct);
 #if 0
 		hillclimb_test_iterative(m3.machine_settings(), ct);
 		hillclimb_test_single(m3.machine_settings(), ct);

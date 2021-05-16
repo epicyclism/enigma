@@ -170,12 +170,15 @@ int main(int ac, char** av)
 				auto vjb = make_job_list_position<job_position_t>(j.mst_, arena_, j.ctb_, j.cte_);
 				auto pa = arena_.arena_.begin();
 				// do the search for quite likely
-				std::cout << " - considering " << vjb.size() << " possibles.";
+				std::cout << " - considering " << vjb.size() << " possibles.\n";
 				std::for_each(std::execution::par, std::begin(vjb), std::end(vjb), [&plugsets, &pa](auto& aj)
 					{
 #if 1
-//						aj.scr_ = hillclimb_bgtg_fast(aj.ctb_, aj.cte_, pa + aj.off_, aj.mst_);
+#if 1
+						aj.scr_ = hillclimb_partial_exhaust3_fast(aj.ctb_, aj.cte_, trigram_score_op(), alpha::E, alpha::N, alpha::S, aj.mst_);
+#else
 						aj.scr_ = hillclimb_specific_exhaust_fast(aj.ctb_, aj.cte_, std::begin(plugsets), std::end(plugsets), trigram_score_op(), pa + aj.off_, aj.mst_);
+#endif
 #else
 #if 0
 						aj.scr_ = hillclimb_partial_exhaust_all(aj.ctb_, aj.cte_, trigram_score_op(), aj.mst_);

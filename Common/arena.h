@@ -18,6 +18,10 @@ template<size_t W> struct arena_base
 	// remember the position for each column
 	using position_t = std::array<position, W>;
 	static const size_t Width = W;
+	static constexpr size_t width()
+	{
+		return W;
+	}
 
 	size_t active_width_;
 	// position of each column
@@ -69,7 +73,8 @@ template<typename A> void fill_arena_simple(wheels3& w, A& a)
 //
 template<typename A> void fill_arena_width(wheels3& w, A& a, size_t width)
 {
-	a.active_width_ = std::min(A::Width, width);
+//	a.active_width_ = std::min(A::Width, width);
+	a.active_width_ = std::min(A::width(), width);
 	// for each wheel state we have to go down all 26 arrays
 	for (auto i = 0; i < a.active_width_; ++i)
 	{

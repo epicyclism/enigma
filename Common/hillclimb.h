@@ -117,7 +117,7 @@ template<typename IC, typename F, typename FD > auto hillclimb_base_fast(IC ctb,
 	stecker s_b;
 	auto vo = fd.decode(ctb, cte, s);
 	auto iocs = index_of_coincidence(vo.begin(), vo.end());
-	if (iocs * .90 < iocb)
+	if (iocs * .93 < iocb)
 		return 0U;
 	// establish the baseline
 	auto scr = eval_fn(std::begin(vo), std::end(vo));
@@ -127,20 +127,18 @@ template<typename IC, typename F, typename FD > auto hillclimb_base_fast(IC ctb,
 		improved = false;
 		modalpha mx = 0;
 		modalpha my = 0;
-		for (int fi = 0; fi < alpha_max; ++fi)
+		for (int fi = 0; fi < alpha_max - 1; ++fi)
 		{
-			modalpha f{ fi };
-			for (int ti = fi; ti < alpha_max; ++ti)
+			for (int ti = fi + 1; ti < alpha_max; ++ti)
 			{
-				modalpha t{ ti };
 				s_b = s;
-				s.Apply(f, t);
+				s.Apply(modalpha{fi}, modalpha{ti});
 				vo = fd.decode(ctb, cte, s);
 				auto scrn = eval_fn(std::begin(vo), std::end(vo));
 				if (scrn > scr && s.Count() < max_stecker + 1)
 				{
-					mx = f;
-					my = t;
+					mx = fi;
+					my = ti;
 					scr = scrn;
 					improved = true;
 				}
@@ -512,7 +510,6 @@ template<typename IF, typename IT> std::vector<std::array<std::pair<modalpha, mo
 	return rv;
 }
 
-
 template<typename IT> std::vector<std::array<std::pair<modalpha, modalpha>, 2>> make_plug_list2(IT tb, IT te)
 {
 	std::vector<std::array<std::pair<modalpha, modalpha>, 2>> rv;
@@ -575,6 +572,11 @@ template<typename IC, typename SC, typename F, typename AI> auto hillclimb_speci
 			{
 				s_best = s;
 				scr = scrn;
+				for (auto const& p : sa)
+				{
+					std::cout << p.first << p.second << ' ';
+				}
+				std::cout << '\n';
 			}
 		});
 	mst.stecker_ = s_best;
