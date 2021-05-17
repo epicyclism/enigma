@@ -218,8 +218,9 @@ template<typename F, typename FD, size_t max_stecker = 10 > __device__ unsigned 
 	unsigned ctl = cte - ctb;
 	auto vo = fd.decode(ctb, cte, s);
 	auto iocs = index_of_coincidence(vo, ctl);
-	if (iocs * .97 < iocb)
-		return 0U;
+//	if (iocs * .99 < iocb)
+//	if (iocs < iocb)
+//		return 0U;
 	// establish the baseline
 	auto scr = eval_fn(vo, vo + ctl);
 	while (1)
@@ -227,20 +228,18 @@ template<typename F, typename FD, size_t max_stecker = 10 > __device__ unsigned 
 		bool improved = false;
 		modalpha mx = 0;
 		modalpha my = 0;
-		for (int fi = 0; fi < alpha_max; ++fi)
+		for (int fi = 0; fi < alpha_max - 1; ++fi)
 		{
-			modalpha f{ fi };
-			for (int ti = fi; ti < alpha_max; ++ti)
+			for (int ti = fi + 1; ti < alpha_max; ++ti)
 			{
-				modalpha t{ ti };
 				s_b = s;
-				s.Apply(f, t);
+				s.Apply(modalpha {fi}, modalpha {ti});
 				vo = fd.decode(ctb, cte, s);
 				auto scrn = eval_fn(vo, vo + ctl);
 				if (scrn > scr /*&& s.Count() < max_stecker + 1*/)
 				{
-					mx = f;
-					my = t;
+					mx = fi;
+					my = ti;
 					scr = scrn;
 					improved = true;
 				}
@@ -279,6 +278,7 @@ __device__ void hillclimb_partial_exhaust2_fast(modalpha const* ctb, modalpha co
 {
 	const modalpha f1 = alpha::E;
 	const modalpha f2 = alpha::N;
+
 	fast_decoder_ptr fd(ai->arena_ + cj.off_ * alpha_max);
 	stecker s_best;
 	// establish the baseline
@@ -312,13 +312,92 @@ __device__ void hillclimb_partial_exhaust2_fast(modalpha const* ctb, modalpha co
 	cj.scr_ = scr;
 }
 
-__global__ void process_hillclimb_ex(cudaJob* jl, unsigned jls, modalpha* ct, unsigned ctl, arena_decode_t* ai, trigram_table* tgt)
+__device__ void hillclimb_partial_exhaust3_fast(modalpha const* ctb, modalpha const* cte, arena_decode_t const* ai, bigram_table const* bgt, cudaJob& cj)
+{
+	const modalpha f1 = alpha::E;
+	const modalpha f2 = alpha::N;
+	const modalpha f3 = alpha::S;
+
+	fast_decoder_ptr fd(ai->arena_ + cj.off_ * alpha_max);
+	stecker s_best;
+	// establish the baseline
+	unsigned ctl = cte - ctb;
+	auto vo = fd.decode(ctb, cte, cj.s_);
+	auto ef = bigram_score_op(bgt);
+	auto scr = ef(vo, vo + ctl);
+	auto iocb = index_of_coincidence(vo, ctl);
+	for (int ti1 = 0; ti1 < alpha_max; ++ti1)
+	{
+		for (int ti2 = 0; ti2 < alpha_max; ++ti2)
+		{
+			for (int ti3 = 0; ti3 < alpha_max; ++ti3)
+			{
+				if (ti3 == ti2 || ti3 == ti1 || ti2 == ti1)
+					continue;
+				cj.s_.Set(f1, modalpha{ti1});
+				cj.s_.Set(f2, modalpha{ti2});
+				cj.s_.Set(f3, modalpha{ti3});
+				auto scrn = hillclimb_base_fast(ctb, cte, ef, iocb, fd, &cj.s_);
+				if (scrn > scr)
+				{
+					s_best = cj.s_;
+					scr = scrn;
+				}
+				cj.s_.Clear();
+			}
+		}
+	}
+	cj.s_ = s_best;
+	cj.scr_ = scr;
+}
+
+__device__ void hillclimb_partial_exhaust3_fast(modalpha const* ctb, modalpha const* cte, arena_decode_t const* ai, trigram_table const* tgt, cudaJob& cj)
+{
+	const modalpha f1 = alpha::E;
+	const modalpha f2 = alpha::N;
+	const modalpha f3 = alpha::S;
+
+	fast_decoder_ptr fd(ai->arena_ + cj.off_ * alpha_max);
+	stecker s_best;
+	// establish the baseline
+	cj.s_.Clear();
+	unsigned ctl = cte - ctb;
+	auto vo = fd.decode(ctb, cte, cj.s_);
+	auto ef = trigram_score_op(tgt);
+	auto scr = ef(vo, vo + ctl);
+	auto iocb = index_of_coincidence(vo, ctl);
+	for (int ti1 = 0; ti1 < alpha_max; ++ti1)
+	{
+		for (int ti2 = 0; ti2 < alpha_max; ++ti2)
+		{
+			for (int ti3 = 0; ti3 < alpha_max; ++ti3)
+			{
+				if (ti3 == ti2 || ti3 == ti1 || ti2 == ti1)
+					continue;
+				cj.s_.Set(f1, modalpha{ti1});
+				cj.s_.Set(f2, modalpha{ti2});
+				cj.s_.Set(f3, modalpha{ti3});
+				auto scrn = hillclimb_base_fast(ctb, cte, ef, iocb, fd, &cj.s_);
+				if (scrn > scr)
+				{
+					s_best = cj.s_;
+					scr = scrn;
+				}
+				cj.s_.Clear();
+			}
+		}
+	}
+	cj.s_ = s_best;
+	cj.scr_ = scr;
+}
+
+__global__ void process_hillclimb_ex(cudaJob* jl, unsigned jls, modalpha* ct, unsigned ctl, arena_decode_t* ai, bigram_table * bgt, trigram_table* tgt)
 {
 	// figure out which cudaJob refers and call the actual worker fn.
 	unsigned j = blockIdx.x * blockDim.x + threadIdx.x;
 	if (j >= jls)
 		return;
-	hillclimb_partial_exhaust2_fast(ct, ct + ctl, ai, tgt, *(jl + j));
+	hillclimb_partial_exhaust3_fast(ct, ct + ctl, ai, bgt, *(jl + j));
 }
 
 void cudaWrap::run_gpu_process()
@@ -340,5 +419,5 @@ void cudaWrap::run_gpu_process_ex()
 	// start
 	dim3 block(tpb);
 	dim3 grid(32);
-	process_hillclimb_ex <<<grid, block>>> (jl_, jls_, ct_, ctl_, adt_, tgt_);
+	process_hillclimb_ex <<<grid, block>>> (jl_, jls_, ct_, ctl_, adt_, bgt_, tgt_);
 }

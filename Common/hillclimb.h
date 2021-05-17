@@ -272,21 +272,16 @@ template<typename IC, typename F> auto hillclimb_partial_exhaust3_fast(IC ctb, I
 	auto iocb = index_of_coincidence(vo.begin(), vo.end());
 	for (int ti1 = 0; ti1 < alpha_max; ++ti1)
 	{
-		modalpha t1{ ti1 };
 		for (int ti2 = 0; ti2 < alpha_max; ++ti2)
 		{
-			modalpha t2{ ti2 };
-			if (ti1 == ti2 || ti2 == f1)
-				continue;
 			for (int ti3 = 0; ti3 < alpha_max; ++ti3)
 			{
-				if (ti3 == ti2 || ti3 == ti1 || ti3 == f1 || ti3 == f2)
+				if (ti3 == ti2 || ti3 == ti1 || ti2 == ti1)
 					continue;
-				modalpha t3{ ti3 };
 				s_b = s;
-				s.Apply(f3, t3);
-				s.Apply(f2, t2);
-				s.Apply(f1, t1);
+				s.Apply(f3, modalpha{ti3});
+				s.Apply(f2, modalpha{ti2});
+				s.Apply(f1, modalpha{ti1});
 				auto scrn = hillclimb_base_fast(ctb, cte, eval_fn, iocb, fd, s);
 				if (scrn > scr)
 				{
